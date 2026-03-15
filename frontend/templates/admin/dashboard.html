@@ -1,0 +1,1146 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#09090b">
+  <title>PH WiFi Admin Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
+  <link rel="stylesheet" href="/static/css/admin.css">
+</head>
+<body>
+<div id="app" x-data="adminApp" x-init="init()">
+
+  <!-- ==================== SIDEBAR ==================== -->
+  <aside class="sidebar" :class="{ open: sidebarOpen }">
+    <div class="sidebar-logo">
+      <span class="logo-icon">&#x1F4F6;</span>
+      <div>
+        <div class="logo-title">PH WiFi</div>
+        <div class="logo-subtitle">Admin Console v3.0</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">&#x2500;&#x2500;&#x2500; &#x6838;&#x5FC3; &#x2500;&#x2500;&#x2500;</div>
+      <button class="nav-item" :class="{ active: currentTab === 'dashboard' }" @click="switchTab('dashboard')">
+        <span class="nav-icon">&#x1F4CA;</span> Dashboard
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'hotspots' }" @click="switchTab('hotspots')">
+        <span class="nav-icon">&#x1F4E1;</span> &#x71B1;&#x9EDE;&#x7BA1;&#x7406;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'revenue' }" @click="switchTab('revenue')">
+        <span class="nav-icon">&#x1F4B0;</span> &#x6536;&#x5165;&#x5206;&#x6790;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'live' }" @click="switchTab('live')">
+        <span class="nav-icon">&#x1F534;</span> &#x5373;&#x6642;&#x76E3;&#x63A7;
+      </button>
+
+      <div class="nav-section-label">&#x2500;&#x2500;&#x2500; &#x7BA1;&#x7406; &#x2500;&#x2500;&#x2500;</div>
+      <button class="nav-item" :class="{ active: currentTab === 'users' }" @click="switchTab('users')">
+        <span class="nav-icon">&#x1F465;</span> &#x7528;&#x6236;&#x8A18;&#x9304;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'advertisers' }" @click="switchTab('advertisers')">
+        <span class="nav-icon">&#x1F4E6;</span> &#x5EE3;&#x544A;&#x4E3B;&#x7BA1;&#x7406;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'devices' }" @click="switchTab('devices')">
+        <span class="nav-icon">&#x1F4F1;</span> &#x8A2D;&#x5099;&#x7BA1;&#x7406;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'sessions' }" @click="switchTab('sessions')">
+        <span class="nav-icon">&#x1F50C;</span> &#x9023;&#x7DDA;&#x7BA1;&#x7406;
+      </button>
+
+      <div class="nav-section-label">&#x2500;&#x2500;&#x2500; &#x7CFB;&#x7D71; &#x2500;&#x2500;&#x2500;</div>
+      <button class="nav-item" :class="{ active: currentTab === 'security' }" @click="switchTab('security')">
+        <span class="nav-icon">&#x1F512;</span> &#x8CC7;&#x5B89;&#x4E2D;&#x5FC3;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'settings' }" @click="switchTab('settings')">
+        <span class="nav-icon">&#x2699;</span> &#x7CFB;&#x7D71;&#x8A2D;&#x5B9A;
+      </button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="footer-brand">PH WiFi System</div>
+      <div class="footer-clock" x-text="clockTime"></div>
+    </div>
+  </aside>
+
+  <!-- Sidebar overlay for mobile -->
+  <div class="sidebar-overlay" :class="{ visible: sidebarOpen }" @click="sidebarOpen = false"></div>
+
+  <!-- ==================== MAIN ==================== -->
+  <main class="main-content">
+
+    <!-- ==================== TOPBAR ==================== -->
+    <header class="topbar">
+      <button class="topbar-hamburger" @click="sidebarOpen = !sidebarOpen" aria-label="Toggle menu">
+        <span></span><span></span><span></span>
+      </button>
+      <h2 class="topbar-title" x-text="tabTitles[currentTab] || currentTab"></h2>
+      <div class="topbar-right">
+        <span class="badge-live">LIVE</span>
+        <span class="topbar-update" x-text="lastUpdateLabel"></span>
+      </div>
+    </header>
+
+    <!-- ==================== TAB: DASHBOARD ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'dashboard'" x-transition>
+      <div class="page-header">
+        <h1>Dashboard</h1>
+        <p class="page-desc">&#x7CFB;&#x7D71;&#x7E3D;&#x89BD;&#x8207;&#x5373;&#x6642;&#x72C0;&#x614B;</p>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x5BA2;</div>
+          <div class="kpi-value" x-text="stats ? stats.today_visits : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x7E3D;&#x9023;&#x7DDA;</div>
+          <div class="kpi-value" x-text="stats ? stats.total_grants : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">&#x6D3B;&#x8E8D;&#x71B1;&#x9EDE;</div>
+          <div class="kpi-value" x-text="stats ? stats.active_hotspots : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">&#x672C;&#x6708;&#x6536;&#x5165;</div>
+          <div class="kpi-value" x-text="stats ? ('&#x20B1;' + Number(stats.monthly_revenue || 0).toLocaleString()) : '...'"></div>
+        </div>
+      </div>
+
+      <div class="section-grid-2-1">
+        <div class="card">
+          <div class="card-header">
+            <h3>7&#x5929;&#x8DA8;&#x52E2;</h3>
+          </div>
+          <div class="card-body chart-container">
+            <canvas id="chart-trend"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>&#x7CFB;&#x7D71;&#x5065;&#x5EB7;</h3>
+          </div>
+          <div class="card-body">
+            <div class="health-grid">
+              <div class="health-item">
+                <span class="health-dot" :class="health?.database ? 'dot-green' : 'dot-red'"></span>
+                <span>Database</span>
+              </div>
+              <div class="health-item">
+                <span class="health-dot" :class="health?.redis ? 'dot-green' : 'dot-red'"></span>
+                <span>Redis</span>
+              </div>
+              <div class="health-item">
+                <span class="health-dot" :class="health?.omada ? 'dot-green' : 'dot-red'"></span>
+                <span>Omada</span>
+              </div>
+              <div class="health-item">
+                <span class="health-dot dot-green"></span>
+                <span>App Server</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>&#x71B1;&#x9EDE;&#x7E3D;&#x89BD;</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>&#x540D;&#x7A31;</th>
+                  <th>&#x5730;&#x9EDE;</th>
+                  <th>&#x4ECA;&#x65E5;&#x8A2A;&#x554F;</th>
+                  <th>&#x72C0;&#x614B;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!hotspots">
+                  <tr><td colspan="4" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="hotspots && hotspots.length === 0">
+                  <tr><td colspan="4" class="table-empty">&#x5C1A;&#x7121;&#x71B1;&#x9EDE;&#x8CC7;&#x6599;</td></tr>
+                </template>
+                <template x-for="h in (hotspots || [])" :key="h.id">
+                  <tr>
+                    <td x-text="h.name"></td>
+                    <td x-text="h.location"></td>
+                    <td x-text="h.today_visits ?? '-'"></td>
+                    <td>
+                      <span class="status-badge" :class="h.is_active ? 'status-active' : 'status-inactive'" x-text="h.is_active ? '&#x555F;&#x7528;' : '&#x505C;&#x7528;'"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: HOTSPOTS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'hotspots'" x-transition>
+      <div class="page-header">
+        <h1>&#x71B1;&#x9EDE;&#x7BA1;&#x7406;</h1>
+        <div class="page-actions">
+          <input type="text" class="input" placeholder="&#x641C;&#x5C0B;&#x71B1;&#x9EDE;..." x-model="hotspotSearch">
+          <button class="btn btn-primary" @click="openHotspotModal()">&#x65B0;&#x589E;&#x71B1;&#x9EDE;</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>&#x540D;&#x7A31;</th>
+                  <th>&#x5730;&#x9EDE;</th>
+                  <th>AP MAC</th>
+                  <th>Site</th>
+                  <th>&#x5EA7;&#x6A19;</th>
+                  <th>&#x4ECA;&#x65E5;&#x8A2A;&#x554F;</th>
+                  <th>&#x72C0;&#x614B;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!hotspots">
+                  <tr><td colspan="9" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="hotspots && filteredHotspots.length === 0">
+                  <tr><td colspan="9" class="table-empty">&#x7121;&#x7B26;&#x5408;&#x689D;&#x4EF6;&#x7684;&#x71B1;&#x9EDE;</td></tr>
+                </template>
+                <template x-for="h in filteredHotspots" :key="h.id">
+                  <tr>
+                    <td x-text="h.id"></td>
+                    <td x-text="h.name"></td>
+                    <td x-text="h.location"></td>
+                    <td><code x-text="h.ap_mac || '-'"></code></td>
+                    <td x-text="h.site_name || '-'"></td>
+                    <td x-text="(h.latitude && h.longitude) ? (h.latitude + ', ' + h.longitude) : '-'"></td>
+                    <td x-text="h.today_visits ?? '-'"></td>
+                    <td>
+                      <span class="status-badge" :class="h.is_active ? 'status-active' : 'status-inactive'" x-text="h.is_active ? '&#x555F;&#x7528;' : '&#x505C;&#x7528;'"></span>
+                    </td>
+                    <td class="actions-cell">
+                      <button class="btn-icon" title="&#x8A73;&#x7D30;" @click="viewHotspotDetail(h)">&#x1F50D;</button>
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openHotspotModal(h)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon" :title="h.is_active ? '&#x505C;&#x7528;' : '&#x555F;&#x7528;'" @click="toggleHotspot(h)">
+                        <span x-text="h.is_active ? '&#x23F8;' : '&#x25B6;&#xFE0F;'"></span>
+                      </button>
+                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="confirmDeleteHotspot(h)">&#x1F5D1;&#xFE0F;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: REVENUE ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'revenue'" x-transition>
+      <div class="page-header">
+        <h1>&#x6536;&#x5165;&#x5206;&#x6790;</h1>
+      </div>
+
+      <div class="card filter-bar">
+        <div class="card-body filter-row">
+          <div class="filter-group">
+            <input type="month" class="input" x-model="revenueMonth">
+            <button class="btn btn-primary" @click="fetchRevenue()">&#x67E5;&#x8A62;</button>
+          </div>
+          <div class="filter-divider"></div>
+          <div class="filter-group">
+            <input type="date" class="input" x-model="revenueDateStart">
+            <span class="filter-sep">~</span>
+            <input type="date" class="input" x-model="revenueDateEnd">
+            <button class="btn btn-primary" @click="fetchDailyRevenue()">&#x65E5;&#x5831;&#x67E5;&#x8A62;</button>
+            <a :href="'/admin/api/export/revenue?start=' + revenueDateStart + '&end=' + revenueDateEnd" class="btn btn-outline">&#x532F;&#x51FA; CSV</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x6708;&#x4EFD;</div>
+          <div class="kpi-value" x-text="revenueData ? revenueData.month : '-'"></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x7E3D;&#x6536;&#x5165;</div>
+          <div class="kpi-value" x-text="revenueData ? ('&#x20B1;' + Number(revenueData.total_revenue || 0).toLocaleString()) : '-'"></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">&#x5EE3;&#x544A;&#x5C55;&#x793A;</div>
+          <div class="kpi-value" x-text="revenueData ? (revenueData.total_ad_views || 0).toLocaleString() : '-'"></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">&#x7E3D;&#x8A2A;&#x5BA2;</div>
+          <div class="kpi-value" x-text="revenueData ? (revenueData.total_visits || 0).toLocaleString() : '-'"></div>
+        </div>
+      </div>
+
+      <div class="section-grid-2-1">
+        <div class="card">
+          <div class="card-header">
+            <h3>&#x71B1;&#x9EDE;&#x6536;&#x5165;&#x660E;&#x7D30;</h3>
+          </div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>&#x71B1;&#x9EDE;</th>
+                    <th>&#x8A2A;&#x5BA2;</th>
+                    <th>&#x5EE3;&#x544A;&#x6B21;&#x6578;</th>
+                    <th>&#x6536;&#x5165;</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-if="!revenueData || !revenueData.by_hotspot">
+                    <tr><td colspan="4" class="table-empty">&#x8ACB;&#x5148;&#x67E5;&#x8A62;</td></tr>
+                  </template>
+                  <template x-for="r in (revenueData?.by_hotspot || [])" :key="r.hotspot">
+                    <tr>
+                      <td x-text="r.hotspot"></td>
+                      <td x-text="r.visits"></td>
+                      <td x-text="r.ad_views"></td>
+                      <td x-text="'&#x20B1;' + Number(r.revenue || 0).toLocaleString()"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header">
+            <h3>&#x6536;&#x5165;&#x5206;&#x4F48;</h3>
+          </div>
+          <div class="card-body chart-container">
+            <canvas id="chart-revenue-doughnut"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Daily revenue section (shown after daily query) -->
+      <template x-if="dailyRevenueData">
+        <div>
+          <div class="kpi-grid kpi-grid-3">
+            <div class="kpi-card kpi-green">
+              <div class="kpi-label">&#x65E5;&#x5747;&#x6536;&#x5165;</div>
+              <div class="kpi-value" x-text="'&#x20B1;' + Number(dailyRevenueData.avg_revenue || 0).toFixed(2)"></div>
+            </div>
+            <div class="kpi-card kpi-purple">
+              <div class="kpi-label">&#x65E5;&#x5747;&#x5EE3;&#x544A;</div>
+              <div class="kpi-value" x-text="Number(dailyRevenueData.avg_views || 0).toFixed(0)"></div>
+            </div>
+            <div class="kpi-card kpi-amber">
+              <div class="kpi-label">CPM</div>
+              <div class="kpi-value" x-text="'&#x20B1;' + Number(dailyRevenueData.cpm || 0).toFixed(2)"></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-header">
+              <h3>&#x6BCF;&#x65E5;&#x6536;&#x5165;&#x8DA8;&#x52E2;</h3>
+            </div>
+            <div class="card-body chart-container">
+              <canvas id="chart-daily-revenue"></canvas>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- ==================== TAB: LIVE ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'live'" x-transition>
+      <div class="page-header">
+        <h1>&#x5373;&#x6642;&#x76E3;&#x63A7;</h1>
+      </div>
+
+      <div class="live-hero">
+        <div class="live-count-wrap">
+          <div class="live-count pulse" x-text="liveData ? liveData.online_count : '...'"></div>
+        </div>
+        <p class="live-label">
+          &#x76EE;&#x524D;&#x5728;&#x7DDA;&#x4EBA;&#x6578; |
+          <span x-text="liveRefreshCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
+        </p>
+        <button class="btn btn-outline" @click="fetchLive()">&#x7ACB;&#x5373;&#x5237;&#x65B0;</button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>&#x71B1;&#x9EDE;&#x5373;&#x6642;&#x72C0;&#x614B;</h3>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>&#x71B1;&#x9EDE;</th>
+                  <th>&#x5728;&#x7DDA;&#x4EBA;&#x6578;</th>
+                  <th>&#x72C0;&#x614B;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!liveData || !liveData.hotspots">
+                  <tr><td colspan="3" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="liveData && liveData.hotspots && liveData.hotspots.length === 0">
+                  <tr><td colspan="3" class="table-empty">&#x7121;&#x71B1;&#x9EDE;&#x8CC7;&#x6599;</td></tr>
+                </template>
+                <template x-for="h in (liveData?.hotspots || [])" :key="h.name">
+                  <tr>
+                    <td x-text="h.name"></td>
+                    <td x-text="h.online"></td>
+                    <td>
+                      <span class="status-badge" :class="h.online > 0 ? 'status-active' : 'status-inactive'" x-text="h.online > 0 ? '&#x6D3B;&#x8E8D;' : '&#x7A7A;&#x9592;'"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: USERS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'users'" x-transition>
+      <div class="page-header">
+        <h1>&#x7528;&#x6236;&#x8A18;&#x9304;</h1>
+        <div class="page-actions">
+          <input type="text" class="input" placeholder="&#x641C;&#x5C0B; MAC / IP..." x-model="userSearch">
+          <select class="input select" x-model="userHotspotFilter" @change="fetchVisits()">
+            <option value="">&#x5168;&#x90E8;&#x71B1;&#x9EDE;</option>
+            <template x-for="h in (hotspots || [])" :key="h.id">
+              <option :value="h.id" x-text="h.name"></option>
+            </template>
+          </select>
+          <a :href="'/admin/api/export/visits'" class="btn btn-outline">&#x532F;&#x51FA; CSV</a>
+          <button class="btn btn-outline" @click="fetchVisits()">&#x91CD;&#x65B0;&#x8F09;&#x5165;</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>MAC</th>
+                  <th>IP</th>
+                  <th>&#x71B1;&#x9EDE;</th>
+                  <th>&#x6642;&#x9593;</th>
+                  <th>&#x5EE3;&#x544A;</th>
+                  <th>&#x6388;&#x6B0A;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!visits">
+                  <tr><td colspan="7" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="visits && visits.items && visits.items.length === 0">
+                  <tr><td colspan="7" class="table-empty">&#x7121;&#x8A2A;&#x554F;&#x8A18;&#x9304;</td></tr>
+                </template>
+                <template x-for="v in (visits?.items || [])" :key="v.id">
+                  <tr>
+                    <td x-text="v.id"></td>
+                    <td><code x-text="v.mac"></code></td>
+                    <td x-text="v.ip || '-'"></td>
+                    <td x-text="v.hotspot_name || '-'"></td>
+                    <td x-text="v.created_at"></td>
+                    <td>
+                      <span class="status-badge" :class="v.ad_viewed ? 'status-active' : 'status-inactive'" x-text="v.ad_viewed ? '&#x2713;' : '-'"></span>
+                    </td>
+                    <td>
+                      <span class="status-badge" :class="v.granted ? 'status-active' : 'status-inactive'" x-text="v.granted ? '&#x2713;' : '-'"></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="pagination" x-show="visits && visits.total_pages > 1">
+            <button class="btn btn-outline btn-sm" :disabled="visits?.page <= 1" @click="fetchVisits(visits.page - 1)">&laquo; &#x4E0A;&#x4E00;&#x9801;</button>
+            <span class="pagination-info" x-text="'&#x7B2C; ' + (visits?.page || 1) + ' / ' + (visits?.total_pages || 1) + ' &#x9801;'"></span>
+            <button class="btn btn-outline btn-sm" :disabled="visits?.page >= visits?.total_pages" @click="fetchVisits(visits.page + 1)">&#x4E0B;&#x4E00;&#x9801; &raquo;</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: SECURITY ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'security'" x-transition>
+      <div class="page-header">
+        <h1>&#x8CC7;&#x5B89;&#x4E2D;&#x5FC3;</h1>
+      </div>
+
+      <div class="section-grid-1-1">
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>&#x4ECA;&#x65E5;&#x8ACB;&#x6C42;&#x7D71;&#x8A08;</h3></div>
+            <div class="card-body">
+              <template x-if="!securityData">
+                <div class="table-empty"><div class="spinner"></div></div>
+              </template>
+              <template x-if="securityData">
+                <div class="stat-list">
+                  <div class="stat-row">
+                    <span>&#x7E3D;&#x8A2A;&#x554F;</span>
+                    <strong x-text="securityData.today_visits || 0"></strong>
+                  </div>
+                  <div class="stat-row">
+                    <span>&#x5EE3;&#x544A;&#x8A08;&#x6578;</span>
+                    <strong x-text="securityData.today_ad_views || 0"></strong>
+                  </div>
+                  <div class="stat-row">
+                    <span>&#x6388;&#x6B0A;&#x6B21;&#x6578;</span>
+                    <strong x-text="securityData.today_grants || 0"></strong>
+                  </div>
+                  <div class="stat-row">
+                    <span>&#x653E;&#x68C4;&#x7387;</span>
+                    <strong x-text="(securityData.abandon_rate || 0) + '%'"></strong>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>&#x7570;&#x5E38; MAC</h3></div>
+            <div class="card-body">
+              <template x-if="!securityData || !securityData.suspicious_macs">
+                <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
+              </template>
+              <template x-if="securityData && securityData.suspicious_macs && securityData.suspicious_macs.length === 0">
+                <div class="table-empty">&#x7121;&#x7570;&#x5E38;&#x8A18;&#x9304;</div>
+              </template>
+              <div class="table-responsive" x-show="securityData?.suspicious_macs?.length > 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>MAC</th>
+                      <th>&#x6B21;&#x6578;</th>
+                      <th>&#x6700;&#x5F8C;&#x8A2A;&#x554F;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="m in (securityData?.suspicious_macs || [])" :key="m.mac">
+                      <tr>
+                        <td><code x-text="m.mac"></code></td>
+                        <td x-text="m.count"></td>
+                        <td x-text="m.last_seen"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="card">
+            <div class="card-header"><h3>IP &#x7D71;&#x8A08;</h3></div>
+            <div class="card-body">
+              <template x-if="!securityData || !securityData.top_ips">
+                <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
+              </template>
+              <div class="table-responsive" x-show="securityData?.top_ips?.length > 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>IP</th>
+                      <th>&#x8A2A;&#x554F;&#x6B21;&#x6578;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="ip in (securityData?.top_ips || [])" :key="ip.ip">
+                      <tr>
+                        <td><code x-text="ip.ip"></code></td>
+                        <td x-text="ip.count"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>&#x7BA1;&#x7406;&#x64CD;&#x4F5C;&#x8A18;&#x9304;</h3></div>
+            <div class="card-body">
+              <template x-if="!securityData || !securityData.admin_logs">
+                <div class="table-empty">&#x7121;&#x64CD;&#x4F5C;&#x8A18;&#x9304;</div>
+              </template>
+              <div class="table-responsive" x-show="securityData?.admin_logs?.length > 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>&#x6642;&#x9593;</th>
+                      <th>&#x52D5;&#x4F5C;</th>
+                      <th>&#x8A73;&#x60C5;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="log in (securityData?.admin_logs || [])" :key="log.id">
+                      <tr>
+                        <td x-text="log.created_at"></td>
+                        <td x-text="log.action"></td>
+                        <td x-text="log.detail"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3>&#x7CFB;&#x7D71;&#x8CC7;&#x8A0A;</h3></div>
+            <div class="card-body">
+              <div class="stat-list">
+                <div class="stat-row">
+                  <span>Python</span>
+                  <strong x-text="securityData?.system_info?.python || '-'"></strong>
+                </div>
+                <div class="stat-row">
+                  <span>FastAPI</span>
+                  <strong x-text="securityData?.system_info?.fastapi || '-'"></strong>
+                </div>
+                <div class="stat-row">
+                  <span>Uptime</span>
+                  <strong x-text="securityData?.system_info?.uptime || '-'"></strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-link" @click="switchTab('devices')">
+            <div class="card-body">
+              <span>&#x1F512; &#x5C01;&#x9396;&#x88DD;&#x7F6E;&#x6578;: </span>
+              <strong x-text="securityData?.blocked_count || 0"></strong>
+              <span class="card-arrow">&rarr;</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: ADVERTISERS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'advertisers'" x-transition>
+      <div class="page-header">
+        <h1>&#x5EE3;&#x544A;&#x4E3B;&#x7BA1;&#x7406;</h1>
+        <div class="page-actions">
+          <input type="text" class="input" placeholder="&#x641C;&#x5C0B;&#x5EE3;&#x544A;&#x4E3B;..." x-model="advSearch">
+          <button class="btn btn-primary" @click="openAdvModal()">&#x65B0;&#x589E;&#x5EE3;&#x544A;&#x4E3B;</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>&#x540D;&#x7A31;</th>
+                  <th>&#x806F;&#x7D61;&#x4EBA;</th>
+                  <th>&#x6708;&#x8CBB; (PHP)</th>
+                  <th>&#x72C0;&#x614B;</th>
+                  <th>&#x958B;&#x59CB;</th>
+                  <th>&#x7D50;&#x675F;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!advertisers">
+                  <tr><td colspan="8" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="advertisers && filteredAdvertisers.length === 0">
+                  <tr><td colspan="8" class="table-empty">&#x7121;&#x5EE3;&#x544A;&#x4E3B;&#x8CC7;&#x6599;</td></tr>
+                </template>
+                <template x-for="a in filteredAdvertisers" :key="a.id">
+                  <tr>
+                    <td x-text="a.id"></td>
+                    <td x-text="a.name"></td>
+                    <td x-text="a.contact || '-'"></td>
+                    <td x-text="'&#x20B1;' + Number(a.monthly_fee || 0).toLocaleString()"></td>
+                    <td>
+                      <span class="status-badge" :class="a.status === 'active' ? 'status-active' : 'status-inactive'" x-text="a.status"></span>
+                    </td>
+                    <td x-text="a.start_date || '-'"></td>
+                    <td x-text="a.end_date || '-'"></td>
+                    <td class="actions-cell">
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openAdvModal(a)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="confirmDeleteAdv(a)">&#x1F5D1;&#xFE0F;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: DEVICES ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'devices'" x-transition>
+      <div class="page-header">
+        <h1>&#x8A2D;&#x5099;&#x7BA1;&#x7406;</h1>
+        <p class="page-desc">&#x5C01;&#x9396;&#x8207;&#x67E5;&#x8A62;&#x88DD;&#x7F6E;</p>
+      </div>
+
+      <div class="page-actions-bar">
+        <button class="btn btn-danger" @click="showBlockModal = true">&#x5C01;&#x9396;&#x88DD;&#x7F6E;</button>
+        <a :href="'/admin/api/export/blocked'" class="btn btn-outline">&#x532F;&#x51FA; CSV</a>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>&#x5DF2;&#x5C01;&#x9396;&#x88DD;&#x7F6E;</h3></div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>MAC</th>
+                  <th>&#x539F;&#x56E0;</th>
+                  <th>&#x5C01;&#x9396;&#x6642;&#x9593;</th>
+                  <th>&#x5230;&#x671F;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!blockedDevices">
+                  <tr><td colspan="5" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="blockedDevices && blockedDevices.length === 0">
+                  <tr><td colspan="5" class="table-empty">&#x7121;&#x5C01;&#x9396;&#x88DD;&#x7F6E;</td></tr>
+                </template>
+                <template x-for="d in (blockedDevices || [])" :key="d.mac">
+                  <tr>
+                    <td><code x-text="d.mac"></code></td>
+                    <td x-text="d.reason || '-'"></td>
+                    <td x-text="d.blocked_at"></td>
+                    <td x-text="d.expires_at || '&#x6C38;&#x4E45;'"></td>
+                    <td>
+                      <button class="btn btn-outline btn-sm" @click="unblockDevice(d.mac)">&#x89E3;&#x9664;&#x5C01;&#x9396;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h3>&#x88DD;&#x7F6E;&#x67E5;&#x8A62;</h3></div>
+        <div class="card-body">
+          <div class="device-lookup-bar">
+            <input type="text" class="input" placeholder="&#x8F38;&#x5165; MAC &#x4F4D;&#x5740;..." x-model="deviceLookupMac">
+            <button class="btn btn-primary" @click="lookupDevice()">&#x67E5;&#x8A62;</button>
+          </div>
+
+          <template x-if="deviceLookupResult">
+            <div class="device-lookup-results">
+              <div class="kpi-grid kpi-grid-3">
+                <div class="kpi-card kpi-blue">
+                  <div class="kpi-label">&#x7E3D;&#x8A2A;&#x554F;</div>
+                  <div class="kpi-value" x-text="deviceLookupResult.total_visits || 0"></div>
+                </div>
+                <div class="kpi-card kpi-green">
+                  <div class="kpi-label">&#x6388;&#x6B0A;&#x6B21;&#x6578;</div>
+                  <div class="kpi-value" x-text="deviceLookupResult.total_grants || 0"></div>
+                </div>
+                <div class="kpi-card kpi-purple">
+                  <div class="kpi-label">&#x5EE3;&#x544A;&#x6B21;&#x6578;</div>
+                  <div class="kpi-value" x-text="deviceLookupResult.total_ad_views || 0"></div>
+                </div>
+              </div>
+
+              <div class="table-responsive" x-show="deviceLookupResult.recent_visits?.length > 0">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>&#x6642;&#x9593;</th>
+                      <th>&#x71B1;&#x9EDE;</th>
+                      <th>IP</th>
+                      <th>&#x5EE3;&#x544A;</th>
+                      <th>&#x6388;&#x6B0A;</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <template x-for="v in (deviceLookupResult.recent_visits || [])" :key="v.id">
+                      <tr>
+                        <td x-text="v.created_at"></td>
+                        <td x-text="v.hotspot_name || '-'"></td>
+                        <td x-text="v.ip || '-'"></td>
+                        <td x-text="v.ad_viewed ? '&#x2713;' : '-'"></td>
+                        <td x-text="v.granted ? '&#x2713;' : '-'"></td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: SESSIONS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'sessions'" x-transition>
+      <div class="page-header">
+        <h1>&#x9023;&#x7DDA;&#x7BA1;&#x7406;</h1>
+      </div>
+
+      <div class="kpi-grid kpi-grid-2">
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x6D3B;&#x8E8D;&#x9023;&#x7DDA;</div>
+          <div class="kpi-value" x-text="activeSessions ? activeSessions.length : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x5E73;&#x5747;&#x5269;&#x9918;&#x6642;&#x9593;</div>
+          <div class="kpi-value" x-text="avgRemainingTime || '-'"></div>
+        </div>
+      </div>
+
+      <p class="auto-refresh-label">
+        <span x-text="sessionRefreshCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
+      </p>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>MAC</th>
+                  <th>&#x71B1;&#x9EDE;</th>
+                  <th>&#x958B;&#x59CB;&#x6642;&#x9593;</th>
+                  <th>&#x5230;&#x671F;&#x6642;&#x9593;</th>
+                  <th>&#x5269;&#x9918;&#x6642;&#x9593;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!activeSessions">
+                  <tr><td colspan="6" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="activeSessions && activeSessions.length === 0">
+                  <tr><td colspan="6" class="table-empty">&#x7121;&#x6D3B;&#x8E8D;&#x9023;&#x7DDA;</td></tr>
+                </template>
+                <template x-for="s in (activeSessions || [])" :key="s.mac">
+                  <tr>
+                    <td><code x-text="s.mac"></code></td>
+                    <td x-text="s.hotspot_name || '-'"></td>
+                    <td x-text="s.started_at"></td>
+                    <td x-text="s.expires_at"></td>
+                    <td>
+                      <div class="session-remaining">
+                        <div class="progress-bar-sm">
+                          <div class="progress-fill-sm" :style="'width:' + (s.remaining_pct || 0) + '%'"></div>
+                        </div>
+                        <span class="remaining-text" x-text="s.remaining_label || '-'"></span>
+                      </div>
+                    </td>
+                    <td>
+                      <button class="btn btn-danger btn-sm" @click="revokeSession(s.mac)">&#x64A4;&#x92B7;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: SETTINGS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'settings'" x-transition>
+      <div class="page-header">
+        <h1>&#x7CFB;&#x7D71;&#x8A2D;&#x5B9A;</h1>
+      </div>
+
+      <div class="section-grid-1-1">
+        <div class="card">
+          <div class="card-header"><h3>&#x5546;&#x696D;&#x898F;&#x5247;</h3></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">&#x5EE3;&#x544A;&#x6642;&#x9577; (&#x79D2;)</label>
+              <input type="number" class="input" x-model.number="settingsForm.ad_duration_seconds" min="5" max="120">
+            </div>
+            <div class="form-group">
+              <label class="form-label">&#x9023;&#x7DDA;&#x6642;&#x9577; (&#x79D2;)</label>
+              <input type="number" class="input" x-model.number="settingsForm.session_duration_seconds" min="60" max="86400">
+            </div>
+            <div class="form-group">
+              <label class="form-label">&#x9632;&#x6D17;&#x7A97;&#x53E3; (&#x79D2;)</label>
+              <input type="number" class="input" x-model.number="settingsForm.anti_spam_window_seconds" min="0" max="86400">
+            </div>
+            <button class="btn btn-primary" @click="saveSettings()">&#x5132;&#x5B58;&#x8A2D;&#x5B9A;</button>
+            <p class="form-note">&#x26A0; &#x8B8A;&#x66F4;&#x5C07;&#x7ACB;&#x5373;&#x751F;&#x6548;&#xFF0C;&#x8ACB;&#x8B39;&#x614E;&#x64CD;&#x4F5C;</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3>&#x7CFB;&#x7D71;&#x8CC7;&#x8A0A;</h3></div>
+          <div class="card-body">
+            <div class="stat-list">
+              <div class="stat-row">
+                <span>&#x61C9;&#x7528;&#x540D;&#x7A31;</span>
+                <strong x-text="systemInfo?.app_name || 'PH WiFi System'"></strong>
+              </div>
+              <div class="stat-row">
+                <span>&#x74B0;&#x5883;</span>
+                <strong x-text="systemInfo?.environment || '-'"></strong>
+              </div>
+              <div class="stat-row">
+                <span>Omada Host</span>
+                <strong x-text="systemInfo?.omada_host || '-'"></strong>
+              </div>
+            </div>
+            <div class="form-group" style="margin-top: 1.5rem;">
+              <button class="btn btn-outline" @click="testOmada()">&#x6E2C;&#x8A66; Omada &#x9023;&#x7DDA;</button>
+              <div class="test-result" x-show="omadaTestResult" x-text="omadaTestResult"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ==================== MODAL: HOTSPOT ==================== -->
+  <div class="modal-overlay" x-show="showHotspotModal" x-transition.opacity @click.self="showHotspotModal = false">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h3 x-text="editingHotspot ? '&#x7DE8;&#x8F2F;&#x71B1;&#x9EDE;' : '&#x65B0;&#x589E;&#x71B1;&#x9EDE;'"></h3>
+        <button class="modal-close" @click="showHotspotModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">&#x540D;&#x7A31; *</label>
+          <input type="text" class="input" x-model="hotspotForm.name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x5730;&#x9EDE; *</label>
+          <input type="text" class="input" x-model="hotspotForm.location" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">AP MAC</label>
+            <input type="text" class="input" x-model="hotspotForm.ap_mac" placeholder="AA:BB:CC:DD:EE:FF">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Site Name</label>
+            <input type="text" class="input" x-model="hotspotForm.site_name">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Latitude</label>
+            <input type="number" step="any" class="input" x-model="hotspotForm.latitude">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Longitude</label>
+            <input type="number" step="any" class="input" x-model="hotspotForm.longitude">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showHotspotModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-primary" @click="saveHotspot()">&#x5132;&#x5B58;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: ADVERTISER ==================== -->
+  <div class="modal-overlay" x-show="showAdvModal" x-transition.opacity @click.self="showAdvModal = false">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h3 x-text="editingAdv ? '&#x7DE8;&#x8F2F;&#x5EE3;&#x544A;&#x4E3B;' : '&#x65B0;&#x589E;&#x5EE3;&#x544A;&#x4E3B;'"></h3>
+        <button class="modal-close" @click="showAdvModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">&#x540D;&#x7A31; *</label>
+          <input type="text" class="input" x-model="advForm.name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x806F;&#x7D61;&#x4EBA;</label>
+          <input type="text" class="input" x-model="advForm.contact">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Banner URL *</label>
+          <input type="url" class="input" x-model="advForm.banner_url" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Click URL *</label>
+          <input type="url" class="input" x-model="advForm.click_url" required>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x6708;&#x8CBB; (PHP) *</label>
+            <input type="number" class="input" x-model.number="advForm.monthly_fee" min="0" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x72C0;&#x614B;</label>
+            <select class="input select" x-model="advForm.status">
+              <option value="active">Active</option>
+              <option value="paused">Paused</option>
+              <option value="ended">Ended</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x958B;&#x59CB;&#x65E5;&#x671F; *</label>
+            <input type="date" class="input" x-model="advForm.start_date" required>
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x7D50;&#x675F;&#x65E5;&#x671F;</label>
+            <input type="date" class="input" x-model="advForm.end_date">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showAdvModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-primary" @click="saveAdv()">&#x5132;&#x5B58;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: BLOCK DEVICE ==================== -->
+  <div class="modal-overlay" x-show="showBlockModal" x-transition.opacity @click.self="showBlockModal = false">
+    <div class="modal modal-sm" @click.stop>
+      <div class="modal-header">
+        <h3>&#x5C01;&#x9396;&#x88DD;&#x7F6E;</h3>
+        <button class="modal-close" @click="showBlockModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">MAC &#x4F4D;&#x5740; *</label>
+          <input type="text" class="input" x-model="blockForm.mac" placeholder="AA:BB:CC:DD:EE:FF" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x539F;&#x56E0;</label>
+          <input type="text" class="input" x-model="blockForm.reason" placeholder="&#x5C01;&#x9396;&#x539F;&#x56E0;...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x5230;&#x671F;&#x6642;&#x9593;</label>
+          <input type="datetime-local" class="input" x-model="blockForm.expires_at">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showBlockModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-danger" @click="blockDevice()">&#x5C01;&#x9396;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: HOTSPOT DETAIL ==================== -->
+  <div class="modal-overlay" x-show="showHsDetail" x-transition.opacity @click.self="showHsDetail = false">
+    <div class="modal modal-wide" @click.stop>
+      <div class="modal-header">
+        <h3>&#x71B1;&#x9EDE;&#x8A73;&#x60C5;: <span x-text="hsDetailData?.name || ''"></span></h3>
+        <button class="modal-close" @click="showHsDetail = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <template x-if="!hsDetailData">
+          <div class="table-empty"><div class="spinner"></div></div>
+        </template>
+        <template x-if="hsDetailData">
+          <div>
+            <div class="kpi-grid kpi-grid-3">
+              <div class="kpi-card kpi-blue">
+                <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x554F;</div>
+                <div class="kpi-value" x-text="hsDetailData.today_visits || 0"></div>
+              </div>
+              <div class="kpi-card kpi-green">
+                <div class="kpi-label">&#x672C;&#x9031;&#x8A2A;&#x554F;</div>
+                <div class="kpi-value" x-text="hsDetailData.week_visits || 0"></div>
+              </div>
+              <div class="kpi-card kpi-purple">
+                <div class="kpi-label">&#x4ECA;&#x65E5;&#x5EE3;&#x544A;</div>
+                <div class="kpi-value" x-text="hsDetailData.today_ads || 0"></div>
+              </div>
+            </div>
+
+            <h4 class="detail-section-title">&#x71B1;&#x9580;&#x88DD;&#x7F6E;</h4>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>MAC</th>
+                    <th>&#x8A2A;&#x554F;&#x6B21;&#x6578;</th>
+                    <th>&#x6700;&#x5F8C;&#x8A2A;&#x554F;</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-if="!hsDetailData.top_devices || hsDetailData.top_devices.length === 0">
+                    <tr><td colspan="3" class="table-empty">&#x7121;&#x8CC7;&#x6599;</td></tr>
+                  </template>
+                  <template x-for="d in (hsDetailData.top_devices || [])" :key="d.mac">
+                    <tr>
+                      <td><code x-text="d.mac"></code></td>
+                      <td x-text="d.visit_count"></td>
+                      <td x-text="d.last_visit"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showHsDetail = false">&#x95DC;&#x9589;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== CONFIRM DIALOG ==================== -->
+  <div class="modal-overlay" x-show="showConfirm" x-transition.opacity @click.self="showConfirm = false">
+    <div class="modal modal-confirm" @click.stop>
+      <div class="modal-body">
+        <p class="confirm-message" x-text="confirmMessage"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showConfirm = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-danger" @click="confirmAction()">&#x78BA;&#x8A8D;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== TOAST CONTAINER ==================== -->
+  <div class="toast-container">
+    <template x-for="(t, idx) in toasts" :key="t.id">
+      <div class="toast" :class="'toast-' + t.type" x-show="t.visible" x-transition>
+        <span class="toast-message" x-text="t.message"></span>
+        <button class="toast-close" @click="removeToast(idx)">&times;</button>
+      </div>
+    </template>
+  </div>
+
+</div>
+
+<script src="/static/js/admin.js"></script>
+</body>
+</html>
