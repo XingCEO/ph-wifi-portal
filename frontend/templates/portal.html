@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#09090b">
+  <title>Free WiFi — {{ ssid_name }}</title>
+  <link rel="stylesheet" href="/static/css/portal.css">
+</head>
+<body>
+  <div class="portal-card">
+    <header class="portal-header">
+      <p class="ssid-label">{{ ssid_name }}</p>
+      <h1 class="portal-title">Connect to Free WiFi</h1>
+    </header>
+
+    <div class="ad-container">
+      <div class="ad-label">
+        <span>Sponsored</span>
+      </div>
+      <div class="ad-slot" id="adSlot">
+        <!-- Adcash Ad Tag -->
+        <div class="ad-placeholder" id="adFallback">Advertisement loading...</div>
+      </div>
+    </div>
+
+    <div class="countdown-section">
+      <div class="countdown-display">
+        <span class="countdown-number" id="countdown-number">{{ ad_duration }}</span>
+        <span class="countdown-unit">sec</span>
+      </div>
+      <div class="progress-track">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <p class="countdown-hint" id="countdown-hint">Watch the ad to get 1 hour of free internet</p>
+      <p class="tagalog-hint" id="tagalog-hint">Manood ng ad para makakuha ng 1 oras na libreng internet</p>
+    </div>
+
+    <button class="btn-connect" id="btn-connect" aria-label="Connect to free WiFi for 1 hour">
+      Get Free WiFi — 1 Hour
+    </button>
+
+    <div class="error-msg" id="error-msg" role="alert"></div>
+
+    <p class="paid-option">
+      Skip ad? <a onclick="alert('Paid option coming soon — ₱5 for 30 min')">Pay ₱5 for 30 minutes</a>
+    </p>
+  </div>
+
+  <script>
+    window.__PORTAL_SESSION_ID__ = "{{ session_id }}";
+    window.__PORTAL_REDIRECT_URL__ = "{{ redirect_url | e }}";
+    window.__PORTAL_AD_DURATION__ = {{ ad_duration }};
+  </script>
+  <script src="/static/js/portal.js"></script>
+</body>
+</html>

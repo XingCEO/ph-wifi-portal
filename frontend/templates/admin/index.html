@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin — PH WiFi Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary: #09090b;
+      --bg-surface: #18181b;
+      --bg-elevated: #27272a;
+      --border: #3f3f46;
+      --border-subtle: #27272a;
+      --text-primary: #fafafa;
+      --text-secondary: #a1a1aa;
+      --text-muted: #71717a;
+      --accent-green: #22c55e;
+      --accent-green-dim: rgba(34,197,94,0.12);
+      --accent-green-hover: #16a34a;
+      --red: #ef4444;
+      --red-dim: rgba(239,68,68,0.12);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245,158,11,0.12);
+      --blue: #3b82f6;
+      --blue-dim: rgba(59,130,246,0.12);
+      --sidebar-w: 220px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ─── Layout ─────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: var(--sidebar-w) 1fr;
+      grid-template-rows: 64px 1fr;
+      min-height: 100vh;
+    }
+
+    /* ─── Sidebar ────────────────────────────────── */
+    .sidebar {
+      grid-row: 1 / -1;
+      background: var(--bg-surface);
+      border-right: 1px solid var(--border-subtle);
+      display: flex;
+      flex-direction: column;
+      padding: 0;
+    }
+
+    .sidebar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 0 20px;
+      height: 64px;
+      border-bottom: 1px solid var(--border-subtle);
+      flex-shrink: 0;
+    }
+
+    .brand-icon {
+      width: 32px;
+      height: 32px;
+      background: var(--accent-green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .brand-name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: var(--text-primary);
+    }
+
+    .brand-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .sidebar-nav {
+      flex: 1;
+      padding: 12px 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .nav-section-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      padding: 8px 12px 4px;
+      margin-top: 8px;
+    }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      text-decoration: none;
+      user-select: none;
+    }
+
+    .nav-item:hover {
+      background: var(--bg-elevated);
+      color: var(--text-primary);
+    }
+
+    .nav-item.active {
+      background: var(--accent-green-dim);
+      color: var(--accent-green);
+    }
+
+    .nav-item svg {
+      flex-shrink: 0;
+      opacity: 0.7;
+    }
+
+    .nav-item.active svg { opacity: 1; }
+
+    .sidebar-footer {
+      padding: 12px 8px;
+      border-top: 1px solid var(--border-subtle);
+    }
+
+    .user-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+    }
+
+    .avatar {
+      width: 30px;
+      height: 30px;
+      background: var(--accent-green-dim);
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-green);
+      flex-shrink: 0;
+    }
+
+    .user-info { flex: 1; min-width: 0; }
+    .user-name { font-size: 12px; font-weight: 600; color: var(--text-primary); }
+    .user-role { font-size: 10px; color: var(--text-muted); }
+
+    /* ─── Header ─────────────────────────────────── */
+    .header {
+      grid-column: 2;
+      background: var(--bg-surface);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 28px;
+    }
+
+    .header-title {
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .header-right {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-green-dim);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-radius: 20px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-green);
+      letter-spacing: 0.03em;
+    }
+
+    .live-dot {
+      width: 6px;
+      height: 6px;
+      background: var(--accent-green);
+      border-radius: 50%;
+      animation: pulse 2s ease infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.85); }
+    }
+
+    .clock {
+      font-size: 13px;
+      font-variant-numeric: tabular-nums;
+      color: var(--text-muted);
+    }
+
+    /* ─── Main Content ───────────────────────────── */
+    .main {
+      grid-column: 2;
+      padding: 28px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+
+    /* ─── Stat Cards ─────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 16px;
+    }
+
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .stat-card.green::before { background: var(--accent-green); }
+    .stat-card.blue::before { background: var(--blue); }
+    .stat-card.amber::before { background: var(--amber); }
+    .stat-card.red::before { background: var(--red); }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .stat-value {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+      margin-bottom: 8px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-card.green .stat-value { color: var(--accent-green); }
+    .stat-card.blue .stat-value { color: var(--blue); }
+    .stat-card.amber .stat-value { color: var(--amber); }
+    .stat-card.red .stat-value { color: var(--text-primary); }
+
+    .stat-delta {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    .stat-delta.up { color: var(--accent-green); }
+    .stat-delta.down { color: var(--red); }
+
+    .stat-period {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .stat-icon {
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .stat-card.green .stat-icon { background: var(--accent-green-dim); }
+    .stat-card.blue .stat-icon { background: var(--blue-dim); }
+    .stat-card.amber .stat-icon { background: var(--amber-dim); }
+    .stat-card.red .stat-icon { background: var(--red-dim); }
+
+    /* ─── Chart Section ──────────────────────────── */
+    .chart-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .section-title {
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .section-subtitle {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .chart-legend {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      color: var(--text-secondary);
+    }
+
+    .legend-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .chart-wrap {
+      position: relative;
+      width: 100%;
+      height: 180px;
+    }
+
+    .chart-svg {
+      width: 100%;
+      height: 100%;
+      overflow: visible;
+    }
+
+    .chart-x-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding: 0 4px;
+    }
+
+    .chart-x-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    /* ─── Bottom Grid ────────────────────────────── */
+    .bottom-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    /* ─── Table ──────────────────────────────────── */
+    .table-section {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    .table-header {
+      padding: 20px 20px 16px;
+      border-bottom: 1px solid var(--border-subtle);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    thead th {
+      padding: 10px 20px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      background: var(--bg-elevated);
+    }
+
+    tbody tr {
+      border-top: 1px solid var(--border-subtle);
+      transition: background 0.15s;
+    }
+
+    tbody tr:hover { background: rgba(255,255,255,0.02); }
+
+    tbody td {
+      padding: 12px 20px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      vertical-align: middle;
+    }
+
+    .hotspot-name {
+      font-weight: 500;
+      color: var(--text-primary);
+    }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 3px 8px;
+      border-radius: 20px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .status-badge.online {
+      background: var(--accent-green-dim);
+      color: var(--accent-green);
+      border: 1px solid rgba(34,197,94,0.25);
+    }
+
+    .status-badge.offline {
+      background: var(--red-dim);
+      color: var(--red);
+      border: 1px solid rgba(239,68,68,0.25);
+    }
+
+    .status-badge.idle {
+      background: var(--amber-dim);
+      color: var(--amber);
+      border: 1px solid rgba(245,158,11,0.25);
+    }
+
+    .status-dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    /* ─── Revenue Panel ──────────────────────────── */
+    .revenue-panel {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .revenue-total {
+      font-size: 40px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      color: var(--accent-green);
+      line-height: 1;
+    }
+
+    .revenue-label {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .revenue-breakdown {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .breakdown-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .breakdown-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .breakdown-bar-wrap {
+      flex: 1;
+      margin: 0 12px;
+      height: 4px;
+      background: var(--bg-elevated);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .breakdown-bar {
+      height: 100%;
+      border-radius: 2px;
+      background: var(--accent-green);
+    }
+
+    .breakdown-value {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 48px;
+      text-align: right;
+    }
+
+    .divider { height: 1px; background: var(--border-subtle); }
+
+    /* ─── Responsive ─────────────────────────────── */
+    @media (max-width: 1100px) {
+      .stats-grid { grid-template-columns: repeat(2, 1fr); }
+      .bottom-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+      </div>
+      <div>
+        <div class="brand-name">PH WiFi</div>
+        <div class="brand-sub">Admin Console</div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Overview</div>
+      <a class="nav-item active" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>
+        </svg>
+        Dashboard
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12.55a11 11 0 0 1 14.08 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>
+        </svg>
+        Hotspots
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+        </svg>
+        Users
+      </a>
+
+      <div class="nav-section-label">Monetization</div>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+        </svg>
+        Ad Campaigns
+      </a>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
+        Revenue
+      </a>
+
+      <div class="nav-section-label">System</div>
+      <a class="nav-item" href="#">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+        </svg>
+        Settings
+      </a>
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-row">
+        <div class="avatar">AD</div>
+        <div class="user-info">
+          <div class="user-name">Admin</div>
+          <div class="user-role">Super Admin</div>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header-title">Dashboard Overview</div>
+    <div class="header-right">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        LIVE
+      </div>
+      <div class="clock" id="clock">--:--:--</div>
+    </div>
+  </header>
+
+  <!-- Main -->
+  <main class="main">
+
+    <!-- Stat Cards -->
+    <div class="stats-grid">
+      <div class="stat-card green">
+        <div class="stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+          </svg>
+        </div>
+        <div class="stat-label">Unique Visitors</div>
+        <div class="stat-value" id="stat-uv">{{ stats.unique_visitors | default('1,247') }}</div>
+        <div class="stat-delta up">↑ 12.4%</div>
+        <div class="stat-period">vs. yesterday</div>
+      </div>
+
+      <div class="stat-card blue">
+        <div class="stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+          </svg>
+        </div>
+        <div class="stat-label">Ad Views</div>
+        <div class="stat-value" id="stat-ads">{{ stats.ad_views | default('3,891') }}</div>
+        <div class="stat-delta up">↑ 8.7%</div>
+        <div class="stat-period">vs. yesterday</div>
+      </div>
+
+      <div class="stat-card amber">
+        <div class="stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+          </svg>
+        </div>
+        <div class="stat-label">Est. Revenue</div>
+        <div class="stat-value" id="stat-rev">₱{{ stats.revenue | default('847') }}</div>
+        <div class="stat-delta up">↑ 23.1%</div>
+        <div class="stat-period">this month</div>
+      </div>
+
+      <div class="stat-card red">
+        <div class="stat-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="stat-label">Live Users</div>
+        <div class="stat-value" id="stat-live">{{ stats.live_users | default('38') }}</div>
+        <div class="stat-delta down">↓ 3</div>
+        <div class="stat-period">right now</div>
+      </div>
+    </div>
+
+    <!-- Chart -->
+    <div class="chart-section">
+      <div class="section-header">
+        <div>
+          <div class="section-title">7-Day Traffic Trend</div>
+          <div class="section-subtitle">Unique visitors per day</div>
+        </div>
+        <div class="chart-legend">
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#22c55e"></div>
+            Visitors
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot" style="background:#3b82f6"></div>
+            Ad Views
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <svg class="chart-svg" id="chart-svg" viewBox="0 0 700 180" preserveAspectRatio="none"></svg>
+      </div>
+      <div class="chart-x-labels" id="chart-labels"></div>
+    </div>
+
+    <!-- Bottom Grid -->
+    <div class="bottom-grid">
+
+      <!-- Hotspot Table -->
+      <div class="table-section">
+        <div class="table-header">
+          <div class="section-title">Hotspot Status</div>
+          <div class="section-subtitle">All registered access points</div>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>Hotspot</th>
+              <th>Location</th>
+              <th>Users</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="hotspot-tbody">
+            {% for hs in hotspots | default([
+              {'name': 'AP-Manila-01', 'location': 'Tondo, Manila', 'users': 12, 'status': 'online'},
+              {'name': 'AP-Cebu-01', 'location': 'Colon, Cebu', 'users': 9, 'status': 'online'},
+              {'name': 'AP-Davao-01', 'location': 'Bankerohan', 'users': 7, 'status': 'online'},
+              {'name': 'AP-QC-02', 'location': 'Cubao, QC', 'users': 6, 'status': 'idle'},
+              {'name': 'AP-Batangas-01', 'location': 'Lipa City', 'users': 4, 'status': 'online'},
+              {'name': 'AP-Iloilo-01', 'location': 'Molo, Iloilo', 'users': 0, 'status': 'offline'},
+            ]) %}
+            <tr>
+              <td><span class="hotspot-name">{{ hs.name }}</span></td>
+              <td>{{ hs.location }}</td>
+              <td>{{ hs.users }}</td>
+              <td>
+                <span class="status-badge {{ hs.status }}">
+                  <span class="status-dot"></span>
+                  {{ hs.status | capitalize }}
+                </span>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Revenue Panel -->
+      <div class="revenue-panel">
+        <div class="section-header" style="margin-bottom:0">
+          <div>
+            <div class="section-title">Revenue Breakdown</div>
+            <div class="section-subtitle">March 2026 · Est.</div>
+          </div>
+        </div>
+
+        <div>
+          <div class="revenue-total">₱{{ revenue.total | default('847') }}</div>
+          <div class="revenue-label">Total estimated earnings</div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="revenue-breakdown">
+          <div class="breakdown-row">
+            <div class="breakdown-label">
+              <div class="legend-dot" style="background:#22c55e;border-radius:2px;width:10px;height:10px"></div>
+              Ad Impressions
+            </div>
+            <div class="breakdown-bar-wrap">
+              <div class="breakdown-bar" style="width:72%;background:#22c55e"></div>
+            </div>
+            <div class="breakdown-value">₱610</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label">
+              <div class="legend-dot" style="background:#3b82f6;border-radius:2px;width:10px;height:10px"></div>
+              Paid Sessions
+            </div>
+            <div class="breakdown-bar-wrap">
+              <div class="breakdown-bar" style="width:20%;background:#3b82f6"></div>
+            </div>
+            <div class="breakdown-value">₱170</div>
+          </div>
+          <div class="breakdown-row">
+            <div class="breakdown-label">
+              <div class="legend-dot" style="background:#f59e0b;border-radius:2px;width:10px;height:10px"></div>
+              Referral Bonus
+            </div>
+            <div class="breakdown-bar-wrap">
+              <div class="breakdown-bar" style="width:8%;background:#f59e0b"></div>
+            </div>
+            <div class="breakdown-value">₱67</div>
+          </div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.6">
+          Revenue is estimated based on CPM rates from Adcash. Actual payouts may vary. Updated every 30 seconds.
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script>
+  'use strict';
+
+  /* ─── Clock ──────────────────────────── */
+  function updateClock() {
+    const now = new Date();
+    const h = String(now.getHours()).padStart(2, '0');
+    const m = String(now.getMinutes()).padStart(2, '0');
+    const s = String(now.getSeconds()).padStart(2, '0');
+    document.getElementById('clock').textContent = h + ':' + m + ':' + s;
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  /* ─── SVG Chart ──────────────────────── */
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  // Sample data — replace with {{ chart_data | tojson }} in production
+  const visitorsData = [820, 940, 1050, 890, 1150, 1320, 1247];
+  const adViewsData  = [2100, 2560, 2900, 2400, 3100, 3600, 3891];
+
+  function renderChart() {
+    const svg = document.getElementById('chart-svg');
+    const labelsWrap = document.getElementById('chart-labels');
+    const W = 700, H = 180;
+    const padLeft = 0, padRight = 0, padTop = 16, padBottom = 20;
+    const chartW = W - padLeft - padRight;
+    const chartH = H - padTop - padBottom;
+    const n = visitorsData.length;
+
+    // Normalize helpers
+    const maxV = Math.max(...visitorsData);
+    const maxA = Math.max(...adViewsData);
+
+    function normV(v) { return padTop + chartH - (v / maxV) * chartH; }
+    function normA(v) { return padTop + chartH - (v / maxA) * chartH; }
+    function xPos(i) { return padLeft + (i / (n - 1)) * chartW; }
+
+    // Build bezier path
+    function makePath(data, normFn) {
+      const pts = data.map((v, i) => [xPos(i), normFn(v)]);
+      let d = `M ${pts[0][0]},${pts[0][1]}`;
+      for (let i = 0; i < pts.length - 1; i++) {
+        const cp1x = pts[i][0] + (pts[i+1][0] - pts[i][0]) * 0.5;
+        const cp1y = pts[i][1];
+        const cp2x = pts[i][0] + (pts[i+1][0] - pts[i][0]) * 0.5;
+        const cp2y = pts[i+1][1];
+        d += ` C ${cp1x},${cp1y} ${cp2x},${cp2y} ${pts[i+1][0]},${pts[i+1][1]}`;
+      }
+      return d;
+    }
+
+    function makeAreaPath(data, normFn) {
+      const path = makePath(data, normFn);
+      const lastX = xPos(n - 1);
+      const firstX = xPos(0);
+      const bottom = padTop + chartH;
+      return path + ` L ${lastX},${bottom} L ${firstX},${bottom} Z`;
+    }
+
+    // Grid lines
+    let svgHtml = '';
+    const gridLines = 4;
+    for (let i = 0; i <= gridLines; i++) {
+      const y = padTop + (chartH / gridLines) * i;
+      svgHtml += `<line x1="${padLeft}" y1="${y}" x2="${W - padRight}" y2="${y}"
+        stroke="#27272a" stroke-width="1" vector-effect="non-scaling-stroke"/>`;
+    }
+
+    // Gradient defs
+    svgHtml += `
+      <defs>
+        <linearGradient id="gradV" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#22c55e" stop-opacity="0.25"/>
+          <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+        </linearGradient>
+        <linearGradient id="gradA" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.2"/>
+          <stop offset="100%" stop-color="#3b82f6" stop-opacity="0"/>
+        </linearGradient>
+      </defs>
+    `;
+
+    // Area fills
+    svgHtml += `<path d="${makeAreaPath(adViewsData, normA)}" fill="url(#gradA)"/>`;
+    svgHtml += `<path d="${makeAreaPath(visitorsData, normV)}" fill="url(#gradV)"/>`;
+
+    // Lines
+    svgHtml += `<path d="${makePath(adViewsData, normA)}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
+    svgHtml += `<path d="${makePath(visitorsData, normV)}" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+    // Dots for visitors
+    visitorsData.forEach(function(v, i) {
+      const x = xPos(i);
+      const y = normV(v);
+      svgHtml += `<circle cx="${x}" cy="${y}" r="4" fill="#09090b" stroke="#22c55e" stroke-width="2"/>`;
+    });
+
+    svg.innerHTML = svgHtml;
+
+    // X labels
+    labelsWrap.innerHTML = DAYS.map(function(d) {
+      return `<span class="chart-x-label">${d}</span>`;
+    }).join('');
+  }
+
+  renderChart();
+
+  /* ─── Auto-refresh stats every 30s ──── */
+  async function refreshStats() {
+    try {
+      const resp = await fetch('/api/admin/stats');
+      if (!resp.ok) return;
+      const data = await resp.json();
+      if (data.unique_visitors !== undefined)
+        document.getElementById('stat-uv').textContent = data.unique_visitors.toLocaleString();
+      if (data.ad_views !== undefined)
+        document.getElementById('stat-ads').textContent = data.ad_views.toLocaleString();
+      if (data.revenue !== undefined)
+        document.getElementById('stat-rev').textContent = '₱' + data.revenue.toLocaleString();
+      if (data.live_users !== undefined)
+        document.getElementById('stat-live').textContent = data.live_users;
+    } catch (e) {
+      // silently fail — data shown is last good state
+    }
+  }
+
+  // Refresh every 30 seconds
+  setInterval(refreshStats, 30000);
+</script>
+</body>
+</html>

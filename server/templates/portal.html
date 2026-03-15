@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WiFi Access Portal</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 480px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            text-align: center;
+        }
+        h1 { font-size: 24px; color: #333; margin-bottom: 8px; }
+        .subtitle { color: #666; margin-bottom: 24px; font-size: 14px; }
+        #ad-container {
+            background: #f8f8f8;
+            border-radius: 8px;
+            min-height: 250px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            border: 1px solid #eee;
+            overflow: hidden;
+        }
+        #ad-container img { max-width: 100%; height: auto; }
+        #timer-section { margin-bottom: 20px; }
+        #timer-text { font-size: 14px; color: #666; margin-bottom: 8px; }
+        #timer {
+            font-size: 36px;
+            font-weight: bold;
+            color: #764ba2;
+        }
+        #progress-bar {
+            width: 100%;
+            height: 6px;
+            background: #eee;
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        #progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 3px;
+            transition: width 1s linear;
+        }
+        #connect-btn {
+            display: none;
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        #connect-btn:hover { opacity: 0.9; }
+        #connect-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #status-msg { margin-top: 12px; font-size: 13px; color: #666; min-height: 20px; }
+        .error { color: #e53e3e; }
+        .success { color: #38a169; }
+        #location { font-size: 12px; color: #999; margin-top: 16px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🌐 Free WiFi Access</h1>
+        <p class="subtitle">Watch a short ad to get free internet access</p>
+
+        <div id="ad-container">
+            <!-- Ad content loaded dynamically -->
+            <div id="ad-placeholder" style="padding:20px;color:#aaa;font-size:14px;">
+                Loading advertisement...
+            </div>
+        </div>
+
+        <div id="timer-section">
+            <p id="timer-text">Time remaining:</p>
+            <div id="timer">{{ad_duration}}</div>
+            <div id="progress-bar">
+                <div id="progress-fill" style="width:100%"></div>
+            </div>
+        </div>
+
+        <button id="connect-btn" onclick="grantAccess()">
+            ✓ Connect to Internet
+        </button>
+        <div id="status-msg"></div>
+        <div id="location">{{hotspot_name}} · {{location}}</div>
+    </div>
+
+    <script>
+        const SESSION_ID = "{{session_id}}";
+        const AD_DURATION = {{ad_duration}};
+        const REDIRECT_URL = "{{redirect_url}}";
+        let timeLeft = AD_DURATION;
+        let adWatched = false;
+
+        // Load ad content
+        (function loadAd() {
+            const container = document.getElementById('ad-container');
+            const placeholder = document.getElementById('ad-placeholder');
+            // Adcash integration
+            const adZoneKey = "{{adcash_zone_key}}";
+            if (adZoneKey) {
+                placeholder.innerHTML = '';
+                const script = document.createElement('script');
+                script.src = `https://adinplay.com/libs/aip.js`;
+                script.async = true;
+                container.appendChild(script);
+            } else {
+                // Direct advertiser banner
+                const bannerUrl = "{{banner_url}}";
+                const clickUrl = "{{click_url}}";
+                if (bannerUrl && bannerUrl !== 'null') {
+                    placeholder.innerHTML = '';
+                    const link = document.createElement('a');
+                    link.href = clickUrl || '#';
+                    link.target = '_blank';
+                    const img = document.createElement('img');
+                    img.src = bannerUrl;
+                    img.alt = 'Advertisement';
+                    link.appendChild(img);
+                    container.appendChild(link);
+                } else {
+                    placeholder.textContent = '📱 Sponsored by local businesses';
+                }
+            }
+        })();
+
+        // Countdown timer
+        const timerEl = document.getElementById('timer');
+        const progressFill = document.getElementById('progress-fill');
+        const connectBtn = document.getElementById('connect-btn');
+
+        function updateTimer() {
+            timerEl.textContent = timeLeft;
+            const pct = (timeLeft / AD_DURATION) * 100;
+            progressFill.style.width = pct + '%';
+
+            if (timeLeft <= 0) {
+                adWatched = true;
+                document.getElementById('timer-section').style.display = 'none';
+                connectBtn.style.display = 'block';
+                document.getElementById('timer-text').textContent = 'Ad complete!';
+            } else {
+                timeLeft--;
+                setTimeout(updateTimer, 1000);
+            }
+        }
+        setTimeout(updateTimer, 1000);
+
+        async function grantAccess() {
+            if (!adWatched) return;
+            const btn = document.getElementById('connect-btn');
+            const statusEl = document.getElementById('status-msg');
+            btn.disabled = true;
+            btn.textContent = 'Connecting...';
+            statusEl.textContent = '';
+
+            try {
+                const resp = await fetch('/api/grant-access', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ session_id: SESSION_ID })
+                });
+                const data = await resp.json();
+
+                if (resp.ok && data.status === 'granted') {
+                    statusEl.className = 'success';
+                    statusEl.textContent = '✓ Access granted! Redirecting...';
+                    setTimeout(() => {
+                        window.location.href = REDIRECT_URL;
+                    }, 1500);
+                } else {
+                    statusEl.className = 'error';
+                    statusEl.textContent = data.message || 'Error granting access. Please try again.';
+                    btn.disabled = false;
+                    btn.textContent = '✓ Connect to Internet';
+                }
+            } catch (e) {
+                statusEl.className = 'error';
+                statusEl.textContent = 'Network error. Please try again.';
+                btn.disabled = false;
+                btn.textContent = '✓ Connect to Internet';
+            }
+        }
+    </script>
+</body>
+</html>
