@@ -60,9 +60,9 @@ class Settings(BaseSettings):
     adcash_zone_key: str = ""
 
     # Business Rules
-    ad_duration_seconds: int = 30
+    ad_duration_seconds: int = 10
     session_duration_seconds: int = 3600
-    anti_spam_window_seconds: int = 3600
+    anti_spam_window_seconds: int = 10
 
     # Admin
     admin_username: str = "admin"

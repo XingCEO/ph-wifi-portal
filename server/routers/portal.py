@@ -152,3 +152,15 @@ async def portal_page(
     )
 
     return HTMLResponse(content=html, status_code=200)
+
+
+THANKS_TEMPLATE_PATH = Path(__file__).parent.parent.parent / "frontend" / "templates" / "thanks.html"
+_THANKS_CACHE: str | None = None
+
+
+@router.get("/thanks", response_class=HTMLResponse)
+async def thanks_page() -> HTMLResponse:
+    global _THANKS_CACHE
+    if _THANKS_CACHE is None:
+        _THANKS_CACHE = THANKS_TEMPLATE_PATH.read_text(encoding="utf-8")
+    return HTMLResponse(content=_THANKS_CACHE, status_code=200)

@@ -64,7 +64,7 @@
         $btn.textContent = 'Connected!';
         $btn.style.background = '#22c55e';
         setTimeout(function () {
-          window.location.href = REDIRECT_URL || 'https://google.com';
+          window.location.href = '/thanks?to=' + encodeURIComponent(REDIRECT_URL || 'https://google.com');
         }, 800);
       } else {
         throw new Error(data.detail || 'Connection failed');
