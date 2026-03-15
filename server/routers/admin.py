@@ -60,13 +60,38 @@ def verify_basic_auth(request: Request) -> None:
 
 
 DASHBOARD_HTML = """<!DOCTYPE html>
-<html><head><title>WiFi Admin</title></head>
-<body><h1>WiFi Portal Admin Dashboard</h1>
-<div id="stats"></div>
+<html lang="zh-TW"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>WiFi Admin</title>
+<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:-apple-system,sans-serif;background:#f0f2f5}.header{background:#1a1a2e;color:#fff;padding:16px 24px;display:flex;justify-content:space-between;align-items:center}.container{max-width:1100px;margin:20px auto;padding:0 16px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:20px}.card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08)}.card h3{font-size:11px;color:#888;margin-bottom:6px;text-transform:uppercase}.card .val{font-size:30px;font-weight:700;color:#1a1a2e}.sec{background:#fff;border-radius:10px;padding:20px;box-shadow:0 2px 8px rgba(0,0,0,.08);margin-bottom:16px}.sec h2{font-size:15px;margin-bottom:14px;color:#1a1a2e}table{width:100%;border-collapse:collapse}th{font-size:11px;color:#888;padding:8px;border-bottom:2px solid #f0f2f5;text-align:left;text-transform:uppercase}td{padding:11px 8px;border-bottom:1px solid #f0f2f5;font-size:13px}.ok{color:#28a745;font-weight:600}.err{color:#dc3545;font-weight:600}.btn{padding:7px 14px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;background:#1a1a2e;color:#fff}input{padding:8px;border:1px solid #ddd;border-radius:8px;font-size:13px;width:100%;margin-bottom:8px}.row{display:grid;grid-template-columns:1fr 1fr;gap:8px}</style></head><body>
+<div class="header"><h1>WiFi Portal Admin</h1><span id="ts" style="font-size:12px;opacity:.7">Loading...</span></div>
+<div class="container">
+<div class="grid"><div class="card"><h3>總連線</h3><div class="val" id="v1">-</div></div><div class="card"><h3>廣告瀏覽</h3><div class="val" id="v2">-</div></div><div class="card"><h3>熱點數</h3><div class="val" id="v3">-</div></div><div class="card"><h3>收入 USD</h3><div class="val" id="v4">-</div></div></div>
+<div class="sec"><h2>熱點管理 <button class="btn" onclick="document.getElementById('af').style.display='block'" style="float:right;font-size:12px;padding:5px 10px">+ 新增</button></h2>
+<div id="af" style="display:none;background:#f8f9fa;padding:14px;border-radius:8px;margin-bottom:14px"><div class="row"><input id="hN" placeholder="名稱"/><input id="hL" placeholder="地點"/></div><div class="row"><input id="hM" placeholder="AP MAC"/><input id="hS" placeholder="Site 名稱"/></div><button class="btn" onclick="addH()">新增</button> <button class="btn" onclick="document.getElementById('af').style.display='none'" style="background:#ddd;color:#333">取消</button></div>
+<table><tr><th>名稱</th><th>地點</th><th>AP MAC</th><th>狀態</th></tr><tbody id="ht"><tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px">載入中...</td></tr></tbody></table></div>
+<div class="sec"><h2>系統狀態</h2><table><tr><th>項目</th><th>狀態</th></tr><tbody id="st"></tbody></table></div>
+</div>
 <script>
-fetch("/admin/api/stats").then(r=>r.json()).then(d=>{
-  document.getElementById("stats").innerHTML = JSON.stringify(d,null,2).replace(/\n/g,"<br>");
-});
+async function load(){
+  try{
+    const d=await(await fetch("/admin/api/stats")).json();
+    document.getElementById("v1").textContent=d.total_visits??0;
+    document.getElementById("v2").textContent=d.total_ad_views??0;
+    document.getElementById("v3").textContent=d.hotspots?.length??0;
+    document.getElementById("v4").textContent="$"+parseFloat(d.total_revenue_usd??0).toFixed(2);
+    document.getElementById("ts").textContent=new Date().toLocaleTimeString();
+    document.getElementById("st").innerHTML=[["資料庫",d.database_status],["Redis",d.redis_status],["OC200",d.omada_status??"未設定"]]
+      .map(([k,v])=>`<tr><td>${k}</td><td><span class="${v==="ok"?"ok":"err"}">${v==="ok"?"✅ 正常":"⚠️ "+v}</span></td></tr>`).join("");
+    const hs=await(await fetch("/admin/api/hotspots")).json();
+    document.getElementById("ht").innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td>${h.location}</td><td style="font-family:monospace;font-size:11px">${h.ap_mac}</td><td style="color:${h.is_active?"#28a745":"#dc3545"}">${h.is_active?"● 運行中":"● 停用"}</td></tr>`).join(""):`<tr><td colspan="4" style="text-align:center;color:#aaa;padding:16px">尚無熱點</td></tr>`;
+  }catch(e){document.getElementById("ts").textContent="⚠️ 載入失敗";}
+}
+async function addH(){
+  const d={name:document.getElementById("hN").value,location:document.getElementById("hL").value,ap_mac:document.getElementById("hM").value,site_name:document.getElementById("hS").value};
+  if(!d.name||!d.ap_mac||!d.site_name){alert("必填：名稱、AP MAC、Site");return;}
+  const r=await fetch("/admin/api/hotspots",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)});
+  if(r.ok){document.getElementById("af").style.display="none";load();}else{alert("失敗");}
+}
+load();setInterval(load,30000);
 </script></body></html>"""
 
 
