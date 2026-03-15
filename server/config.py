@@ -7,8 +7,17 @@ class Settings(BaseSettings):
     environment: str = "production"
     secret_key: str = "change-me-in-production"
 
-    # Database
+    # Database — 支援 postgresql:// 和 postgresql+asyncpg:// 兩種格式
     database_url: str = "postgresql+asyncpg://user:pass@localhost/wifi_portal"
+
+    @property
+    def async_database_url(self) -> str:
+        url = self.database_url
+        if url.startswith("postgresql://"):
+            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+        elif url.startswith("postgres://"):
+            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
+        return url
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
