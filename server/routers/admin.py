@@ -650,7 +650,9 @@ setInterval(()=>{
   if(document.getElementById('tab-live').classList.contains('active'))loadLive();
 },20000);
 </script>
-</body></html>"""m __future__ import annotations
+</body></html>"""
+
+from __future__ import annotations
 
 import base64
 import secrets
