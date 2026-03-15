@@ -49,12 +49,19 @@ def increment_metric(name: str) -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log = logger.bind(action="startup")
     log.info("app_starting", environment=settings.environment)
-    await init_db()
-    log.info("database_initialized")
-    redis: Redis = Redis.from_url(settings.resolved_redis_url, encoding="utf-8", decode_responses=True)
-    await redis.ping()
-    set_redis_instance(redis)
-    log.info("redis_connected")
+    try:
+        await init_db()
+        log.info("database_initialized")
+    except Exception as e:
+        log.error("database_init_failed", error=str(e))
+        # 繼續啟動，允許服務在無 DB 時仍能回應 health check
+    try:
+        redis: Redis = Redis.from_url(settings.resolved_redis_url, encoding="utf-8", decode_responses=True)
+        await redis.ping()
+        set_redis_instance(redis)
+        log.info("redis_connected")
+    except Exception as e:
+        log.error("redis_connect_failed", error=str(e))
     omada_module.omada_client = omada_module.OmadaClient()
     log.info("omada_client_initialized")
     log.info("app_started")
