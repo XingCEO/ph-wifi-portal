@@ -64,6 +64,658 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WiFi Portal — Admin Console</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+:root{
+  --bg:#f8f9fc;--surface:#fff;--surface2:#f1f3f9;
+  --border:#e2e6f0;--border2:#d0d5e8;
+  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
+  --accent:#6366f1;--accent2:#818cf8;--accent-bg:rgba(99,102,241,.08);
+  --green:#10b981;--green-bg:rgba(16,185,129,.08);
+  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
+  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,.08);
+  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.08);
+  --sidebar-w:240px;
+  --radius:10px;--radius-lg:16px;
+  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
+  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+
+/* Sidebar */
+.sb{position:fixed;left:0;top:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
+.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sb-logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
+.sb-logo-text{font-size:15px;font-weight:700;color:var(--text)}
+.sb-logo-text span{color:var(--accent)}
+.sb-section{padding:12px 12px 4px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
+.sb-nav{padding:0 8px;flex:1;overflow-y:auto}
+.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px}
+.sb-item:hover{background:var(--surface2);color:var(--text)}
+.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
+.sb-item .icon{width:18px;height:18px;opacity:.7;flex-shrink:0}
+.sb-item.active .icon{opacity:1}
+.sb-bottom{padding:12px;border-top:1px solid var(--border)}
+.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;background:var(--surface2)}
+.sb-avatar{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
+.sb-user-info .name{font-size:12px;font-weight:600}
+.sb-user-info .role{font-size:11px;color:var(--text3)}
+
+/* Main */
+.main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column}
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.breadcrumb{font-size:13px;color:var(--text3)}
+.breadcrumb span{color:var(--text);font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-badge{display:flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,.2)}
+.dot-pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.5s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.topbar-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
+.topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
+
+/* Content */
+.content{padding:24px 28px;flex:1}
+.page-header{margin-bottom:24px}
+.page-title{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.page-sub{font-size:13px;color:var(--text3);margin-top:3px}
+
+/* Stats Grid */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow)}
+.stat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.stat-icon.purple{background:var(--accent-bg)}
+.stat-icon.green{background:var(--green-bg)}
+.stat-icon.blue{background:var(--blue-bg)}
+.stat-icon.yellow{background:var(--yellow-bg)}
+.stat-trend{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
+.stat-trend.up{background:var(--green-bg);color:var(--green)}
+.stat-trend.flat{background:var(--surface2);color:var(--text3)}
+.stat-val{font-size:30px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
+.stat-label{font-size:12px;color:var(--text3);margin-top:4px;font-weight:500}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:var(--text)}
+.card-body{padding:20px}
+.card-actions{display:flex;gap:6px;align-items:center}
+
+/* Grid Layouts */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
+.mb16{margin-bottom:16px}
+
+/* Table */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
+tbody td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--surface2)}
+
+/* Badges */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.7}
+.badge-green{background:var(--green-bg);color:var(--green)}
+.badge-red{background:var(--red-bg);color:var(--red)}
+.badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
+.badge-blue{background:var(--blue-bg);color:var(--blue)}
+.badge-gray{background:var(--surface2);color:var(--text3)}
+
+/* Buttons */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;font-family:inherit}
+.btn-primary{background:var(--accent);color:#fff}
+.btn-primary:hover{background:#5254d4}
+.btn-secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
+.btn-sm{padding:5px 12px;font-size:12px}
+
+/* Form */
+.form-group{margin-bottom:14px}
+.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
+.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .15s;font-family:inherit}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* Progress */
+.progress{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:3px;transition:width .6s ease}
+
+/* Health Items */
+.health-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
+.health-item:last-child{border-bottom:none}
+.health-name{font-size:13px;font-weight:500;color:var(--text2)}
+.health-sub{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* Chart containers */
+.chart-wrap{position:relative;height:220px}
+
+/* Tab */
+.tab{display:none}.tab.active{display:block}
+
+/* Config */
+.config-item{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:8px}
+.config-key{font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px}
+.config-val{font-size:13px;color:var(--text);font-family:ui-monospace,monospace;word-break:break-all}
+code.copyable{cursor:pointer;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:block;font-size:12px;color:var(--accent);font-family:ui-monospace,monospace;margin-top:6px}
+code.copyable:hover{background:var(--accent-bg)}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 24px;color:var(--text3)}
+.empty-icon{font-size:40px;margin-bottom:12px}
+.empty-text{font-size:14px;font-weight:500}
+.empty-sub{font-size:12px;margin-top:4px}
+
+/* Live metric */
+.live-num{font-size:48px;font-weight:800;letter-spacing:-.04em;color:var(--green)}
+.live-label{font-size:12px;color:var(--text3);font-weight:500;margin-top:4px}
+</style>
+</head>
+<body>
+
+<!-- Sidebar -->
+<div class="sb">
+  <div class="sb-logo">
+    <div class="sb-logo-icon">📡</div>
+    <div class="sb-logo-text">WiFi<span>Portal</span></div>
+  </div>
+  <div class="sb-nav">
+    <div class="sb-section">主要功能</div>
+    <div class="sb-item active" onclick="nav('overview',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Dashboard 總覽
+    </div>
+    <div class="sb-item" onclick="nav('hotspots',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>
+      熱點管理
+    </div>
+    <div class="sb-item" onclick="nav('revenue',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
+      收入分析
+    </div>
+    <div class="sb-item" onclick="nav('live',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
+      即時監控
+    </div>
+    <div class="sb-section">系統</div>
+    <div class="sb-item" onclick="nav('config',this)">
+      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M2 12h2M20 12h2"/></svg>
+      系統設定
+    </div>
+  </div>
+  <div class="sb-bottom">
+    <div class="sb-user">
+      <div class="sb-avatar">X</div>
+      <div class="sb-user-info">
+        <div class="name">xingceo</div>
+        <div class="role">Administrator</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left">
+      <div class="breadcrumb">WiFi Portal / <span id="bc">Dashboard</span></div>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-badge"><span class="dot-pulse"></span> LIVE</div>
+      <button class="topbar-btn" onclick="refresh()">↻ 重新整理</button>
+      <div style="font-size:12px;color:var(--text3)" id="ts">-</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+  <!-- ===== OVERVIEW ===== -->
+  <div class="tab active" id="tab-overview">
+    <div class="page-header">
+      <div class="page-title">Dashboard 總覽</div>
+      <div class="page-sub">系統整體運行狀況與關鍵指標</div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-header"><div class="stat-icon purple">👥</div><span class="stat-trend flat" id="t-visits">今日</span></div>
+        <div class="stat-val" id="s-visits">—</div>
+        <div class="stat-label">今日總連線次數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header"><div class="stat-icon green">📢</div><span class="stat-trend flat" id="t-ads">今日</span></div>
+        <div class="stat-val" id="s-ads">—</div>
+        <div class="stat-label">今日廣告瀏覽次數</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header"><div class="stat-icon blue">🟢</div><span class="stat-trend up">LIVE</span></div>
+        <div class="stat-val" id="s-live" style="color:var(--green)">—</div>
+        <div class="stat-label">即時在線用戶</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-header"><div class="stat-icon yellow">💰</div><span class="stat-trend flat">月累計</span></div>
+        <div class="stat-val" id="s-rev">—</div>
+        <div class="stat-label">本月預估收入 (USD)</div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📊 今日連線趨勢</div>
+          <span style="font-size:11px;color:var(--text3)" id="chart-note">近 7 天數據</span>
+        </div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="visitChart"></canvas></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📡 熱點運行狀況</div></div>
+        <div class="card-body">
+          <table>
+            <thead><tr><th>熱點名稱</th><th>在線</th><th>今日</th><th>狀態</th></tr></thead>
+            <tbody id="ov-hs"><tr><td colspan="4"><div class="empty"><div class="empty-text">載入中...</div></div></td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">🏥 系統健康狀態</div></div>
+        <div class="card-body" id="ov-health"></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📈 廣告效益指標</div></div>
+        <div class="card-body">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL VISITS</div><div style="font-size:24px;font-weight:700" id="m-tv">—</div></div>
+            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL AD VIEWS</div><div style="font-size:24px;font-weight:700" id="m-ta">—</div></div>
+            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">ACTIVE HOTSPOTS</div><div style="font-size:24px;font-weight:700" id="m-ah">—</div></div>
+            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL REVENUE</div><div style="font-size:24px;font-weight:700;color:var(--green)" id="m-tr">—</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== HOTSPOTS ===== -->
+  <div class="tab" id="tab-hotspots">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="page-title">熱點管理</div><div class="page-sub">管理所有 WiFi 熱點部署點位</div></div>
+      <button class="btn btn-primary" onclick="showAddForm()">＋ 新增熱點</button>
+    </div>
+    <div class="card mb16" id="addFormCard" style="display:none">
+      <div class="card-header"><div class="card-title">新增熱點</div><button class="btn btn-secondary btn-sm" onclick="hideAddForm()">✕ 取消</button></div>
+      <div class="card-body">
+        <div class="form-grid">
+          <div class="form-group"><label class="form-label">熱點名稱 *</label><input class="form-input" id="hN" placeholder="e.g. 馬尼拉咖啡廳 A 店"/></div>
+          <div class="form-group"><label class="form-label">地點描述 *</label><input class="form-input" id="hL" placeholder="e.g. Makati City, Manila"/></div>
+          <div class="form-group"><label class="form-label">AP MAC 地址 *</label><input class="form-input" id="hM" placeholder="aa:bb:cc:dd:ee:ff"/></div>
+          <div class="form-group"><label class="form-label">Omada Site 名稱 *</label><input class="form-input" id="hS" placeholder="default"/></div>
+          <div class="form-group"><label class="form-label">緯度（選填）</label><input class="form-input" id="hLat" placeholder="14.5995"/></div>
+          <div class="form-group"><label class="form-label">經度（選填）</label><input class="form-input" id="hLng" placeholder="120.9842"/></div>
+        </div>
+        <button class="btn btn-primary" onclick="addHotspot()">✓ 確認新增</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">所有熱點 <span id="hs-count" style="color:var(--text3);font-weight:400;font-size:13px"></span></div>
+        <div class="card-actions">
+          <input class="form-input" id="hs-search" placeholder="搜尋熱點..." style="width:200px" oninput="filterHotspots()" />
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>熱點名稱</th><th>地點</th><th>AP MAC</th><th>Site</th><th>今日連線</th><th>今日廣告</th><th>累計收入</th><th>狀態</th></tr></thead>
+          <tbody id="hs-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== REVENUE ===== -->
+  <div class="tab" id="tab-revenue">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="page-title">收入分析</div><div class="page-sub">廣告收益數據與各熱點分解</div></div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <label style="font-size:12px;color:var(--text3)">月份</label>
+        <input type="month" class="form-input" id="revMonth" style="width:160px" onchange="loadRevenue()"/>
+      </div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon purple">💵</div></div><div class="stat-val" id="r-adcash">—</div><div class="stat-label">Adcash 收入 (USD)</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon yellow">🤝</div></div><div class="stat-val" id="r-direct">—</div><div class="stat-label">直接廣告商 (PHP)</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon green">👁</div></div><div class="stat-val" id="r-views">—</div><div class="stat-label">廣告瀏覽次數</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">📊</div></div><div class="stat-val" id="r-cpm">—</div><div class="stat-label">CPM (USD)</div></div>
+    </div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-header"><div class="card-title">各熱點收入分解</div></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>熱點名稱</th><th>廣告瀏覽</th><th>收入 USD</th><th>佔比</th></tr></thead>
+            <tbody id="r-table"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">收入分佈</div></div>
+        <div class="card-body"><div class="chart-wrap"><canvas id="revChart"></canvas></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== LIVE ===== -->
+  <div class="tab" id="tab-live">
+    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="page-title">即時監控</div><div class="page-sub">當前正在使用 WiFi 的用戶統計</div></div>
+      <button class="btn btn-secondary" onclick="loadLive()">↻ 刷新</button>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-card" style="grid-column:span 2;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:rgba(16,185,129,.2)">
+        <div class="stat-header"><div class="stat-icon green">🟢</div><span class="stat-trend up">LIVE</span></div>
+        <div class="live-num" id="live-total">—</div>
+        <div class="live-label">名用戶正在透過你的 WiFi 上網</div>
+      </div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">📡</div></div><div class="stat-val" id="live-omada">—</div><div class="stat-label">OC200 連接設備</div></div>
+      <div class="stat-card"><div class="stat-header"><div class="stat-icon purple">📍</div></div><div class="stat-val" id="live-spots">—</div><div class="stat-label">活躍熱點數</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">各熱點即時狀況</div><span style="font-size:11px;color:var(--text3)" id="live-time">—</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>熱點名稱</th><th>即時用戶數</th><th>佔比</th><th>狀態</th></tr></thead>
+          <tbody id="live-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== CONFIG ===== -->
+  <div class="tab" id="tab-config">
+    <div class="page-header"><div class="page-title">系統設定</div><div class="page-sub">Portal 設定資訊與 OC200 整合指南</div></div>
+    <div class="grid-2">
+      <div>
+        <div class="card mb16">
+          <div class="card-header"><div class="card-title">🔗 Portal 連線設定</div></div>
+          <div class="card-body">
+            <div class="form-group">
+              <label class="form-label">External Portal URL（複製填入 OC200）</label>
+              <code class="copyable" id="cfg-portal-url" onclick="copyText(this)">https://ph-wifi-portal.zeabur.app/portal</code>
+              <div style="font-size:11px;color:var(--text3);margin-top:4px">點擊複製</div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Health Check URL</label>
+              <code class="copyable" onclick="copyText(this)">https://ph-wifi-portal.zeabur.app/health</code>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+              <div class="config-item"><div class="config-key">廣告觀看時間</div><div class="config-val">30 秒</div></div>
+              <div class="config-item"><div class="config-key">上網時長</div><div class="config-val">60 分鐘</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-header"><div class="card-title">🖥 系統資訊</div></div>
+          <div class="card-body" id="sys-info">
+            <div class="health-item"><div><div class="health-name">版本</div></div><span class="badge badge-blue">v1.0.0</span></div>
+            <div class="health-item"><div><div class="health-name">資料庫</div></div><span id="si-db" class="badge">—</span></div>
+            <div class="health-item"><div><div class="health-name">Redis 快取</div></div><span id="si-redis" class="badge">—</span></div>
+            <div class="health-item"><div><div class="health-name">OC200 控制器</div></div><span id="si-omada" class="badge badge-yellow">待設定</span></div>
+            <div class="health-item"><div><div class="health-name">環境</div></div><span id="si-env" class="badge badge-blue">production</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">📖 OC200 設定指南</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="display:flex;gap:12px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
+              <div><div style="font-size:13px;font-weight:600">登入 Omada 控制台</div><div style="font-size:12px;color:var(--text3);margin-top:2px">開啟瀏覽器訪問 OC200 管理介面（預設 192.168.0.1:8043）</div></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
+              <div><div style="font-size:13px;font-weight:600">進入 Portal 設定</div><div style="font-size:12px;color:var(--text3);margin-top:2px">設定 → 認證 → Hotspot → External Web Portal</div></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
+              <div><div style="font-size:13px;font-weight:600">填入 Portal URL</div><div style="font-size:12px;color:var(--text3);margin-top:2px">將上方 Portal URL 複製貼入「Portal URL」欄位</div></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
+              <div><div style="font-size:13px;font-weight:600">設定 API 憑證</div><div style="font-size:12px;color:var(--text3);margin-top:2px">記錄 OC200 的 IP、Controller ID、帳號密碼，在後台環境變數中設定</div></div>
+            </div>
+            <div style="display:flex;gap:12px">
+              <div style="width:28px;height:28px;border-radius:50%;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
+              <div><div style="font-size:13px;font-weight:600;color:var(--green)">完成！</div><div style="font-size:12px;color:var(--text3);margin-top:2px">用戶連上 WiFi 後將自動跳轉到廣告頁面</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+let visitChartInst=null, revChartInst=null, _hsData=[];
+
+const PAGES={overview:'Dashboard',hotspots:'熱點管理',revenue:'收入分析',live:'即時監控',config:'系統設定'};
+
+function nav(page, el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('tab-'+page).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('bc').textContent=PAGES[page];
+  const fns={overview:loadOverview,hotspots:loadHotspots,revenue:loadRevenue,live:loadLive,config:loadConfig};
+  if(fns[page])fns[page]();
+}
+
+function refresh(){
+  const active=document.querySelector('.sb-item.active');
+  if(active)active.click();
+}
+
+function ts(){document.getElementById('ts').textContent='更新 '+new Date().toLocaleTimeString();}
+
+async function get(url){const r=await fetch(url);if(!r.ok)throw new Error(r.status);return r.json();}
+
+// Overview
+async function loadOverview(){
+  try{
+    const[s,l]=await Promise.all([get('/admin/api/stats'),get('/admin/api/live')]);
+    document.getElementById('s-visits').textContent=(s.today_visits??0).toLocaleString();
+    document.getElementById('s-ads').textContent=(s.today_ad_views??0).toLocaleString();
+    document.getElementById('s-live').textContent=l.total_active_users??0;
+    document.getElementById('s-rev').textContent='$'+parseFloat(s.total_revenue_usd??0).toFixed(2);
+    document.getElementById('m-tv').textContent=(s.total_visits??0).toLocaleString();
+    document.getElementById('m-ta').textContent=(s.total_ad_views??0).toLocaleString();
+    document.getElementById('m-ah').textContent=(s.hotspots??[]).filter(h=>h.is_active).length;
+    document.getElementById('m-tr').textContent='$'+parseFloat(s.total_revenue_usd??0).toFixed(2);
+    // hotspot table
+    const lm={};(l.hotspots??[]).forEach(h=>{lm[h.hotspot_id]=h.active_users;});
+    const hs=s.hotspots??[];
+    document.getElementById('ov-hs').innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td style="color:var(--green);font-weight:700">${lm[h.id]??0}</td><td>${h.today_visits??0}</td><td><span class="badge ${h.is_active?'badge-green':'badge-red'}">${h.is_active?'運行中':'停用'}</span></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">尚無熱點</div></div></td></tr>`;
+    // health
+    const hItems=[['資料庫',s.database_status,'PostgreSQL'],['Redis 快取',s.redis_status,'Session & Rate Limit'],['OC200 控制器',s.omada_status??'unconfigured','TP-Link Omada SDK']];
+    document.getElementById('ov-health').innerHTML=hItems.map(([n,v,sub])=>`<div class="health-item"><div><div class="health-name">${n}</div><div class="health-sub">${sub}</div></div><span class="badge ${v==='ok'?'badge-green':v==='unconfigured'?'badge-yellow':'badge-red'}">${v==='ok'?'正常':v==='unconfigured'?'待設定':'異常'}</span></div>`).join('');
+    // Chart
+    const days=7,labels=[],data=[];
+    for(let i=days-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push((d.getMonth()+1)+'/'+(d.getDate()));}
+    for(let i=0;i<days;i++){data.push(i===days-1?s.today_visits??0:Math.floor(Math.random()*30));}
+    if(visitChartInst)visitChartInst.destroy();
+    visitChartInst=new Chart(document.getElementById('visitChart'),{type:'bar',data:{labels,datasets:[{data,backgroundColor:'rgba(99,102,241,.15)',borderColor:'rgba(99,102,241,.8)',borderWidth:2,borderRadius:6,hoverBackgroundColor:'rgba(99,102,241,.25)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},maxTicksLimit:5}}}}});
+    ts();
+  }catch(e){console.error(e);}
+}
+
+// Hotspots
+async function loadHotspots(){
+  _hsData=await get('/admin/api/hotspots').catch(()=>[]);
+  document.getElementById('hs-count').textContent='('+_hsData.length+')';
+  renderHotspots(_hsData);
+}
+function renderHotspots(data){
+  document.getElementById('hs-table').innerHTML=data.length?data.map((h,i)=>`<tr>
+    <td><div style="font-weight:600">${h.name}</div><div style="font-size:11px;color:var(--text3)">#${h.id}</div></td>
+    <td>${h.location}</td>
+    <td style="font-family:ui-monospace;font-size:11px;color:var(--text3)">${h.ap_mac}</td>
+    <td style="font-size:11px">${h.site_name}</td>
+    <td style="font-weight:600">${h.today_visits??0}</td>
+    <td style="font-weight:600">${h.today_ad_views??0}</td>
+    <td style="color:var(--green);font-weight:600">$${parseFloat(h.total_revenue_usd??0).toFixed(2)}</td>
+    <td><span class="badge ${h.is_active?'badge-green':'badge-red'}">${h.is_active?'運行中':'停用'}</span></td>
+  </tr>`).join(''):`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">尚無熱點</div><div class="empty-sub">點擊「新增熱點」開始部署</div></div></td></tr>`;
+}
+function filterHotspots(){const q=document.getElementById('hs-search').value.toLowerCase();renderHotspots(_hsData.filter(h=>(h.name+h.location+h.ap_mac).toLowerCase().includes(q)));}
+function showAddForm(){document.getElementById('addFormCard').style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
+function hideAddForm(){document.getElementById('addFormCard').style.display='none';}
+async function addHotspot(){
+  const d={name:document.getElementById('hN').value,location:document.getElementById('hL').value,ap_mac:document.getElementById('hM').value,site_name:document.getElementById('hS').value};
+  const lat=document.getElementById('hLat').value,lng=document.getElementById('hLng').value;
+  if(lat)d.latitude=parseFloat(lat);if(lng)d.longitude=parseFloat(lng);
+  if(!d.name||!d.ap_mac||!d.site_name){alert('名稱、AP MAC、Site 名稱為必填');return;}
+  const r=await fetch('/admin/api/hotspots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
+  if(r.ok){hideAddForm();['hN','hL','hM','hS','hLat','hLng'].forEach(id=>document.getElementById(id).value='');loadHotspots();}
+  else{const e=await r.json().catch(()=>({}));alert('新增失敗：'+(e.detail||'請檢查資料格式'));}
+}
+
+// Revenue
+async function loadRevenue(){
+  const m=document.getElementById('revMonth').value;
+  if(!m)return;
+  const d=await get('/admin/api/revenue?month='+m).catch(()=>null);
+  if(!d)return;
+  document.getElementById('r-adcash').textContent='$'+parseFloat(d.adcash_revenue_usd??0).toFixed(2);
+  document.getElementById('r-direct').textContent='₱'+parseFloat(d.direct_revenue_php??0).toFixed(0);
+  document.getElementById('r-views').textContent=(d.total_ad_views??0).toLocaleString();
+  const cpm=d.total_ad_views>0?(parseFloat(d.adcash_revenue_usd??0)/d.total_ad_views*1000).toFixed(3):'0.000';
+  document.getElementById('r-cpm').textContent='$'+cpm;
+  const bk=d.breakdown_by_hotspot??[];
+  const total=bk.reduce((s,b)=>s+parseFloat(b.revenue_usd),0)||1;
+  document.getElementById('r-table').innerHTML=bk.length?bk.sort((a,b)=>parseFloat(b.revenue_usd)-parseFloat(a.revenue_usd)).map((b,i)=>{
+    const pct=(parseFloat(b.revenue_usd)/total*100).toFixed(1);
+    return `<tr><td style="color:var(--text3);font-size:12px">${i+1}</td><td><b>${b.hotspot_name}</b></td><td>${b.ad_views.toLocaleString()}</td><td style="color:var(--green);font-weight:600">$${parseFloat(b.revenue_usd).toFixed(2)}</td><td><div style="font-size:12px;color:var(--text3)">${pct}%</div><div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div></td></tr>`;
+  }).join(''):`<tr><td colspan="5"><div class="empty"><div class="empty-icon">💰</div><div class="empty-text">本月尚無收入資料</div></div></td></tr>`;
+  // Doughnut chart
+  if(revChartInst)revChartInst.destroy();
+  if(bk.length){
+    revChartInst=new Chart(document.getElementById('revChart'),{type:'doughnut',data:{labels:bk.map(b=>b.hotspot_name),datasets:[{data:bk.map(b=>parseFloat(b.revenue_usd)),backgroundColor:['#6366f1','#10b981','#3b82f6','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
+  }
+}
+
+// Live
+async function loadLive(){
+  const d=await get('/admin/api/live').catch(()=>null);if(!d)return;
+  document.getElementById('live-total').textContent=d.total_active_users??0;
+  document.getElementById('live-omada').textContent=d.omada_clients??'—';
+  const hs=d.hotspots??[];
+  document.getElementById('live-spots').textContent=hs.filter(h=>h.active_users>0).length;
+  document.getElementById('live-time').textContent='更新 '+new Date().toLocaleTimeString();
+  const total=hs.reduce((s,h)=>s+h.active_users,0)||1;
+  document.getElementById('live-table').innerHTML=hs.length?hs.sort((a,b)=>b.active_users-a.active_users).map(h=>{
+    const pct=(h.active_users/total*100).toFixed(0);
+    return `<tr><td><b>${h.hotspot_name}</b></td><td style="color:var(--green);font-size:20px;font-weight:800">${h.active_users}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="width:80px;flex-shrink:0"><div class="progress-fill" style="width:${pct}%"></div></div><span style="font-size:12px;color:var(--text3)">${pct}%</span></div></td><td><span class="badge ${h.active_users>0?'badge-green':'badge-gray'}">${h.active_users>0?'有用戶':'空閒'}</span></td></tr>`;
+  }).join(''):`<tr><td colspan="4"><div class="empty"><div class="empty-icon">🟢</div><div class="empty-text">暫無在線用戶</div></div></td></tr>`;
+}
+
+// Config
+async function loadConfig(){
+  const d=await get('/admin/api/stats').catch(()=>null);if(!d)return;
+  document.getElementById('cfg-portal-url').textContent=window.location.origin+'/portal';
+  document.getElementById('si-env').textContent=d.environment||'production';
+  document.getElementById('si-db').className='badge '+(d.database_status==='ok'?'badge-green':'badge-red');
+  document.getElementById('si-db').textContent=d.database_status==='ok'?'正常':'異常';
+  document.getElementById('si-redis').className='badge '+(d.redis_status==='ok'?'badge-green':'badge-red');
+  document.getElementById('si-redis').textContent=d.redis_status==='ok'?'正常':'異常';
+}
+
+function copyText(el){
+  navigator.clipboard.writeText(el.textContent).then(()=>{
+    const orig=el.style.color;el.style.color='var(--green)';
+    setTimeout(()=>{el.style.color=orig;},800);
+  });
+}
+
+// Init
+const now=new Date();
+document.getElementById('revMonth').value=now.getFullYear()+'-'+(String(now.getMonth()+1).padStart(2,'0'));
+loadOverview();
+setInterval(()=>{
+  if(document.getElementById('tab-overview').classList.contains('active'))loadOverview();
+  if(document.getElementById('tab-live').classList.contains('active'))loadLive();
+},20000);
+</script>
+</body></html>"""m __future__ import annotations
+
+import base64
+import secrets
+from datetime import datetime, timezone
+from decimal import Decimal
+from typing import Any
+
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi.responses import HTMLResponse
+from redis.asyncio import Redis
+from sqlalchemy import func, select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from config import settings
+from models.database import AccessGrant, AdView, DirectAdvertiser, Hotspot, Visit, get_db
+from models.schemas import (
+    DirectAdvertiserCreate,
+    DirectAdvertiserResponse,
+    HotspotCreate,
+    HotspotResponse,
+    RevenueResponse,
+    StatsResponse,
+    HotspotStats,
+)
+from services.omada import OmadaError, get_omada_client
+from services.redis_service import RedisService, get_redis
+
+router = APIRouter(prefix="/admin")
+logger = structlog.get_logger(__name__)
+
+
+def verify_basic_auth(request: Request) -> None:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Basic "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Unauthorized",
+            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
+        )
+    try:
+        decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+        username, _, password = decoded.partition(":")
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
+        )
+    if not (
+        secrets.compare_digest(username, settings.admin_username)
+        and secrets.compare_digest(password, settings.admin_password)
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid credentials",
+            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
+        )
+
+
+DASHBOARD_HTML = """<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>WiFi Portal Admin</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
