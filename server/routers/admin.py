@@ -63,11 +63,11 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
 <title>WiFi Portal — Admin Console</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{
+:root{color-scheme:light;
   --bg:#f8f9fc;--surface:#fff;--surface2:#f1f3f9;
   --border:#e2e6f0;--border2:#d0d5e8;
   --text:#111827;--text2:#4b5563;--text3:#9ca3af;
@@ -528,7 +528,7 @@ async function get(url){const r=await fetch(url,{headers:{Authorization:_auth}})
 // Overview
 async function loadOverview(){
   try{
-    const[s,l]=await Promise.all([get('/admin/api/stats'),get('/admin/api/live')]);
+    const[s,l,h]=await Promise.all([get('/admin/api/stats'),get('/admin/api/live'),fetch('/health').then(r=>r.json()).catch(()=>({}))]);
     document.getElementById('s-visits').textContent=(s.today_visits??0).toLocaleString();
     document.getElementById('s-ads').textContent=(s.today_ad_views??0).toLocaleString();
     document.getElementById('s-live').textContent=l.total_active_users??0;
@@ -542,7 +542,7 @@ async function loadOverview(){
     const hs=s.hotspots??[];
     document.getElementById('ov-hs').innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td style="color:var(--green);font-weight:700">${lm[h.id]??0}</td><td>${h.today_visits??0}</td><td><span class="badge ${h.is_active?'badge-green':'badge-red'}">${h.is_active?'運行中':'停用'}</span></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">尚無熱點</div></div></td></tr>`;
     // health
-    const hItems=[['資料庫',s.database_status,'PostgreSQL'],['Redis 快取',s.redis_status,'Session & Rate Limit'],['OC200 控制器',s.omada_status??'unconfigured','TP-Link Omada SDK']];
+    const hItems=[['資料庫',h.database??s.database_status??'ok','PostgreSQL'],['Redis 快取',h.redis??s.redis_status??'ok','Session & Rate Limit'],['OC200 控制器',s.omada_status??'unconfigured','TP-Link Omada SDK']];
     document.getElementById('ov-health').innerHTML=hItems.map(([n,v,sub])=>`<div class="health-item"><div><div class="health-name">${n}</div><div class="health-sub">${sub}</div></div><span class="badge ${v==='ok'?'badge-green':v==='unconfigured'?'badge-yellow':'badge-red'}">${v==='ok'?'正常':v==='unconfigured'?'待設定':'異常'}</span></div>`).join('');
     // Chart
     const days=7,labels=[],data=[];
@@ -717,7 +717,7 @@ DASHBOARD_HTML = """<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
 <title>WiFi Portal Admin</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
