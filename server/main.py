@@ -18,7 +18,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
-from config import settings
+from config import settings, validate_settings
 from models.database import init_db
 from models.schemas import ErrorResponse, HealthResponse
 from routers import admin, auth, portal
@@ -52,6 +52,7 @@ def increment_metric(name: str) -> None:
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log = logger.bind(action="startup")
     log.info("app_starting", environment=settings.environment)
+    validate_settings()
     try:
         await init_db()
         log.info("database_initialized")
@@ -93,7 +94,7 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=settings.cors_origins,
         allow_credentials=True,
-        allow_methods=["GET", "POST", "DELETE"],
+        allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
 
@@ -165,7 +166,9 @@ def create_app() -> FastAPI:
         )
 
     @application.get("/metrics")
-    async def metrics_endpoint() -> dict[str, Any]:
+    async def metrics_endpoint(request: Request) -> dict[str, Any]:
+        from routers.admin import verify_basic_auth
+        verify_basic_auth(request)
         from services.redis_service import get_redis as _get_redis
         redis_key_count = 0
         try:

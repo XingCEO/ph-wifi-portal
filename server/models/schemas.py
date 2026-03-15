@@ -18,6 +18,16 @@ class HotspotCreate(BaseModel):
     is_active: bool = True
 
 
+class HotspotUpdate(BaseModel):
+    name: str | None = None
+    location: str | None = None
+    ap_mac: str | None = Field(default=None, pattern=r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$")
+    site_name: str | None = None
+    latitude: float | None = None
+    longitude: float | None = None
+    is_active: bool | None = None
+
+
 class HotspotResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: int
@@ -144,6 +154,62 @@ class HealthResponse(BaseModel):
     environment: str
     database: str
     redis: str
+
+
+class BlockedDeviceCreate(BaseModel):
+    client_mac: str = Field(..., pattern=r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$")
+    reason: str | None = None
+    expires_at: datetime | None = None
+
+
+class BlockedDeviceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    client_mac: str
+    reason: str | None
+    blocked_by: str | None
+    blocked_at: datetime
+    expires_at: datetime | None
+    is_active: bool
+
+
+class DirectAdvertiserUpdate(BaseModel):
+    name: str | None = None
+    contact: str | None = None
+    banner_url: str | None = None
+    click_url: str | None = None
+    monthly_fee_php: Decimal | None = None
+    hotspot_ids: list[int] | None = None
+    is_active: bool | None = None
+    starts_at: datetime | None = None
+    ends_at: datetime | None = None
+
+
+class AuditLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    admin_user: str
+    action: str
+    target_type: str | None
+    target_id: str | None
+    details: Any | None
+    ip_address: str | None
+    created_at: datetime
+
+
+class SystemSettingsResponse(BaseModel):
+    ad_duration_seconds: int
+    session_duration_seconds: int
+    anti_spam_window_seconds: int
+    omada_host: str
+    environment: str
+    app_name: str
+
+
+class SystemSettingsUpdate(BaseModel):
+    ad_duration_seconds: int | None = None
+    session_duration_seconds: int | None = None
+    anti_spam_window_seconds: int | None = None
 
 
 class PortalSessionData(BaseModel):

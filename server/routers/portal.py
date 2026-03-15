@@ -31,12 +31,23 @@ def _load_template() -> str:
     return _TEMPLATE_CACHE
 
 
+import html as html_mod
+
+
+def _escape_html(value: Any) -> str:
+    """Escape HTML special characters to prevent XSS."""
+    return html_mod.escape(str(value))
+
+
 def _render_template(template: str, context: dict[str, Any]) -> str:
     result = template
     for key, value in context.items():
+        safe_value = _escape_html(value)
         # 支援 {{ key }} 和 {{key}} 兩種格式
-        result = result.replace(f"{{{{ {key} }}}}", str(value))
-        result = result.replace(f"{{{{{key}}}}}", str(value))
+        # Also support {{ key | e }} (explicit escape marker)
+        result = result.replace(f"{{{{ {key} | e }}}}", safe_value)
+        result = result.replace(f"{{{{ {key} }}}}", safe_value)
+        result = result.replace(f"{{{{{key}}}}}", safe_value)
     return result
 
 
@@ -132,6 +143,7 @@ async def portal_page(
             "ad_duration": settings.ad_duration_seconds,
             "redirect_url": redirectUrl,
             "hotspot_name": hotspot_name,
+            "ssid_name": ssidName,
             "location": location,
             "adcash_zone_key": settings.adcash_zone_key,
             "banner_url": "null",

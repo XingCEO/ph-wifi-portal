@@ -20,6 +20,9 @@ def _get_redis_url() -> str:
     return "redis://localhost:6379/0"
 
 
+import warnings
+
+
 class Settings(BaseSettings):
     # App
     app_name: str = "PH WiFi Portal"
@@ -50,7 +53,8 @@ class Settings(BaseSettings):
     omada_port: int = 8043
     omada_controller_id: str = ""
     omada_operator: str = "admin"
-    omada_password: str = "admin"
+    omada_password: str = ""
+    omada_verify_ssl: bool = False
 
     # Adcash
     adcash_zone_key: str = ""
@@ -62,9 +66,9 @@ class Settings(BaseSettings):
 
     # Admin
     admin_username: str = "admin"
-    admin_password: str = "admin"
+    admin_password: str = ""
 
-    # CORS - allowed origins
+    # CORS - allowed origins (set via env var in production)
     cors_origins: list[str] = ["*"]
 
     model_config = {
@@ -74,3 +78,14 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def validate_settings() -> None:
+    """Warn about insecure defaults on startup."""
+    if settings.environment == "production":
+        if settings.secret_key == "change-me-in-production":
+            warnings.warn("SECRET_KEY is using the default value — set it in .env", stacklevel=2)
+        if not settings.admin_password:
+            warnings.warn("ADMIN_PASSWORD is empty — set it in .env", stacklevel=2)
+        if settings.cors_origins == ["*"]:
+            warnings.warn("CORS_ORIGINS allows all origins — restrict in production", stacklevel=2)

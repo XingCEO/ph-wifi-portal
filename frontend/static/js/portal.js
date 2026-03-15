@@ -81,6 +81,14 @@
 
   document.getElementById('btn-connect').addEventListener('click', grantAccess);
 
+  var paidLink = document.getElementById('paid-option-link');
+  if (paidLink) {
+    paidLink.addEventListener('click', function (e) {
+      e.preventDefault();
+      alert('Paid option coming soon — ₱5 for 30 min');
+    });
+  }
+
   // Init display
   updateDisplay(AD_DURATION);
 })();

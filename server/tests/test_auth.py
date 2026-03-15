@@ -246,6 +246,38 @@ async def test_grant_access_calls_omada_with_correct_params(
 
 
 @pytest.mark.asyncio
+async def test_grant_access_blocked_device_returns_403(
+    client: AsyncClient,
+    mock_redis: MagicMock,
+    mock_omada: MagicMock,
+    test_session: Any,
+) -> None:
+    """Blocked device is rejected with 403."""
+    from models.database import BlockedDevice
+
+    # Block the device
+    device = BlockedDevice(
+        client_mac="AA:BB:CC:11:22:33",
+        reason="spam",
+        blocked_by="admin",
+        is_active=True,
+    )
+    test_session.add(device)
+    await test_session.commit()
+
+    session_data = _make_session_data(client_mac="AA:BB:CC:11:22:33")
+    _setup_valid_session(mock_redis, session_data)
+    mock_omada.grant_access = AsyncMock(return_value={})
+
+    response = await client.post(
+        "/api/grant-access",
+        json={"session_id": "blocked-device-session"},
+    )
+
+    assert response.status_code == 403
+
+
+@pytest.mark.asyncio
 async def test_grant_access_records_anti_spam_after_success(
     client: AsyncClient,
     mock_redis: MagicMock,

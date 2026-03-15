@@ -102,7 +102,13 @@
     </button>
   </div>
   <script>
-    const redirect = new URLSearchParams(window.location.search).get('to') || 'https://google.com';
+    const raw = new URLSearchParams(window.location.search).get('to') || 'https://google.com';
+    // Validate URL to prevent open redirect attacks
+    let redirect = 'https://google.com';
+    try {
+      const url = new URL(raw);
+      if (url.protocol === 'http:' || url.protocol === 'https:') redirect = raw;
+    } catch(e) { /* invalid URL, use default */ }
     setTimeout(function() { window.location.href = redirect; }, 1500);
   </script>
 </body>

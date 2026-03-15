@@ -1,28 +1,40 @@
 from __future__ import annotations
 
 import base64
+import csv
+import io
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from typing import Any
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from redis.asyncio import Redis
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from config import settings
-from models.database import AccessGrant, AdView, DirectAdvertiser, Hotspot, Visit, get_db
+from models.database import (
+    AccessGrant, AdView, AdminAuditLog, BlockedDevice,
+    DirectAdvertiser, Hotspot, Visit, get_db,
+)
 from models.schemas import (
+    AuditLogResponse,
+    BlockedDeviceCreate,
+    BlockedDeviceResponse,
     DirectAdvertiserCreate,
     DirectAdvertiserResponse,
+    DirectAdvertiserUpdate,
     HotspotCreate,
     HotspotResponse,
+    HotspotUpdate,
     RevenueResponse,
     StatsResponse,
     HotspotStats,
+    SystemSettingsResponse,
+    SystemSettingsUpdate,
 )
 from services.omada import OmadaError, get_omada_client
 from services.redis_service import RedisService, get_redis
@@ -32,8 +44,10 @@ logger = structlog.get_logger(__name__)
 
 
 def verify_basic_auth(request: Request) -> None:
+    client_ip = request.client.host if request.client else "unknown"
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Basic "):
+        logger.warning("admin_auth_missing", ip=client_ip, path=request.url.path)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Unauthorized",
@@ -43,6 +57,7 @@ def verify_basic_auth(request: Request) -> None:
         decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
         username, _, password = decoded.partition(":")
     except Exception:
+        logger.warning("admin_auth_decode_failed", ip=client_ip)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
@@ -52,11 +67,47 @@ def verify_basic_auth(request: Request) -> None:
         secrets.compare_digest(username, settings.admin_username)
         and secrets.compare_digest(password, settings.admin_password)
     ):
+        logger.warning("admin_auth_failed", ip=client_ip, username=username)
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid credentials",
             headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
         )
+
+
+def _extract_username(request: Request) -> str:
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Basic "):
+        try:
+            decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
+            username, _, _ = decoded.partition(":")
+            return username
+        except Exception:
+            pass
+    return "unknown"
+
+
+async def record_audit(
+    db: AsyncSession,
+    request: Request,
+    action: str,
+    target_type: str | None = None,
+    target_id: str | None = None,
+    details: dict[str, Any] | None = None,
+) -> None:
+    log_entry = AdminAuditLog(
+        admin_user=_extract_username(request),
+        action=action,
+        target_type=target_type,
+        target_id=target_id,
+        details=details,
+        ip_address=request.client.host if request.client else None,
+    )
+    db.add(log_entry)
+    try:
+        await db.flush()
+    except Exception:
+        pass
 
 
 DASHBOARD_HTML = """
@@ -271,6 +322,18 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
     <button class="nav-item" onclick="switchTab('security',this)" data-tab="security">
       <span class="icon">&#128274;</span>資安中心
     </button>
+    <button class="nav-item" onclick="switchTab('advertisers',this)" data-tab="advertisers">
+      <span class="icon">&#128230;</span>廣告主管理
+    </button>
+    <button class="nav-item" onclick="switchTab('devices',this)" data-tab="devices">
+      <span class="icon">&#128267;</span>設備管理
+    </button>
+    <button class="nav-item" onclick="switchTab('sessions',this)" data-tab="sessions">
+      <span class="icon">&#128268;</span>連線管理
+    </button>
+    <button class="nav-item" onclick="switchTab('settings',this)" data-tab="settings">
+      <span class="icon">&#9881;</span>系統設定
+    </button>
   </nav>
   <div class="sidebar-footer">
     <div>PH WiFi System</div>
@@ -351,6 +414,13 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
         <label class="form-label" style="margin:0">月份：</label>
         <input type="month" class="form-control" id="rev-month" style="width:160px" onchange="loadRevenue()">
         <button class="btn btn-primary" onclick="loadRevenue()">查詢</button>
+        <span style="color:var(--gray-300)">|</span>
+        <label class="form-label" style="margin:0">日期範圍：</label>
+        <input type="date" class="form-control" id="rev-start" style="width:150px">
+        <span>~</span>
+        <input type="date" class="form-control" id="rev-end" style="width:150px">
+        <button class="btn btn-outline" onclick="loadRevenueDaily()">每日查詢</button>
+        <button class="btn btn-outline" onclick="window.location.href='/admin/api/export/revenue'">匯出 CSV</button>
       </div>
       <div class="kpi-grid" id="rev-kpis">
         <div class="loading-state"><span class="spinner"></span> 選擇月份後載入...</div>
@@ -371,6 +441,11 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
           <div class="card-title">收入分佈</div>
           <div class="chart-container chart-sm"><canvas id="chart-revenue"></canvas></div>
         </div>
+      </div>
+      <div class="card" id="rev-daily-section" style="margin-top:16px;display:none">
+        <div class="card-title">每日收入趨勢</div>
+        <div class="kpi-grid" id="rev-daily-kpis" style="margin-bottom:12px"></div>
+        <div class="chart-container"><canvas id="chart-revenue-daily"></canvas></div>
       </div>
     </div>
 
@@ -409,6 +484,7 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
           <select class="form-control form-select" id="usr-hotspot-filter" onchange="filterUsers()" style="width:160px">
             <option value="">所有熱點</option>
           </select>
+          <button class="btn btn-outline" onclick="window.location.href='/admin/api/export/visits'">匯出 CSV</button>
           <button class="btn btn-outline" onclick="loadUsers()">重新載入</button>
         </div>
       </div>
@@ -459,8 +535,8 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
           </div>
           <div class="card">
             <div class="sec-section">
-              <h3>&#128221; Admin 登入記錄</h3>
-              <div id="sec-login-log">載入中...</div>
+              <h3>&#128221; 管理操作記錄</h3>
+              <div id="sec-audit-log">載入中...</div>
             </div>
             <div class="sec-section" style="margin-top:16px">
               <h3>&#128295; 系統資訊</h3>
@@ -468,6 +544,115 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
                 <div class="loading-state"><span class="spinner"></span></div>
               </div>
             </div>
+            <div class="sec-section" style="margin-top:16px">
+              <div class="ip-stat-item">
+                <span>封鎖裝置數</span>
+                <span class="badge danger" id="sec-blocked-count">—</span>
+              </div>
+              <button class="btn btn-outline btn-sm" style="margin-top:8px" onclick="switchTab('devices',document.querySelector('[data-tab=devices]'))">管理封鎖裝置 &rarr;</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Advertisers ── -->
+    <div id="tab-advertisers" class="tab-pane">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input class="form-control" id="adv-search" placeholder="搜尋廣告主..." oninput="filterAdvertisers()" style="padding-left:36px">
+        </div>
+        <button class="btn btn-primary" onclick="openAdvModal()">+ 新增廣告主</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>名稱</th><th>聯絡人</th><th>月費(PHP)</th><th>狀態</th><th>開始</th><th>結束</th><th>操作</th></tr></thead>
+            <tbody id="adv-table-body">
+              <tr><td colspan="8"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Devices ── -->
+    <div id="tab-devices" class="tab-pane">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <h3 style="font-size:15px;font-weight:600;color:var(--gray-800)">封鎖裝置</h3>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-outline" onclick="window.location.href='/admin/api/export/devices'">匯出 CSV</button>
+          <button class="btn btn-danger" onclick="openBlockModal()">+ 封鎖裝置</button>
+        </div>
+      </div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>MAC</th><th>原因</th><th>封鎖者</th><th>封鎖時間</th><th>到期</th><th>操作</th></tr></thead>
+            <tbody id="blocked-table-body">
+              <tr><td colspan="6"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">裝置查詢</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px">
+          <input class="form-control" id="dev-lookup-mac" placeholder="輸入 MAC 地址 (AA:BB:CC:DD:EE:FF)" style="max-width:300px">
+          <button class="btn btn-primary" onclick="lookupDevice()">查詢</button>
+        </div>
+        <div id="dev-history"></div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Sessions ── -->
+    <div id="tab-sessions" class="tab-pane">
+      <div class="kpi-grid" id="sess-kpis" style="margin-bottom:16px">
+        <div class="loading-state"><span class="spinner"></span> 載入中...</div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+          <div class="card-title" style="margin:0">活躍連線</div>
+          <div style="font-size:12px;color:var(--gray-400)"><span id="sess-refresh-countdown">30</span>s 後自動刷新</div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>ID</th><th>MAC</th><th>熱點</th><th>開始時間</th><th>到期時間</th><th>剩餘(分鐘)</th><th>操作</th></tr></thead>
+            <tbody id="sess-table-body">
+              <tr><td colspan="7"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Settings ── -->
+    <div id="tab-settings" class="tab-pane">
+      <div class="section-grid cols-2">
+        <div class="card">
+          <div class="card-title">商業規則</div>
+          <div class="form-group">
+            <label class="form-label">廣告時長（秒）</label>
+            <input class="form-control" id="set-ad-dur" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">連線時長（秒）</label>
+            <input class="form-control" id="set-sess-dur" type="number">
+          </div>
+          <div class="form-group">
+            <label class="form-label">防刷間隔（秒）</label>
+            <input class="form-control" id="set-spam-win" type="number">
+          </div>
+          <button class="btn btn-primary" onclick="saveSettings()" style="margin-top:8px">儲存設定</button>
+          <div style="font-size:11px;color:var(--gray-400);margin-top:8px">注意：修改僅影響執行中的程序，重啟後回復 .env 設定</div>
+        </div>
+        <div class="card">
+          <div class="card-title">系統資訊</div>
+          <div id="settings-sysinfo"><div class="loading-state"><span class="spinner"></span></div></div>
+          <div style="margin-top:16px">
+            <button class="btn btn-outline" onclick="testOmada()">測試 Omada 連線</button>
+            <span id="omada-test-result" style="margin-left:8px;font-size:13px"></span>
           </div>
         </div>
       </div>
@@ -527,12 +712,131 @@ tbody td{padding:10px 14px;color:var(--gray-700)}
   </div>
 </div>
 
+<!-- ══ Advertiser Modal ══ -->
+<div class="modal-overlay" id="adv-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="adv-modal-title">&#128230; 新增廣告主</h2>
+      <button class="modal-close" onclick="closeAdvModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="adv-edit-id">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">名稱 *</label>
+          <input class="form-control" id="adv-name" placeholder="廣告主名稱">
+        </div>
+        <div class="form-group">
+          <label class="form-label">聯絡人</label>
+          <input class="form-control" id="adv-contact" placeholder="電話/Email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Banner URL *</label>
+        <input class="form-control" id="adv-banner" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Click URL *</label>
+        <input class="form-control" id="adv-click" placeholder="https://...">
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">月費 (PHP) *</label>
+          <input class="form-control" id="adv-fee" type="number" step="0.01" placeholder="5000">
+        </div>
+        <div class="form-group">
+          <label class="form-label">狀態</label>
+          <select class="form-control form-select" id="adv-active">
+            <option value="true">啟用</option>
+            <option value="false">停用</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">開始日期 *</label>
+          <input class="form-control" id="adv-start" type="datetime-local">
+        </div>
+        <div class="form-group">
+          <label class="form-label">結束日期</label>
+          <input class="form-control" id="adv-end" type="datetime-local">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeAdvModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitAdvertiser()">確認</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Block Device Modal ══ -->
+<div class="modal-overlay" id="block-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>&#128683; 封鎖裝置</h2>
+      <button class="modal-close" onclick="closeBlockModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">MAC 地址 *</label>
+        <input class="form-control" id="block-mac" placeholder="AA:BB:CC:DD:EE:FF">
+      </div>
+      <div class="form-group">
+        <label class="form-label">原因</label>
+        <input class="form-control" id="block-reason" placeholder="封鎖原因">
+      </div>
+      <div class="form-group">
+        <label class="form-label">到期時間（留空=永久）</label>
+        <input class="form-control" id="block-expires" type="datetime-local">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeBlockModal()">取消</button>
+      <button class="btn btn-danger" onclick="submitBlock()">確認封鎖</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Hotspot Detail Modal ══ -->
+<div class="modal-overlay" id="hs-detail-modal">
+  <div class="modal" style="width:640px">
+    <div class="modal-header">
+      <h2 id="hs-detail-title">&#128205; 熱點詳情</h2>
+      <button class="modal-close" onclick="closeHsDetail()">&times;</button>
+    </div>
+    <div class="modal-body" id="hs-detail-body">
+      <div class="loading-state"><span class="spinner"></span> 載入中...</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ Confirm Dialog ══ -->
+<div class="modal-overlay" id="confirm-modal">
+  <div class="modal" style="width:400px">
+    <div class="modal-header">
+      <h2 id="confirm-title">確認操作</h2>
+      <button class="modal-close" onclick="closeConfirm()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg">確定要執行此操作？</p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+      <button class="btn btn-danger" id="confirm-btn" onclick="confirmAction()">確認</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast-container"></div>
 
 <script>
-const AUTH = 'Basic eGluZ2Nlbzp4aW5nd2lmaTIwMjY=';
-const headers = { 'Authorization': AUTH, 'Content-Type': 'application/json' };
-const headersGet = { 'Authorization': AUTH };
+// Auth handled by browser's built-in Basic Auth credential caching
+const headers = { 'Content-Type': 'application/json' };
+const headersGet = {};
+
+// XSS escape helper
+function esc(s) { if (s == null) return '—'; const d = document.createElement('div'); d.textContent = String(s); return d.innerHTML; }
 
 let trendChart = null;
 let revenueChart = null;
@@ -540,8 +844,12 @@ let liveTimer = null;
 let liveCountdown = 15;
 let allHotspots = [];
 let allUsers = [];
+let allAdvertisers = [];
 let usersPage = 0;
 const PAGE_SIZE = 50;
+let sessTimer = null;
+let sessCountdown = 30;
+let pendingConfirmFn = null;
 
 // ── Helpers ──
 function toast(msg, type='info') {
@@ -579,7 +887,7 @@ document.addEventListener('click', e => {
 });
 
 // ── Tab switching ──
-const tabTitles = { dashboard:'Dashboard', hotspots:'熱點管理', revenue:'收入分析', live:'即時監控', users:'用戶記錄', security:'資安中心' };
+const tabTitles = { dashboard:'Dashboard', hotspots:'熱點管理', revenue:'收入分析', live:'即時監控', users:'用戶記錄', security:'資安中心', advertisers:'廣告主管理', devices:'設備管理', sessions:'連線管理', settings:'系統設定' };
 function switchTab(tab, el) {
   document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   el.classList.add('active');
@@ -589,12 +897,17 @@ function switchTab(tab, el) {
   const li = document.getElementById('live-indicator');
   if (tab === 'live') { li.style.display=''; startLiveTimer(); }
   else { li.style.display='none'; stopLiveTimer(); }
+  if (tab !== 'sessions') stopSessTimer();
   if (tab === 'dashboard') loadDashboard();
   if (tab === 'hotspots') loadHotspots();
   if (tab === 'revenue') { setDefaultMonth(); loadRevenue(); }
   if (tab === 'live') loadLive();
   if (tab === 'users') loadUsers();
   if (tab === 'security') loadSecurity();
+  if (tab === 'advertisers') loadAdvertisers();
+  if (tab === 'devices') loadDevices();
+  if (tab === 'sessions') { loadSessions(); startSessTimer(); }
+  if (tab === 'settings') loadSettings();
 }
 
 // ── Dashboard ──
@@ -612,7 +925,7 @@ async function loadStats() {
     renderDashHotspots(d.hotspots || []);
     renderTrendChart(d.daily_trend || []);
   } catch(e) {
-    document.getElementById('dash-kpis').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9888;</div>載入失敗：' + e.message + '</div>';
+    document.getElementById('dash-kpis').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9888;</div>載入失敗：' + esc(e.message) + '</div>';
   }
 }
 
@@ -636,8 +949,8 @@ function renderDashHotspots(hs) {
   const tbody = document.getElementById('dash-hotspot-body');
   if (!hs.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">無資料</div></td></tr>'; return; }
   tbody.innerHTML = hs.map(h =>
-    '<tr><td><strong>' + (h.name || h.id || '—') + '</strong></td>' +
-    '<td>' + (h.location || '—') + '</td>' +
+    '<tr><td><strong>' + esc(h.name || h.id) + '</strong></td>' +
+    '<td>' + esc(h.location) + '</td>' +
     '<td>' + fmt(h.today_visits) + '</td>' +
     '<td>' + fmt(h.online_users) + '</td>' +
     '<td><span class="badge ' + (h.is_active ? 'success' : 'danger') + '"><span class="dot ' + (h.is_active ? 'success' : 'danger') + '"></span>' + (h.is_active ? '正常' : '離線') + '</span></td></tr>'
@@ -700,7 +1013,7 @@ async function loadHotspots() {
     renderHotspotTable(allHotspots);
     populateHotspotFilter(allHotspots);
   } catch(e) {
-    document.getElementById('hs-table-body').innerHTML = '<tr><td colspan="9"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+    document.getElementById('hs-table-body').innerHTML = '<tr><td colspan="9"><div class="empty-state">&#9888; 載入失敗：' + esc(e.message) + '</div></td></tr>';
   }
 }
 
@@ -709,16 +1022,20 @@ function renderHotspotTable(hs) {
   if (!hs.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#128205;</div>無熱點資料</div></td></tr>'; return; }
   tbody.innerHTML = hs.map(h =>
     '<tr>' +
-    '<td>' + (h.id || '—') + '</td>' +
-    '<td><strong>' + (h.name || '—') + '</strong></td>' +
-    '<td>' + (h.location || '—') + '</td>' +
-    '<td><code style="font-size:11px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + (h.ap_mac || '—') + '</code></td>' +
-    '<td>' + (h.site_id || h.site || '—') + '</td>' +
+    '<td>' + esc(h.id) + '</td>' +
+    '<td><strong>' + esc(h.name) + '</strong></td>' +
+    '<td>' + esc(h.location) + '</td>' +
+    '<td><code style="font-size:11px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + esc(h.ap_mac) + '</code></td>' +
+    '<td>' + esc(h.site_name || h.site_id || h.site) + '</td>' +
     '<td style="font-size:11px;color:var(--gray-500)">' + (h.latitude ? h.latitude.toFixed(4) + ', ' + (h.longitude || 0).toFixed(4) : '—') + '</td>' +
     '<td>' + fmt(h.today_visits || 0) + '</td>' +
     '<td><span class="badge ' + (h.is_active !== false ? 'success' : 'danger') + '">' + (h.is_active !== false ? '啟用' : '停用') + '</span></td>' +
-    '<td><button class="btn btn-outline btn-sm" onclick="toggleHotspot(' + h.id + ',' + (h.is_active !== false) + ')">' + (h.is_active !== false ? '停用' : '啟用') + '</button></td>' +
-    '</tr>'
+    '<td style="white-space:nowrap">' +
+    '<button class="btn btn-outline btn-sm" onclick="openHsDetail(' + h.id + ')" title="詳情">&#128269;</button> ' +
+    '<button class="btn btn-outline btn-sm" onclick="openEditHotspot(' + h.id + ')" title="編輯">&#9998;</button> ' +
+    '<button class="btn btn-outline btn-sm" onclick="toggleHotspot(' + h.id + ',' + (h.is_active !== false) + ')">' + (h.is_active !== false ? '停用' : '啟用') + '</button> ' +
+    '<button class="btn btn-sm" style="color:var(--danger)" onclick="confirmDeleteHotspot(' + h.id + ')" title="刪除">&#128465;</button>' +
+    '</td></tr>'
   ).join('');
 }
 
@@ -743,38 +1060,40 @@ async function toggleHotspot(id, currentActive) {
   }
 }
 
-function openAddModal() { document.getElementById('add-modal').classList.add('show'); }
-function closeModal() { document.getElementById('add-modal').classList.remove('show'); }
+function openAddModal() { document.getElementById('add-modal').classList.add('show'); document.getElementById('add-modal').dataset.editId = ''; }
+function closeModal() { document.getElementById('add-modal').classList.remove('show'); document.getElementById('add-modal').dataset.editId = ''; }
 
 async function submitAddHotspot() {
   const name = document.getElementById('f-name').value.trim();
   const location = document.getElementById('f-location').value.trim();
   if (!name || !location) { toast('請填寫名稱與地點', 'error'); return; }
+  const editId = document.getElementById('add-modal').dataset.editId;
   const payload = {
     name, location,
     ap_mac: document.getElementById('f-mac').value.trim() || null,
-    site_id: document.getElementById('f-site').value.trim() || null,
+    site_name: document.getElementById('f-site').value.trim() || null,
     latitude: parseFloat(document.getElementById('f-lat').value) || null,
     longitude: parseFloat(document.getElementById('f-lng').value) || null,
-    notes: document.getElementById('f-note').value.trim() || null,
-    is_active: true
   };
   try {
-    const r = await fetch('/admin/api/hotspots', { method:'POST', headers, body:JSON.stringify(payload) });
+    const url = editId ? '/admin/api/hotspots/' + editId : '/admin/api/hotspots';
+    const method = editId ? 'PATCH' : 'POST';
+    if (!editId) payload.is_active = true;
+    const r = await fetch(url, { method, headers, body:JSON.stringify(payload) });
     if (!r.ok) { const e = await r.json(); throw new Error(e.detail || r.status); }
-    toast('熱點新增成功！', 'success');
+    toast(editId ? '熱點已更新！' : '熱點新增成功！', 'success');
     closeModal();
     loadHotspots();
     ['f-name','f-location','f-mac','f-site','f-lat','f-lng','f-note'].forEach(id => { document.getElementById(id).value = ''; });
   } catch(e) {
-    toast('新增失敗：' + e.message, 'error');
+    toast('操作失敗：' + e.message, 'error');
   }
 }
 
 function populateHotspotFilter(hs) {
   const sel = document.getElementById('usr-hotspot-filter');
   const cur = sel.value;
-  sel.innerHTML = '<option value="">所有熱點</option>' + hs.map(h => '<option value="' + h.id + '">' + (h.name || h.id) + '</option>').join('');
+  sel.innerHTML = '<option value="">所有熱點</option>' + hs.map(h => '<option value="' + h.id + '">' + esc(h.name || h.id) + '</option>').join('');
   sel.value = cur;
 }
 
@@ -798,7 +1117,7 @@ async function loadRevenue() {
     renderRevenueTable(d.breakdown || d.hotspots || []);
     renderRevenueChart(d.breakdown || d.hotspots || []);
   } catch(e) {
-    document.getElementById('rev-kpis').innerHTML = '<div class="empty-state">&#9888; 載入失敗：' + e.message + '</div>';
+    document.getElementById('rev-kpis').innerHTML = '<div class="empty-state">&#9888; 載入失敗：' + esc(e.message) + '</div>';
   }
 }
 
@@ -820,8 +1139,8 @@ function renderRevenueTable(breakdown) {
   const total = breakdown.reduce((s, r) => s + (r.revenue || 0), 0);
   tbody.innerHTML = breakdown.map(r => {
     const pct = total > 0 ? ((r.revenue || 0) / total * 100).toFixed(1) : 0;
-    return '<tr><td><strong>' + (r.hotspot_name || r.name || '—') + '</strong></td>' +
-      '<td>' + (r.location || '—') + '</td>' +
+    return '<tr><td><strong>' + esc(r.hotspot_name || r.name) + '</strong></td>' +
+      '<td>' + esc(r.location) + '</td>' +
       '<td>' + fmt(r.ad_views || r.views || 0) + '</td>' +
       '<td><strong>PHP ' + fmt(r.revenue || 0) + '</strong></td>' +
       '<td><div style="display:flex;align-items:center;gap:8px"><div style="background:var(--primary-light);border-radius:4px;height:8px;width:80px;overflow:hidden"><div style="background:var(--primary);height:100%;width:' + pct + '%"></div></div>' + pct + '%</div></td></tr>';
@@ -877,7 +1196,7 @@ async function loadLive() {
     setLastUpdate();
   } catch(e) {
     document.getElementById('live-total').textContent = '—';
-    document.getElementById('live-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+    document.getElementById('live-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + esc(e.message) + '</div></td></tr>';
   }
 }
 
@@ -886,11 +1205,11 @@ function renderLiveTable(hs) {
   if (!hs.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">無熱點在線</div></td></tr>'; return; }
   tbody.innerHTML = hs.map(h =>
     '<tr>' +
-    '<td><strong>' + (h.name || '—') + '</strong></td>' +
-    '<td>' + (h.location || '—') + '</td>' +
+    '<td><strong>' + esc(h.name) + '</strong></td>' +
+    '<td>' + esc(h.location) + '</td>' +
     '<td style="font-size:18px;font-weight:700;color:var(--primary)">' + fmt(h.online || h.online_users || 0) + '</td>' +
     '<td>' + fmt(h.today_visits || 0) + '</td>' +
-    '<td>' + fmtDate(h.last_activity || h.last_seen) + '</td>' +
+    '<td>' + esc(fmtDate(h.last_activity || h.last_seen)) + '</td>' +
     '<td><span class="badge ' + (h.is_active !== false ? 'success' : 'danger') + '"><span class="dot ' + (h.is_active !== false ? 'success' : 'danger') + '"></span>' + (h.is_active !== false ? '在線' : '離線') + '</span></td>' +
     '</tr>'
   ).join('');
@@ -916,7 +1235,7 @@ async function loadUsers() {
       allHotspots = d2.hotspots || d2 || [];
       populateHotspotFilter(allHotspots);
     } catch(_) {}
-    document.getElementById('usr-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+    document.getElementById('usr-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + esc(e.message) + '</div></td></tr>';
   }
 }
 
@@ -941,11 +1260,11 @@ function renderUsersTable() {
     tbody.innerHTML = paged.map((u, i) =>
       '<tr>' +
       '<td>' + (usersPage * PAGE_SIZE + i + 1) + '</td>' +
-      '<td><code style="font-size:12px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + (u.mac || u.mac_address || '—') + '</code></td>' +
-      '<td>' + (u.hotspot_name || u.hotspot || '—') + '</td>' +
-      '<td><code style="font-size:12px">' + (u.ip || u.ip_address || '—') + '</code></td>' +
-      '<td>' + fmtDate(u.created_at || u.timestamp || u.visited_at) + '</td>' +
-      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (u.user_agent || '') + '">' + truncate(u.user_agent, 35) + '</td>' +
+      '<td><code style="font-size:12px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + esc(u.mac || u.mac_address) + '</code></td>' +
+      '<td>' + esc(u.hotspot_name || u.hotspot) + '</td>' +
+      '<td><code style="font-size:12px">' + esc(u.ip || u.ip_address) + '</code></td>' +
+      '<td>' + esc(fmtDate(u.created_at || u.timestamp || u.visited_at)) + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + esc(u.user_agent || '') + '">' + esc(truncate(u.user_agent, 35)) + '</td>' +
       '</tr>'
     ).join('');
   }
@@ -964,29 +1283,33 @@ function setPage(p) { usersPage = p; renderUsersTable(); }
 
 // ── Security ──
 async function loadSecurity() {
-  recordAdminLogin();
-  renderLoginLog();
-  await Promise.all([loadSecurityStats(), loadSysInfo()]);
+  await Promise.all([loadSecurityStats(), loadSysInfo(), loadAuditLog(), loadBlockedCount()]);
 }
 
-function recordAdminLogin() {
-  const now = new Date().toISOString();
-  let logs = JSON.parse(localStorage.getItem('admin_logins') || '[]');
-  logs.unshift({ time: now, ua: navigator.userAgent.slice(0, 80) });
-  if (logs.length > 20) logs = logs.slice(0, 20);
-  localStorage.setItem('admin_logins', JSON.stringify(logs));
+async function loadAuditLog() {
+  try {
+    const r = await fetch('/admin/api/audit-log?limit=15', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const div = document.getElementById('sec-audit-log');
+    if (!d.items || !d.items.length) { div.innerHTML = '<div class="empty-state">無記錄</div>'; return; }
+    div.innerHTML = d.items.map(l =>
+      '<div class="ip-stat-item"><div><strong>' + esc(l.action) + '</strong>' +
+      (l.target_type ? ' <span class="badge gray">' + esc(l.target_type) + (l.target_id ? '#' + esc(l.target_id) : '') + '</span>' : '') +
+      '<div style="font-size:11px;color:var(--gray-400);margin-top:2px">' + esc(l.admin_user) + ' | ' + fmtDate(l.created_at) + '</div></div></div>'
+    ).join('');
+  } catch(e) {
+    document.getElementById('sec-audit-log').innerHTML = '<div class="empty-state">載入失敗</div>';
+  }
 }
 
-function renderLoginLog() {
-  const logs = JSON.parse(localStorage.getItem('admin_logins') || '[]');
-  const div = document.getElementById('sec-login-log');
-  if (!logs.length) { div.innerHTML = '<div class="empty-state">無記錄</div>'; return; }
-  div.innerHTML = logs.slice(0, 10).map((l, i) =>
-    '<div class="ip-stat-item">' +
-    '<div><strong>' + fmtDate(l.time) + '</strong>' + (i === 0 ? ' <span class="badge success">本次</span>' : '') +
-    '<div style="font-size:11px;color:var(--gray-400);margin-top:2px">' + truncate(l.ua, 50) + '</div></div>' +
-    '</div>'
-  ).join('');
+async function loadBlockedCount() {
+  try {
+    const r = await fetch('/admin/api/devices/blocked', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('sec-blocked-count').textContent = d.length;
+  } catch(e) { document.getElementById('sec-blocked-count').textContent = '?'; }
 }
 
 async function loadSecurityStats() {
@@ -1011,18 +1334,18 @@ async function loadSecurityStats() {
     const topIPs = Object.entries(ipCount).sort((a,b) => b[1]-a[1]).slice(0, 8);
     if (anomaly.length) {
       document.getElementById('sec-anomaly').innerHTML = anomaly.map(([mac, c]) =>
-        '<div class="ip-stat-item"><code style="font-size:12px">' + mac + '</code><span class="badge danger">' + c + ' 次</span></div>'
+        '<div class="ip-stat-item"><code style="font-size:12px">' + esc(mac) + '</code><span class="badge danger">' + c + ' 次</span></div>'
       ).join('');
     }
     if (topIPs.length) {
       document.getElementById('sec-ip-stats').innerHTML = topIPs.map(([ip, c]) =>
-        '<div class="ip-stat-item"><code style="font-size:12px">' + ip + '</code><span class="badge info">' + c + ' 次</span></div>'
+        '<div class="ip-stat-item"><code style="font-size:12px">' + esc(ip) + '</code><span class="badge info">' + c + ' 次</span></div>'
       ).join('');
     } else {
       document.getElementById('sec-ip-stats').innerHTML = '<div class="empty-state">無 IP 統計資料</div>';
     }
   } catch(e) {
-    document.getElementById('sec-stats').innerHTML = '<div class="empty-state">&#9888; ' + e.message + '</div>';
+    document.getElementById('sec-stats').innerHTML = '<div class="empty-state">&#9888; ' + esc(e.message) + '</div>';
   }
 }
 
@@ -1042,6 +1365,352 @@ async function loadSysInfo() {
   }
 }
 
+// ── Hotspot Detail/Edit/Delete ──
+async function openHsDetail(id) {
+  document.getElementById('hs-detail-modal').classList.add('show');
+  document.getElementById('hs-detail-body').innerHTML = '<div class="loading-state"><span class="spinner"></span> 載入中...</div>';
+  try {
+    const r = await fetch('/admin/api/hotspots/' + id + '/detail', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const h = d.hotspot;
+    let html = '<div class="kpi-grid" style="margin-bottom:16px">' +
+      '<div class="kpi-card primary"><div class="kpi-label">今日訪問</div><div class="kpi-value">' + fmt(d.visits_today) + '</div></div>' +
+      '<div class="kpi-card success"><div class="kpi-label">7日訪問</div><div class="kpi-value">' + fmt(d.visits_week) + '</div></div>' +
+      '<div class="kpi-card warning"><div class="kpi-label">今日廣告</div><div class="kpi-value">' + fmt(d.ads_today) + '</div></div></div>';
+    if (d.top_devices && d.top_devices.length) {
+      html += '<h4 style="margin:12px 0 8px;font-size:13px;font-weight:600">Top 裝置</h4><table><thead><tr><th>MAC</th><th>訪問次數</th></tr></thead><tbody>';
+      d.top_devices.forEach(td => { html += '<tr><td><code>' + esc(td.mac) + '</code></td><td>' + td.count + '</td></tr>'; });
+      html += '</tbody></table>';
+    }
+    document.getElementById('hs-detail-title').innerHTML = '&#128205; ' + esc(h.name);
+    document.getElementById('hs-detail-body').innerHTML = html;
+  } catch(e) {
+    document.getElementById('hs-detail-body').innerHTML = '<div class="empty-state">載入失敗：' + esc(e.message) + '</div>';
+  }
+}
+function closeHsDetail() { document.getElementById('hs-detail-modal').classList.remove('show'); }
+
+function openEditHotspot(id) {
+  const h = allHotspots.find(x => x.id === id);
+  if (!h) return;
+  document.getElementById('f-name').value = h.name || '';
+  document.getElementById('f-location').value = h.location || '';
+  document.getElementById('f-mac').value = h.ap_mac || '';
+  document.getElementById('f-site').value = h.site_name || '';
+  document.getElementById('f-lat').value = h.latitude || '';
+  document.getElementById('f-lng').value = h.longitude || '';
+  document.getElementById('add-modal').classList.add('show');
+  document.getElementById('add-modal').dataset.editId = id;
+}
+
+async function confirmDeleteHotspot(id) {
+  showConfirm('確定要刪除此熱點？此操作無法復原。', async () => {
+    try {
+      const r = await fetch('/admin/api/hotspots/' + id, { method: 'DELETE', headers });
+      if (!r.ok) throw new Error(r.status);
+      toast('熱點已刪除', 'success');
+      loadHotspots();
+    } catch(e) { toast('刪除失敗：' + e.message, 'error'); }
+  });
+}
+
+// ── Revenue Daily ──
+let revDailyChart = null;
+async function loadRevenueDaily() {
+  const start = document.getElementById('rev-start').value;
+  const end = document.getElementById('rev-end').value;
+  if (!start || !end) { toast('請選擇日期範圍', 'error'); return; }
+  try {
+    const r = await fetch('/admin/api/revenue/daily?start=' + start + '&end=' + end, { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('rev-daily-section').style.display = 'block';
+    document.getElementById('rev-daily-kpis').innerHTML =
+      '<div class="kpi-card success"><div class="kpi-label">總收入</div><div class="kpi-value">$' + d.total_revenue + '</div></div>' +
+      '<div class="kpi-card primary"><div class="kpi-label">總展示</div><div class="kpi-value">' + fmt(d.total_views) + '</div></div>' +
+      '<div class="kpi-card warning"><div class="kpi-label">CPM</div><div class="kpi-value">$' + d.cpm + '</div></div>';
+    const ctx = document.getElementById('chart-revenue-daily');
+    if (revDailyChart) { revDailyChart.destroy(); revDailyChart = null; }
+    revDailyChart = new Chart(ctx, {
+      type:'line',
+      data:{ labels: d.days.map(x=>x.date), datasets:[{ label:'Revenue', data:d.days.map(x=>parseFloat(x.revenue)), borderColor:'#6366f1', backgroundColor:'rgba(99,102,241,.1)', fill:true, tension:.3 }] },
+      options:{ responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ y:{ beginAtZero:true } } }
+    });
+  } catch(e) { toast('查詢失敗：' + e.message, 'error'); }
+}
+
+// ── Advertisers ──
+async function loadAdvertisers() {
+  try {
+    const r = await fetch('/admin/api/advertisers', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    allAdvertisers = await r.json();
+    renderAdvTable(allAdvertisers);
+  } catch(e) {
+    document.getElementById('adv-table-body').innerHTML = '<tr><td colspan="8"><div class="empty-state">載入失敗</div></td></tr>';
+  }
+}
+
+function renderAdvTable(advs) {
+  const tbody = document.getElementById('adv-table-body');
+  if (!advs.length) { tbody.innerHTML = '<tr><td colspan="8"><div class="empty-state">無廣告主</div></td></tr>'; return; }
+  tbody.innerHTML = advs.map(a =>
+    '<tr><td>' + a.id + '</td><td><strong>' + esc(a.name) + '</strong></td><td>' + esc(a.contact) + '</td>' +
+    '<td>PHP ' + fmt(a.monthly_fee_php) + '</td>' +
+    '<td><span class="badge ' + (a.is_active ? 'success' : 'danger') + '">' + (a.is_active ? '啟用' : '停用') + '</span></td>' +
+    '<td>' + fmtDate(a.starts_at) + '</td><td>' + fmtDate(a.ends_at) + '</td>' +
+    '<td style="white-space:nowrap">' +
+    '<button class="btn btn-outline btn-sm" onclick="editAdvertiser(' + a.id + ')">&#9998;</button> ' +
+    '<button class="btn btn-sm" style="color:var(--danger)" onclick="deleteAdvertiser(' + a.id + ')">&#128465;</button></td></tr>'
+  ).join('');
+}
+
+function filterAdvertisers() {
+  const q = document.getElementById('adv-search').value.toLowerCase();
+  renderAdvTable(allAdvertisers.filter(a => (a.name||'').toLowerCase().includes(q) || (a.contact||'').toLowerCase().includes(q)));
+}
+
+function openAdvModal(editId) {
+  document.getElementById('adv-edit-id').value = editId || '';
+  document.getElementById('adv-modal-title').textContent = editId ? '&#9998; 編輯廣告主' : '&#128230; 新增廣告主';
+  if (!editId) {
+    ['adv-name','adv-contact','adv-banner','adv-click','adv-fee','adv-start','adv-end'].forEach(id => { document.getElementById(id).value = ''; });
+    document.getElementById('adv-active').value = 'true';
+  }
+  document.getElementById('adv-modal').classList.add('show');
+}
+
+function closeAdvModal() { document.getElementById('adv-modal').classList.remove('show'); }
+
+function editAdvertiser(id) {
+  const a = allAdvertisers.find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('adv-edit-id').value = id;
+  document.getElementById('adv-name').value = a.name || '';
+  document.getElementById('adv-contact').value = a.contact || '';
+  document.getElementById('adv-banner').value = a.banner_url || '';
+  document.getElementById('adv-click').value = a.click_url || '';
+  document.getElementById('adv-fee').value = a.monthly_fee_php || '';
+  document.getElementById('adv-active').value = String(a.is_active);
+  document.getElementById('adv-start').value = a.starts_at ? a.starts_at.slice(0,16) : '';
+  document.getElementById('adv-end').value = a.ends_at ? a.ends_at.slice(0,16) : '';
+  document.getElementById('adv-modal').classList.add('show');
+  document.getElementById('adv-modal-title').textContent = '&#9998; 編輯廣告主';
+}
+
+async function submitAdvertiser() {
+  const editId = document.getElementById('adv-edit-id').value;
+  const payload = {
+    name: document.getElementById('adv-name').value.trim(),
+    contact: document.getElementById('adv-contact').value.trim() || null,
+    banner_url: document.getElementById('adv-banner').value.trim(),
+    click_url: document.getElementById('adv-click').value.trim(),
+    monthly_fee_php: parseFloat(document.getElementById('adv-fee').value) || 0,
+    is_active: document.getElementById('adv-active').value === 'true',
+    starts_at: document.getElementById('adv-start').value ? new Date(document.getElementById('adv-start').value).toISOString() : null,
+    ends_at: document.getElementById('adv-end').value ? new Date(document.getElementById('adv-end').value).toISOString() : null,
+    hotspot_ids: [],
+  };
+  if (!payload.name || !payload.banner_url || !payload.click_url) { toast('請填寫必要欄位', 'error'); return; }
+  try {
+    const url = editId ? '/admin/api/advertisers/' + editId : '/admin/api/advertisers';
+    const method = editId ? 'PATCH' : 'POST';
+    const r = await fetch(url, { method, headers, body: JSON.stringify(payload) });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || r.status); }
+    toast(editId ? '廣告主已更新' : '廣告主已新增', 'success');
+    closeAdvModal();
+    loadAdvertisers();
+  } catch(e) { toast('操作失敗：' + e.message, 'error'); }
+}
+
+async function deleteAdvertiser(id) {
+  showConfirm('確定要停用此廣告主？', async () => {
+    try {
+      const r = await fetch('/admin/api/advertisers/' + id, { method: 'DELETE', headers });
+      if (!r.ok) throw new Error(r.status);
+      toast('廣告主已停用', 'success');
+      loadAdvertisers();
+    } catch(e) { toast('操作失敗：' + e.message, 'error'); }
+  });
+}
+
+// ── Devices ──
+async function loadDevices() {
+  try {
+    const r = await fetch('/admin/api/devices/blocked', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    renderBlockedTable(d);
+  } catch(e) {
+    document.getElementById('blocked-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">載入失敗</div></td></tr>';
+  }
+}
+
+function renderBlockedTable(devices) {
+  const tbody = document.getElementById('blocked-table-body');
+  if (!devices.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">無封鎖裝置</div></td></tr>'; return; }
+  tbody.innerHTML = devices.map(d =>
+    '<tr><td><code>' + esc(d.client_mac) + '</code></td><td>' + esc(d.reason) + '</td><td>' + esc(d.blocked_by) + '</td>' +
+    '<td>' + fmtDate(d.blocked_at) + '</td><td>' + (d.expires_at ? fmtDate(d.expires_at) : '永久') + '</td>' +
+    '<td><button class="btn btn-outline btn-sm" onclick="unblockDevice(' + d.id + ')">解除</button></td></tr>'
+  ).join('');
+}
+
+function openBlockModal() { document.getElementById('block-modal').classList.add('show'); }
+function closeBlockModal() { document.getElementById('block-modal').classList.remove('show'); }
+
+async function submitBlock() {
+  const mac = document.getElementById('block-mac').value.trim();
+  if (!mac) { toast('請輸入 MAC 地址', 'error'); return; }
+  const payload = {
+    client_mac: mac,
+    reason: document.getElementById('block-reason').value.trim() || null,
+    expires_at: document.getElementById('block-expires').value ? new Date(document.getElementById('block-expires').value).toISOString() : null,
+  };
+  try {
+    const r = await fetch('/admin/api/devices/block', { method: 'POST', headers, body: JSON.stringify(payload) });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || r.status); }
+    toast('裝置已封鎖', 'success');
+    closeBlockModal();
+    ['block-mac','block-reason','block-expires'].forEach(id => { document.getElementById(id).value = ''; });
+    loadDevices();
+  } catch(e) { toast('封鎖失敗：' + e.message, 'error'); }
+}
+
+async function unblockDevice(id) {
+  showConfirm('確定要解除封鎖？', async () => {
+    try {
+      const r = await fetch('/admin/api/devices/block/' + id, { method: 'DELETE', headers });
+      if (!r.ok) throw new Error(r.status);
+      toast('已解除封鎖', 'success');
+      loadDevices();
+    } catch(e) { toast('操作失敗：' + e.message, 'error'); }
+  });
+}
+
+async function lookupDevice() {
+  const mac = document.getElementById('dev-lookup-mac').value.trim();
+  if (!mac) { toast('請輸入 MAC', 'error'); return; }
+  const div = document.getElementById('dev-history');
+  div.innerHTML = '<div class="loading-state"><span class="spinner"></span> 查詢中...</div>';
+  try {
+    const r = await fetch('/admin/api/devices/' + encodeURIComponent(mac) + '/history', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    let html = '<div class="kpi-grid" style="margin-bottom:12px">' +
+      '<div class="kpi-card primary"><div class="kpi-label">訪問</div><div class="kpi-value">' + d.visits.length + '</div></div>' +
+      '<div class="kpi-card success"><div class="kpi-label">連線</div><div class="kpi-value">' + d.grants.length + '</div></div>' +
+      '<div class="kpi-card warning"><div class="kpi-label">廣告</div><div class="kpi-value">' + d.ad_views.length + '</div></div></div>';
+    if (d.visits.length) {
+      html += '<h4 style="margin:8px 0;font-size:13px">最近訪問</h4><table><thead><tr><th>時間</th><th>IP</th><th>熱點ID</th></tr></thead><tbody>';
+      d.visits.slice(0,10).forEach(v => { html += '<tr><td>' + fmtDate(v.at) + '</td><td>' + esc(v.ip) + '</td><td>' + v.hotspot_id + '</td></tr>'; });
+      html += '</tbody></table>';
+    }
+    div.innerHTML = html;
+  } catch(e) { div.innerHTML = '<div class="empty-state">查詢失敗：' + esc(e.message) + '</div>'; }
+}
+
+// ── Sessions ──
+function startSessTimer() {
+  stopSessTimer();
+  sessCountdown = 30;
+  sessTimer = setInterval(() => {
+    sessCountdown--;
+    const el = document.getElementById('sess-refresh-countdown');
+    if (el) el.textContent = sessCountdown;
+    if (sessCountdown <= 0) { sessCountdown = 30; loadSessions(); }
+  }, 1000);
+}
+function stopSessTimer() { if (sessTimer) { clearInterval(sessTimer); sessTimer = null; } }
+
+async function loadSessions() {
+  sessCountdown = 30;
+  try {
+    const r = await fetch('/admin/api/sessions/active', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('sess-kpis').innerHTML =
+      '<div class="kpi-card primary"><div class="kpi-icon">&#128268;</div><div class="kpi-label">活躍連線</div><div class="kpi-value">' + fmt(d.total) + '</div></div>' +
+      '<div class="kpi-card success"><div class="kpi-icon">&#9200;</div><div class="kpi-label">平均剩餘</div><div class="kpi-value">' + Math.round(d.avg_remaining_seconds / 60) + ' 分鐘</div></div>';
+    const tbody = document.getElementById('sess-table-body');
+    if (!d.items.length) { tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state">無活躍連線</div></td></tr>'; return; }
+    tbody.innerHTML = d.items.map(s =>
+      '<tr><td>' + s.id + '</td><td><code>' + esc(s.client_mac) + '</code></td><td>' + esc(s.hotspot_name) + '</td>' +
+      '<td>' + fmtDate(s.granted_at) + '</td><td>' + fmtDate(s.expires_at) + '</td>' +
+      '<td>' + Math.round(s.remaining_seconds / 60) + '</td>' +
+      '<td><button class="btn btn-danger btn-sm" onclick="revokeSession(' + s.id + ')">撤銷</button></td></tr>'
+    ).join('');
+    setLastUpdate();
+  } catch(e) {
+    document.getElementById('sess-table-body').innerHTML = '<tr><td colspan="7"><div class="empty-state">載入失敗</div></td></tr>';
+  }
+}
+
+async function revokeSession(id) {
+  showConfirm('確定要撤銷此連線？裝置將失去網路存取。', async () => {
+    try {
+      const r = await fetch('/admin/api/sessions/' + id + '/revoke', { method: 'POST', headers });
+      if (!r.ok) throw new Error(r.status);
+      toast('連線已撤銷', 'success');
+      loadSessions();
+    } catch(e) { toast('撤銷失敗：' + e.message, 'error'); }
+  });
+}
+
+// ── Settings ──
+async function loadSettings() {
+  try {
+    const r = await fetch('/admin/api/settings', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('set-ad-dur').value = d.ad_duration_seconds;
+    document.getElementById('set-sess-dur').value = d.session_duration_seconds;
+    document.getElementById('set-spam-win').value = d.anti_spam_window_seconds;
+    document.getElementById('settings-sysinfo').innerHTML =
+      '<div class="ip-stat-item"><span>App Name</span><span class="badge gray">' + esc(d.app_name) + '</span></div>' +
+      '<div class="ip-stat-item"><span>Environment</span><span class="badge ' + (d.environment === 'production' ? 'danger' : 'info') + '">' + esc(d.environment) + '</span></div>' +
+      '<div class="ip-stat-item"><span>Omada Host</span><span class="badge gray">' + esc(d.omada_host) + '</span></div>';
+  } catch(e) { toast('載入設定失敗', 'error'); }
+}
+
+async function saveSettings() {
+  const payload = {
+    ad_duration_seconds: parseInt(document.getElementById('set-ad-dur').value) || null,
+    session_duration_seconds: parseInt(document.getElementById('set-sess-dur').value) || null,
+    anti_spam_window_seconds: parseInt(document.getElementById('set-spam-win').value) || null,
+  };
+  try {
+    const r = await fetch('/admin/api/settings', { method: 'PATCH', headers, body: JSON.stringify(payload) });
+    if (!r.ok) throw new Error(r.status);
+    toast('設定已儲存', 'success');
+  } catch(e) { toast('儲存失敗：' + e.message, 'error'); }
+}
+
+async function testOmada() {
+  const el = document.getElementById('omada-test-result');
+  el.innerHTML = '<span class="spinner"></span>';
+  try {
+    const r = await fetch('/admin/api/settings/test-omada', { method: 'POST', headers });
+    const d = await r.json();
+    el.innerHTML = d.status === 'ok'
+      ? '<span class="badge success">連線成功</span>'
+      : '<span class="badge danger">' + esc(d.message) + '</span>';
+  } catch(e) { el.innerHTML = '<span class="badge danger">測試失敗</span>'; }
+}
+
+// ── Confirm Dialog ──
+function showConfirm(msg, fn) {
+  pendingConfirmFn = fn;
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-modal').classList.add('show');
+}
+function closeConfirm() { document.getElementById('confirm-modal').classList.remove('show'); pendingConfirmFn = null; }
+async function confirmAction() {
+  closeConfirm();
+  if (pendingConfirmFn) { await pendingConfirmFn(); pendingConfirmFn = null; }
+}
+
 // ── Init ──
 (function init() {
   loadDashboard();
@@ -1051,348 +1720,6 @@ async function loadSysInfo() {
 </body>
 </html>
 """
-
-
-import base64
-import secrets
-from datetime import datetime, timezone
-from decimal import Decimal
-from typing import Any
-
-import structlog
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
-from fastapi.responses import HTMLResponse
-from redis.asyncio import Redis
-from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
-
-from config import settings
-from models.database import AccessGrant, AdView, DirectAdvertiser, Hotspot, Visit, get_db
-from models.schemas import (
-    DirectAdvertiserCreate,
-    DirectAdvertiserResponse,
-    HotspotCreate,
-    HotspotResponse,
-    RevenueResponse,
-    StatsResponse,
-    HotspotStats,
-)
-from services.omada import OmadaError, get_omada_client
-from services.redis_service import RedisService, get_redis
-
-router = APIRouter(prefix="/admin")
-logger = structlog.get_logger(__name__)
-
-
-def verify_basic_auth(request: Request) -> None:
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Basic "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Unauthorized",
-            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
-        )
-    try:
-        decoded = base64.b64decode(auth_header[6:]).decode("utf-8")
-        username, _, password = decoded.partition(":")
-    except Exception:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
-        )
-    if not (
-        secrets.compare_digest(username, settings.admin_username)
-        and secrets.compare_digest(password, settings.admin_password)
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid credentials",
-            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
-        )
-
-
-DASHBOARD_HTML = """<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
-<title>WiFi Portal Admin</title>
-<style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#0f0f13;color:#e0e0e8;min-height:100vh}
-a{color:inherit;text-decoration:none}
-.sidebar{position:fixed;left:0;top:0;width:220px;height:100vh;background:#1a1a24;border-right:1px solid #2a2a38;padding:20px 0;z-index:10}
-.logo{padding:0 20px 20px;font-size:16px;font-weight:700;color:#fff;border-bottom:1px solid #2a2a38;margin-bottom:12px}
-.logo span{color:#00e676}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 20px;cursor:pointer;font-size:13px;color:#888;transition:all .15s;border-left:3px solid transparent}
-.nav-item:hover{color:#fff;background:rgba(255,255,255,.04)}
-.nav-item.active{color:#00e676;background:rgba(0,230,118,.06);border-left-color:#00e676}
-.main{margin-left:220px;padding:24px;min-height:100vh}
-.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px}
-.page-title{font-size:20px;font-weight:700}
-.badge-live{background:rgba(0,230,118,.15);color:#00e676;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(0,230,118,.3)}
-.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin-bottom:24px}
-.card{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:20px}
-.card-sm{background:#1a1a24;border:1px solid #2a2a38;border-radius:12px;padding:16px}
-.stat-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
-.stat-val{font-size:28px;font-weight:700;color:#fff;letter-spacing:-.02em}
-.stat-sub{font-size:12px;color:#555;margin-top:4px}
-.stat-up{color:#00e676;font-size:11px}
-.section-title{font-size:14px;font-weight:600;color:#ccc;margin-bottom:16px;display:flex;justify-content:space-between;align-items:center}
-table{width:100%;border-collapse:collapse}
-th{font-size:11px;color:#555;padding:8px 12px;border-bottom:1px solid #2a2a38;text-align:left;text-transform:uppercase;letter-spacing:.06em}
-td{padding:12px;border-bottom:1px solid #1e1e2a;font-size:13px;color:#bbb}
-tr:last-child td{border-bottom:none}
-tr:hover td{background:rgba(255,255,255,.02);color:#ddd}
-.pill{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
-.pill.on{background:rgba(0,230,118,.12);color:#00e676}
-.pill.off{background:rgba(255,80,80,.1);color:#ff5555}
-.pill.warn{background:rgba(255,180,0,.1);color:#ffb400}
-.btn{padding:7px 16px;border-radius:8px;border:none;cursor:pointer;font-size:12px;font-weight:600;transition:all .15s}
-.btn-green{background:#00e676;color:#000}
-.btn-green:hover{background:#00c853}
-.btn-ghost{background:transparent;color:#666;border:1px solid #2a2a38}
-.btn-ghost:hover{color:#ccc;border-color:#444}
-.btn-red{background:rgba(255,80,80,.15);color:#ff5555;border:1px solid rgba(255,80,80,.2)}
-input,select{background:#13131a;border:1px solid #2a2a38;color:#e0e0e8;padding:8px 12px;border-radius:8px;font-size:13px;outline:none;width:100%}
-input:focus,select:focus{border-color:#00e676}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
-.form-label{font-size:11px;color:#555;margin-bottom:4px;display:block}
-.divider{height:1px;background:#2a2a38;margin:20px 0}
-.tab{display:none}.tab.active{display:block}
-.pulse{width:8px;height:8px;border-radius:50%;background:#00e676;display:inline-block;animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(0,230,118,.4)}50%{opacity:.7;box-shadow:0 0 0 6px rgba(0,230,118,0)}}
-.revenue-bar{height:6px;background:#2a2a38;border-radius:3px;overflow:hidden;margin-top:6px}
-.revenue-fill{height:100%;background:linear-gradient(90deg,#00e676,#00b0ff);border-radius:3px;transition:width .5s ease}
-.empty{text-align:center;padding:40px;color:#444;font-size:13px}
-.config-key{font-family:monospace;font-size:12px;color:#888;background:#13131a;padding:4px 8px;border-radius:4px;margin-top:4px;display:block;word-break:break-all}
-</style>
-</head>
-<body>
-<div class="sidebar">
-  <div class="logo">WiFi<span>Portal</span></div>
-  <div class="nav-item active" onclick="showTab('overview')">📊 總覽</div>
-  <div class="nav-item" onclick="showTab('hotspots')">📡 熱點管理</div>
-  <div class="nav-item" onclick="showTab('revenue')">💰 收入分析</div>
-  <div class="nav-item" onclick="showTab('live')">🔴 即時監控</div>
-  <div class="nav-item" onclick="showTab('config')">⚙️ 系統設定</div>
-</div>
-
-<div class="main">
-<div class="topbar">
-  <div>
-    <div class="page-title" id="pageTitle">總覽 Dashboard</div>
-    <div style="font-size:12px;color:#444;margin-top:2px" id="pageDesc">最後更新：<span id="lastUpdate">-</span></div>
-  </div>
-  <span class="badge-live"><span class="pulse"></span> &nbsp;LIVE</span>
-</div>
-
-<!-- 總覽 -->
-<div class="tab active" id="tab-overview">
-  <div class="grid4">
-    <div class="card"><div class="stat-label">今日連線</div><div class="stat-val" id="ov-visits">-</div><div class="stat-sub">累計 <span id="ov-total-visits">-</span></div></div>
-    <div class="card"><div class="stat-label">今日廣告</div><div class="stat-val" id="ov-ads">-</div><div class="stat-sub">累計 <span id="ov-total-ads">-</span></div></div>
-    <div class="card"><div class="stat-label">即時用戶</div><div class="stat-val" id="ov-live" style="color:#00e676">-</div><div class="stat-sub">正在上網中</div></div>
-    <div class="card"><div class="stat-label">本月收入</div><div class="stat-val" id="ov-rev">-</div><div class="stat-sub">USD 估算</div></div>
-  </div>
-  <div class="grid2">
-    <div class="card">
-      <div class="section-title">熱點狀態</div>
-      <table><thead><tr><th>熱點</th><th>即時用戶</th><th>今日</th><th>狀態</th></tr></thead>
-      <tbody id="ov-hotspot-table"><tr><td colspan="4" class="empty">載入中...</td></tr></tbody></table>
-    </div>
-    <div class="card">
-      <div class="section-title">系統健康</div>
-      <div style="display:flex;flex-direction:column;gap:12px" id="ov-health">
-        <div style="color:#444;text-align:center;padding:20px">載入中...</div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<!-- 熱點管理 -->
-<div class="tab" id="tab-hotspots">
-  <div class="card" style="margin-bottom:16px">
-    <div class="section-title">新增熱點 <button class="btn btn-ghost" onclick="toggleAddForm()">+ 新增</button></div>
-    <div id="addForm" style="display:none">
-      <div class="form-row"><div><label class="form-label">熱點名稱 *</label><input id="hN" placeholder="台北咖啡廳"/></div><div><label class="form-label">地點描述 *</label><input id="hL" placeholder="台北市大安區"/></div></div>
-      <div class="form-row"><div><label class="form-label">AP MAC 地址 *</label><input id="hM" placeholder="aa:bb:cc:dd:ee:ff"/></div><div><label class="form-label">Omada Site 名稱 *</label><input id="hS" placeholder="site-default"/></div></div>
-      <div class="form-row"><div><label class="form-label">緯度（選填）</label><input id="hLat" placeholder="25.0330"/></div><div><label class="form-label">經度（選填）</label><input id="hLng" placeholder="121.5654"/></div></div>
-      <button class="btn btn-green" onclick="addHotspot()">確認新增</button>
-      <button class="btn btn-ghost" onclick="toggleAddForm()" style="margin-left:8px">取消</button>
-    </div>
-  </div>
-  <div class="card">
-    <div class="section-title">所有熱點</div>
-    <table><thead><tr><th>名稱</th><th>地點</th><th>AP MAC</th><th>Site</th><th>今日連線</th><th>今日廣告</th><th>狀態</th></tr></thead>
-    <tbody id="hotspot-table"><tr><td colspan="7" class="empty">載入中...</td></tr></tbody></table>
-  </div>
-</div>
-
-<!-- 收入分析 -->
-<div class="tab" id="tab-revenue">
-  <div class="card" style="margin-bottom:16px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <label class="form-label" style="white-space:nowrap;margin:0">選擇月份：</label>
-      <input type="month" id="revMonth" style="width:160px" onchange="loadRevenue()"/>
-    </div>
-  </div>
-  <div class="grid4" style="margin-bottom:16px">
-    <div class="card"><div class="stat-label">Adcash 收入</div><div class="stat-val" id="rev-adcash">-</div><div class="stat-sub">USD</div></div>
-    <div class="card"><div class="stat-label">直接廣告商</div><div class="stat-val" id="rev-direct">-</div><div class="stat-sub">PHP</div></div>
-    <div class="card"><div class="stat-label">廣告瀏覽</div><div class="stat-val" id="rev-views">-</div><div class="stat-sub">次</div></div>
-    <div class="card"><div class="stat-label">每千次收入</div><div class="stat-val" id="rev-cpm">-</div><div class="stat-sub">USD CPM</div></div>
-  </div>
-  <div class="card">
-    <div class="section-title">各熱點收入分解</div>
-    <table><thead><tr><th>熱點</th><th>廣告瀏覽</th><th>收入 USD</th><th>佔比</th></tr></thead>
-    <tbody id="rev-table"><tr><td colspan="4" class="empty">選擇月份後載入</td></tr></tbody></table>
-  </div>
-</div>
-
-<!-- 即時監控 -->
-<div class="tab" id="tab-live">
-  <div class="grid4" style="margin-bottom:16px">
-    <div class="card"><div class="stat-label">即時用戶</div><div class="stat-val" id="live-total" style="color:#00e676">-</div><div class="stat-sub">正在上網</div></div>
-    <div class="card"><div class="stat-label">OC200 連接</div><div class="stat-val" id="live-omada" style="font-size:20px">-</div><div class="stat-sub">設備數</div></div>
-  </div>
-  <div class="card">
-    <div class="section-title">各熱點即時狀況 <button class="btn btn-ghost" onclick="loadLive()" style="font-size:11px">🔄 刷新</button></div>
-    <table><thead><tr><th>熱點名稱</th><th>即時用戶</th><th>狀態</th></tr></thead>
-    <tbody id="live-table"><tr><td colspan="3" class="empty">載入中...</td></tr></tbody></table>
-  </div>
-</div>
-
-<!-- 系統設定 -->
-<div class="tab" id="tab-config">
-  <div class="grid2">
-    <div class="card">
-      <div class="section-title">Portal 設定</div>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <div><div class="form-label">Portal URL（填入 OC200）</div><code class="config-key" id="cfg-url">https://ph-wifi-portal.zeabur.app/portal</code></div>
-        <div><div class="form-label">廣告觀看時間（秒）</div><code class="config-key">30 秒</code></div>
-        <div><div class="form-label">上網時長</div><code class="config-key">3600 秒（1 小時）</code></div>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">OC200 設定指南</div>
-      <div style="font-size:12px;color:#888;line-height:1.8">
-        <p>1. 登入 Omada 控制台</p>
-        <p>2. 設定 → 認證 → Portal</p>
-        <p>3. 認證類型選「External Web Portal」</p>
-        <p>4. Portal URL 填入上方網址</p>
-        <p>5. 儲存並套用到目標 SSID</p>
-      </div>
-    </div>
-    <div class="card">
-      <div class="section-title">系統資訊</div>
-      <table><tbody id="sys-info">
-        <tr><td>版本</td><td style="color:#00e676">v1.0.0</td></tr>
-        <tr><td>環境</td><td id="si-env">-</td></tr>
-        <tr><td>資料庫</td><td id="si-db">-</td></tr>
-        <tr><td>Redis</td><td id="si-redis">-</td></tr>
-        <tr><td>OC200</td><td id="si-omada">-</td></tr>
-      </tbody></table>
-    </div>
-  </div>
-</div>
-
-</div><!-- /main -->
-
-<script>
-const PAGES={overview:'總覽 Dashboard',hotspots:'熱點管理',revenue:'收入分析',live:'即時監控',config:'系統設定'};
-function showTab(name){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('tab-'+name).classList.add('active');
-  event.currentTarget.classList.add('active');
-  document.getElementById('pageTitle').textContent=PAGES[name];
-  if(name==='overview')loadOverview();
-  if(name==='hotspots')loadHotspots();
-  if(name==='revenue'){const d=new Date();document.getElementById('revMonth').value=d.getFullYear()+'-'+(String(d.getMonth()+1).padStart(2,'0'));loadRevenue();}
-  if(name==='live')loadLive();
-  if(name==='config')loadConfig();
-}
-function toggleAddForm(){const f=document.getElementById('addForm');f.style.display=f.style.display==='none'?'block':'none';}
-
-async function loadOverview(){
-  try{
-    const [s,l]=await Promise.all([fetch('/admin/api/stats').then(r=>r.json()),fetch('/admin/api/live').then(r=>r.json())]);
-    document.getElementById('ov-visits').textContent=s.today_visits??0;
-    document.getElementById('ov-total-visits').textContent=(s.total_visits??0).toLocaleString();
-    document.getElementById('ov-ads').textContent=s.today_ad_views??0;
-    document.getElementById('ov-total-ads').textContent=(s.total_ad_views??0).toLocaleString();
-    document.getElementById('ov-live').textContent=l.total_active_users??0;
-    document.getElementById('ov-rev').textContent='$'+(parseFloat(s.total_revenue_usd??0)).toFixed(2);
-    document.getElementById('lastUpdate').textContent=new Date().toLocaleTimeString();
-    // hotspot table
-    const hs=s.hotspots??[];
-    const liveMap={};(l.hotspots??[]).forEach(h=>{liveMap[h.hotspot_id]=h.active_users;});
-    document.getElementById('ov-hotspot-table').innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td style="color:#00e676">${liveMap[h.id]??0}</td><td>${h.today_visits??0}</td><td><span class="pill ${h.is_active?'on':'off'}">${h.is_active?'● 運行':'● 停用'}</span></td></tr>`).join(''):`<tr><td colspan="4" class="empty">尚無熱點</td></tr>`;
-    // health
-    const items=[['資料庫',s.database_status],['Redis',s.redis_status],['OC200',s.omada_status??(s.omada_configured?'連接中':'未設定')]];
-    document.getElementById('ov-health').innerHTML=items.map(([k,v])=>`<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid #2a2a38"><span style="color:#888;font-size:13px">${k}</span><span class="pill ${v==='ok'?'on':v==='未設定'?'warn':'off'}">${v==='ok'?'● 正常':v==='未設定'?'● 未設定':'● 異常'}</span></div>`).join('');
-  }catch(e){console.error(e);}
-}
-
-async function loadHotspots(){
-  const hs=await fetch('/admin/api/hotspots').then(r=>r.json()).catch(()=>[]);
-  document.getElementById('hotspot-table').innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td>${h.location}</td><td style="font-family:monospace;font-size:11px;color:#888">${h.ap_mac}</td><td style="font-size:11px;color:#888">${h.site_name}</td><td>${h.today_visits??0}</td><td>${h.today_ad_views??0}</td><td><span class="pill ${h.is_active?'on':'off'}">${h.is_active?'● 運行中':'● 停用'}</span></td></tr>`).join(''):`<tr><td colspan="7" class="empty">尚無熱點，點「新增」開始</td></tr>`;
-}
-
-async function addHotspot(){
-  const d={name:document.getElementById('hN').value,location:document.getElementById('hL').value,ap_mac:document.getElementById('hM').value,site_name:document.getElementById('hS').value};
-  const lat=document.getElementById('hLat').value,lng=document.getElementById('hLng').value;
-  if(lat)d.latitude=parseFloat(lat);if(lng)d.longitude=parseFloat(lng);
-  if(!d.name||!d.ap_mac||!d.site_name){alert('名稱、AP MAC、Site 為必填');return;}
-  const r=await fetch('/admin/api/hotspots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-  if(r.ok){toggleAddForm();loadHotspots();}else{const e=await r.json();alert('失敗: '+(e.detail||'unknown'));}
-}
-
-async function loadRevenue(){
-  const m=document.getElementById('revMonth').value;if(!m)return;
-  const d=await fetch('/admin/api/revenue?month='+m).then(r=>r.json()).catch(()=>null);
-  if(!d)return;
-  document.getElementById('rev-adcash').textContent='$'+parseFloat(d.adcash_revenue_usd??0).toFixed(2);
-  document.getElementById('rev-direct').textContent='₱'+parseFloat(d.direct_revenue_php??0).toFixed(0);
-  document.getElementById('rev-views').textContent=(d.total_ad_views??0).toLocaleString();
-  const cpm=d.total_ad_views>0?(parseFloat(d.adcash_revenue_usd??0)/d.total_ad_views*1000).toFixed(3):'0';
-  document.getElementById('rev-cpm').textContent='$'+cpm;
-  const total=parseFloat(d.adcash_revenue_usd??0)||0.001;
-  document.getElementById('rev-table').innerHTML=(d.breakdown_by_hotspot??[]).map(b=>{
-    const pct=total>0?(parseFloat(b.revenue_usd)/total*100).toFixed(1):0;
-    return `<tr><td><b>${b.hotspot_name}</b></td><td>${b.ad_views}</td><td>$${parseFloat(b.revenue_usd).toFixed(2)}</td><td><div style="min-width:80px">${pct}%<div class="revenue-bar"><div class="revenue-fill" style="width:${pct}%"></div></div></div></td></tr>`;
-  }).join('')||`<tr><td colspan="4" class="empty">本月尚無收入資料</td></tr>`;
-}
-
-async function loadLive(){
-  const d=await fetch('/admin/api/live').then(r=>r.json()).catch(()=>null);
-  if(!d)return;
-  document.getElementById('live-total').textContent=d.total_active_users??0;
-  document.getElementById('live-omada').textContent=d.omada_clients??'N/A';
-  document.getElementById('live-table').innerHTML=(d.hotspots??[]).map(h=>`<tr><td><b>${h.hotspot_name}</b></td><td style="color:#00e676;font-size:18px;font-weight:700">${h.active_users}</td><td><span class="pill ${h.active_users>0?'on':'warn'}">${h.active_users>0?'● 有用戶':'● 空閒'}</span></td></tr>`).join('')||`<tr><td colspan="3" class="empty">無資料</td></tr>`;
-}
-
-async function loadConfig(){
-  const d=await fetch('/admin/api/stats').then(r=>r.json()).catch(()=>null);
-  if(!d)return;
-  document.getElementById('cfg-url').textContent=window.location.origin+'/portal';
-  document.getElementById('si-env').textContent=d.environment||'production';
-  document.getElementById('si-db').innerHTML=`<span class="${d.database_status==='ok'?'pill on':'pill off'}">${d.database_status==='ok'?'● 正常':'● 異常'}</span>`;
-  document.getElementById('si-redis').innerHTML=`<span class="${d.redis_status==='ok'?'pill on':'pill off'}">${d.redis_status==='ok'?'● 正常':'● 異常'}</span>`;
-  document.getElementById('si-omada').innerHTML=`<span class="pill warn">● 待設定</span>`;
-}
-
-loadOverview();
-setInterval(()=>{
-  const active=document.querySelector('.nav-item.active');
-  if(active&&active.textContent.includes('總覽'))loadOverview();
-  if(active&&active.textContent.includes('即時'))loadLive();
-},15000);
-</script>
-</body></html>"""
 
 @router.get("/", response_class=HTMLResponse)
 async def dashboard(request: Request) -> HTMLResponse:
@@ -1421,25 +1748,40 @@ async def get_stats(
     grants_result = await db.execute(select(func.count(AccessGrant.id)).where(AccessGrant.granted_at >= today_start))
     total_access_grants: int = grants_result.scalar_one() or 0
 
-    hotspots_result = await db.execute(select(Hotspot).where(Hotspot.is_active == True))
+    hotspots_result = await db.execute(select(Hotspot).where(Hotspot.is_active == True))  # noqa: E712
     hotspots = hotspots_result.scalars().all()
+
+    # Batch queries with GROUP BY instead of N+1
+    visits_by_hs = await db.execute(
+        select(Visit.hotspot_id, func.count(Visit.id).label("cnt"))
+        .where(Visit.visited_at >= today_start)
+        .group_by(Visit.hotspot_id)
+    )
+    visits_map = {row.hotspot_id: row.cnt for row in visits_by_hs.all()}
+
+    adviews_by_hs = await db.execute(
+        select(AdView.hotspot_id, func.count(AdView.id).label("cnt"), func.sum(AdView.estimated_revenue_usd).label("rev"))
+        .where(AdView.viewed_at >= today_start)
+        .group_by(AdView.hotspot_id)
+    )
+    adviews_map: dict[int, tuple[int, Decimal]] = {}
+    for row in adviews_by_hs.all():
+        adviews_map[row.hotspot_id] = (row.cnt, row.rev or Decimal("0.0000"))
 
     redis_svc = RedisService(redis)
     hotspot_stats: list[HotspotStats] = []
     active_users_total = 0
 
     for hotspot in hotspots:
-        hv = await db.execute(select(func.count(Visit.id)).where(Visit.hotspot_id == hotspot.id, Visit.visited_at >= today_start))
-        hav = await db.execute(select(func.count(AdView.id)).where(AdView.hotspot_id == hotspot.id, AdView.viewed_at >= today_start))
-        hr = await db.execute(select(func.sum(AdView.estimated_revenue_usd)).where(AdView.hotspot_id == hotspot.id, AdView.viewed_at >= today_start))
         active = await redis_svc.get_active_users_count(hotspot.id)
         active_users_total += active
+        av_cnt, av_rev = adviews_map.get(hotspot.id, (0, Decimal("0.0000")))
         hotspot_stats.append(HotspotStats(
             hotspot_id=hotspot.id,
             hotspot_name=hotspot.name,
-            visits_today=hv.scalar_one() or 0,
-            ad_views_today=hav.scalar_one() or 0,
-            revenue_today_usd=hr.scalar_one() or Decimal("0.0000"),
+            visits_today=visits_map.get(hotspot.id, 0),
+            ad_views_today=av_cnt,
+            revenue_today_usd=av_rev,
             active_users=active,
         ))
 
@@ -1473,8 +1815,33 @@ async def create_hotspot(request: Request, body: HotspotCreate, db: AsyncSession
     db.add(hotspot)
     await db.flush()
     await db.refresh(hotspot)
+    await record_audit(db, request, "create_hotspot", "hotspot", str(hotspot.id), {"name": hotspot.name})
     await db.commit()
     logger.info("hotspot_created", hotspot_id=hotspot.id)
+    return HotspotResponse.model_validate(hotspot)
+
+
+@router.patch("/api/hotspots/{hotspot_id}", response_model=HotspotResponse)
+async def update_hotspot(
+    request: Request,
+    hotspot_id: int,
+    body: HotspotUpdate,
+    db: AsyncSession = Depends(get_db),
+) -> HotspotResponse:
+    verify_basic_auth(request)
+    result = await db.execute(select(Hotspot).where(Hotspot.id == hotspot_id))
+    hotspot = result.scalar_one_or_none()
+    if hotspot is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Hotspot not found")
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(hotspot, field, value)
+    hotspot.updated_at = datetime.now(tz=timezone.utc)
+    await db.flush()
+    await db.refresh(hotspot)
+    await record_audit(db, request, "update_hotspot", "hotspot", str(hotspot_id), update_data)
+    await db.commit()
+    logger.info("hotspot_updated", hotspot_id=hotspot_id, fields=list(update_data.keys()))
     return HotspotResponse.model_validate(hotspot)
 
 
@@ -1501,12 +1868,23 @@ async def get_revenue(
     direct_r = await db.execute(select(func.sum(DirectAdvertiser.monthly_fee_php)).where(DirectAdvertiser.is_active == True, DirectAdvertiser.starts_at < period_end))
     total_v = await db.execute(select(func.count(AdView.id)).where(AdView.viewed_at >= period_start, AdView.viewed_at < period_end))
 
+    # Batch query with GROUP BY instead of N+1
+    rev_by_hs = await db.execute(
+        select(
+            AdView.hotspot_id,
+            func.sum(AdView.estimated_revenue_usd).label("rev"),
+            func.count(AdView.id).label("cnt"),
+        )
+        .where(AdView.viewed_at >= period_start, AdView.viewed_at < period_end)
+        .group_by(AdView.hotspot_id)
+    )
+    rev_map = {row.hotspot_id: (row.rev or Decimal("0.0000"), row.cnt) for row in rev_by_hs.all()}
+
     hotspots_result = await db.execute(select(Hotspot))
     breakdown: list[dict[str, Any]] = []
     for h in hotspots_result.scalars().all():
-        hr = await db.execute(select(func.sum(AdView.estimated_revenue_usd)).where(AdView.hotspot_id == h.id, AdView.viewed_at >= period_start, AdView.viewed_at < period_end))
-        hv = await db.execute(select(func.count(AdView.id)).where(AdView.hotspot_id == h.id, AdView.viewed_at >= period_start, AdView.viewed_at < period_end))
-        breakdown.append({"hotspot_id": h.id, "hotspot_name": h.name, "revenue_usd": str(hr.scalar_one() or Decimal("0.0000")), "ad_views": hv.scalar_one() or 0})
+        rev, cnt = rev_map.get(h.id, (Decimal("0.0000"), 0))
+        breakdown.append({"hotspot_id": h.id, "hotspot_name": h.name, "revenue_usd": str(rev), "ad_views": cnt})
 
     return RevenueResponse(
         period=period,
@@ -1617,4 +1995,457 @@ async def security_overview(
         ],
         "rate_limit_active": True,
         "auth_method": "Basic Auth (bcrypt recommended for production)",
+    }
+
+
+# ── Advertiser CRUD ──────────────────────────────────────────────────────
+
+
+@router.get("/api/advertisers")
+async def list_advertisers(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> list[DirectAdvertiserResponse]:
+    verify_basic_auth(request)
+    result = await db.execute(select(DirectAdvertiser).order_by(DirectAdvertiser.id.desc()))
+    return [DirectAdvertiserResponse.model_validate(a) for a in result.scalars().all()]
+
+
+@router.post("/api/advertisers", response_model=DirectAdvertiserResponse, status_code=201)
+async def create_advertiser(
+    request: Request, body: DirectAdvertiserCreate, db: AsyncSession = Depends(get_db),
+) -> DirectAdvertiserResponse:
+    verify_basic_auth(request)
+    adv = DirectAdvertiser(**body.model_dump())
+    db.add(adv)
+    await db.flush()
+    await db.refresh(adv)
+    await record_audit(db, request, "create_advertiser", "advertiser", str(adv.id), {"name": adv.name})
+    await db.commit()
+    return DirectAdvertiserResponse.model_validate(adv)
+
+
+@router.patch("/api/advertisers/{adv_id}", response_model=DirectAdvertiserResponse)
+async def update_advertiser(
+    request: Request, adv_id: int, body: DirectAdvertiserUpdate, db: AsyncSession = Depends(get_db),
+) -> DirectAdvertiserResponse:
+    verify_basic_auth(request)
+    result = await db.execute(select(DirectAdvertiser).where(DirectAdvertiser.id == adv_id))
+    adv = result.scalar_one_or_none()
+    if not adv:
+        raise HTTPException(status_code=404, detail="Advertiser not found")
+    update_data = body.model_dump(exclude_unset=True)
+    for field, value in update_data.items():
+        setattr(adv, field, value)
+    await db.flush()
+    await db.refresh(adv)
+    await record_audit(db, request, "update_advertiser", "advertiser", str(adv_id), update_data)
+    await db.commit()
+    return DirectAdvertiserResponse.model_validate(adv)
+
+
+@router.delete("/api/advertisers/{adv_id}")
+async def delete_advertiser(
+    request: Request, adv_id: int, db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    verify_basic_auth(request)
+    result = await db.execute(select(DirectAdvertiser).where(DirectAdvertiser.id == adv_id))
+    adv = result.scalar_one_or_none()
+    if not adv:
+        raise HTTPException(status_code=404, detail="Advertiser not found")
+    adv.is_active = False
+    await record_audit(db, request, "delete_advertiser", "advertiser", str(adv_id), {"name": adv.name})
+    await db.commit()
+    return {"status": "deactivated"}
+
+
+# ── Device Management ────────────────────────────────────────────────────
+
+
+@router.get("/api/devices/blocked")
+async def list_blocked_devices(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> list[BlockedDeviceResponse]:
+    verify_basic_auth(request)
+    result = await db.execute(
+        select(BlockedDevice).where(BlockedDevice.is_active == True).order_by(BlockedDevice.blocked_at.desc())  # noqa: E712
+    )
+    return [BlockedDeviceResponse.model_validate(d) for d in result.scalars().all()]
+
+
+@router.post("/api/devices/block", response_model=BlockedDeviceResponse, status_code=201)
+async def block_device(
+    request: Request, body: BlockedDeviceCreate, db: AsyncSession = Depends(get_db),
+) -> BlockedDeviceResponse:
+    verify_basic_auth(request)
+    existing = await db.execute(
+        select(BlockedDevice).where(BlockedDevice.client_mac == body.client_mac, BlockedDevice.is_active == True)  # noqa: E712
+    )
+    if existing.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="Device already blocked")
+    device = BlockedDevice(
+        client_mac=body.client_mac,
+        reason=body.reason,
+        blocked_by=_extract_username(request),
+        expires_at=body.expires_at,
+    )
+    db.add(device)
+    await db.flush()
+    await db.refresh(device)
+    await record_audit(db, request, "block_device", "device", body.client_mac, {"reason": body.reason})
+    await db.commit()
+    return BlockedDeviceResponse.model_validate(device)
+
+
+@router.delete("/api/devices/block/{block_id}")
+async def unblock_device(
+    request: Request, block_id: int, db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    verify_basic_auth(request)
+    result = await db.execute(select(BlockedDevice).where(BlockedDevice.id == block_id))
+    device = result.scalar_one_or_none()
+    if not device:
+        raise HTTPException(status_code=404, detail="Blocked device not found")
+    device.is_active = False
+    await record_audit(db, request, "unblock_device", "device", device.client_mac)
+    await db.commit()
+    return {"status": "unblocked"}
+
+
+@router.get("/api/devices/{mac}/history")
+async def device_history(
+    request: Request,
+    mac: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    visits_r = await db.execute(
+        select(Visit).where(Visit.client_mac == mac).order_by(Visit.visited_at.desc()).limit(50)
+    )
+    grants_r = await db.execute(
+        select(AccessGrant).where(AccessGrant.client_mac == mac).order_by(AccessGrant.granted_at.desc()).limit(50)
+    )
+    ads_r = await db.execute(
+        select(AdView).where(AdView.client_mac == mac).order_by(AdView.viewed_at.desc()).limit(50)
+    )
+    return {
+        "mac": mac,
+        "visits": [
+            {"id": v.id, "hotspot_id": v.hotspot_id, "ip": v.ip_address, "at": v.visited_at.isoformat()}
+            for v in visits_r.scalars().all()
+        ],
+        "grants": [
+            {"id": g.id, "hotspot_id": g.hotspot_id, "granted_at": g.granted_at.isoformat(),
+             "expires_at": g.expires_at.isoformat(), "revoked": g.revoked}
+            for g in grants_r.scalars().all()
+        ],
+        "ad_views": [
+            {"id": a.id, "hotspot_id": a.hotspot_id, "network": a.ad_network, "at": a.viewed_at.isoformat()}
+            for a in ads_r.scalars().all()
+        ],
+    }
+
+
+# ── Session Management ───────────────────────────────────────────────────
+
+
+@router.get("/api/sessions/active")
+async def list_active_sessions(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    now = datetime.now(tz=timezone.utc)
+    result = await db.execute(
+        select(AccessGrant, Hotspot.name.label("hotspot_name"))
+        .join(Hotspot, AccessGrant.hotspot_id == Hotspot.id, isouter=True)
+        .where(AccessGrant.expires_at > now, AccessGrant.revoked == False)  # noqa: E712
+        .order_by(AccessGrant.expires_at.asc())
+    )
+    rows = result.all()
+    items = []
+    for row in rows:
+        grant = row.AccessGrant
+        remaining = (grant.expires_at - now).total_seconds()
+        items.append({
+            "id": grant.id,
+            "client_mac": grant.client_mac,
+            "hotspot_name": row.hotspot_name or "Unknown",
+            "hotspot_id": grant.hotspot_id,
+            "granted_at": grant.granted_at.isoformat(),
+            "expires_at": grant.expires_at.isoformat(),
+            "remaining_seconds": max(0, int(remaining)),
+        })
+    avg_remaining = sum(i["remaining_seconds"] for i in items) / len(items) if items else 0
+    return {"total": len(items), "avg_remaining_seconds": int(avg_remaining), "items": items}
+
+
+@router.post("/api/sessions/{grant_id}/revoke")
+async def revoke_session(
+    request: Request, grant_id: int, db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    verify_basic_auth(request)
+    result = await db.execute(select(AccessGrant).where(AccessGrant.id == grant_id))
+    grant = result.scalar_one_or_none()
+    if not grant:
+        raise HTTPException(status_code=404, detail="Session not found")
+    if grant.revoked:
+        raise HTTPException(status_code=400, detail="Already revoked")
+    grant.revoked = True
+    # Try to revoke via Omada
+    try:
+        hs_result = await db.execute(select(Hotspot).where(Hotspot.id == grant.hotspot_id))
+        hotspot = hs_result.scalar_one_or_none()
+        if hotspot:
+            omada = get_omada_client()
+            await omada.revoke_access(client_mac=grant.client_mac, site=hotspot.site_name)
+    except (OmadaError, RuntimeError) as exc:
+        logger.warning("omada_revoke_failed_on_session_revoke", error=str(exc))
+    await record_audit(db, request, "revoke_session", "session", str(grant_id), {"mac": grant.client_mac})
+    await db.commit()
+    return {"status": "revoked"}
+
+
+# ── Audit Log ────────────────────────────────────────────────────────────
+
+
+@router.get("/api/audit-log")
+async def list_audit_log(
+    request: Request,
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0),
+    action: str | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    q = select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc()).limit(limit).offset(offset)
+    if action:
+        q = q.where(AdminAuditLog.action == action)
+    total_q = select(func.count(AdminAuditLog.id))
+    if action:
+        total_q = total_q.where(AdminAuditLog.action == action)
+    result = await db.execute(q)
+    total = (await db.execute(total_q)).scalar_one()
+    return {
+        "total": total,
+        "items": [AuditLogResponse.model_validate(r).model_dump(mode="json") for r in result.scalars().all()],
+    }
+
+
+# ── Revenue Daily ────────────────────────────────────────────────────────
+
+
+@router.get("/api/revenue/daily")
+async def revenue_daily(
+    request: Request,
+    start: str = Query(default="", description="YYYY-MM-DD"),
+    end: str = Query(default="", description="YYYY-MM-DD"),
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    now = datetime.now(tz=timezone.utc)
+    try:
+        start_dt = datetime.strptime(start, "%Y-%m-%d").replace(tzinfo=timezone.utc) if start else now - timedelta(days=30)
+        end_dt = datetime.strptime(end, "%Y-%m-%d").replace(tzinfo=timezone.utc) + timedelta(days=1) if end else now
+    except ValueError:
+        raise HTTPException(status_code=400, detail="Invalid date format. Use YYYY-MM-DD")
+    result = await db.execute(
+        select(
+            func.date(AdView.viewed_at).label("day"),
+            func.count(AdView.id).label("views"),
+            func.sum(AdView.estimated_revenue_usd).label("revenue"),
+        )
+        .where(AdView.viewed_at >= start_dt, AdView.viewed_at < end_dt)
+        .group_by(func.date(AdView.viewed_at))
+        .order_by(func.date(AdView.viewed_at))
+    )
+    rows = result.all()
+    total_views = sum(r.views for r in rows)
+    total_revenue = sum(r.revenue or Decimal("0") for r in rows)
+    cpm = (total_revenue / total_views * 1000) if total_views > 0 else Decimal("0")
+    return {
+        "days": [{"date": str(r.day), "views": r.views, "revenue": str(r.revenue or "0")} for r in rows],
+        "total_views": total_views,
+        "total_revenue": str(total_revenue),
+        "cpm": str(cpm.quantize(Decimal("0.0001")) if isinstance(cpm, Decimal) else cpm),
+    }
+
+
+# ── CSV Exports ──────────────────────────────────────────────────────────
+
+
+@router.get("/api/export/visits")
+async def export_visits(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    verify_basic_auth(request)
+    result = await db.execute(
+        select(Visit, Hotspot.name.label("hotspot_name"))
+        .join(Hotspot, Visit.hotspot_id == Hotspot.id, isouter=True)
+        .order_by(Visit.visited_at.desc())
+        .limit(10000)
+    )
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["ID", "Client MAC", "Hotspot", "IP Address", "User Agent", "Visited At"])
+    for row in result.all():
+        v = row.Visit
+        writer.writerow([v.id, v.client_mac, row.hotspot_name, v.ip_address, v.user_agent,
+                         v.visited_at.isoformat() if v.visited_at else ""])
+    buf.seek(0)
+    await record_audit(db, request, "export_visits")
+    await db.commit()
+    return StreamingResponse(buf, media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=visits.csv"})
+
+
+@router.get("/api/export/revenue")
+async def export_revenue(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    verify_basic_auth(request)
+    result = await db.execute(
+        select(AdView, Hotspot.name.label("hotspot_name"))
+        .join(Hotspot, AdView.hotspot_id == Hotspot.id, isouter=True)
+        .order_by(AdView.viewed_at.desc())
+        .limit(10000)
+    )
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["ID", "Client MAC", "Hotspot", "Network", "Revenue USD", "Viewed At"])
+    for row in result.all():
+        a = row.AdView
+        writer.writerow([a.id, a.client_mac, row.hotspot_name, a.ad_network,
+                         str(a.estimated_revenue_usd), a.viewed_at.isoformat() if a.viewed_at else ""])
+    buf.seek(0)
+    await record_audit(db, request, "export_revenue")
+    await db.commit()
+    return StreamingResponse(buf, media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=revenue.csv"})
+
+
+@router.get("/api/export/devices")
+async def export_blocked_devices(
+    request: Request, db: AsyncSession = Depends(get_db),
+) -> StreamingResponse:
+    verify_basic_auth(request)
+    result = await db.execute(select(BlockedDevice).order_by(BlockedDevice.blocked_at.desc()))
+    buf = io.StringIO()
+    writer = csv.writer(buf)
+    writer.writerow(["ID", "Client MAC", "Reason", "Blocked By", "Blocked At", "Expires At", "Active"])
+    for d in result.scalars().all():
+        writer.writerow([d.id, d.client_mac, d.reason, d.blocked_by,
+                         d.blocked_at.isoformat() if d.blocked_at else "",
+                         d.expires_at.isoformat() if d.expires_at else "", d.is_active])
+    buf.seek(0)
+    return StreamingResponse(buf, media_type="text/csv",
+                             headers={"Content-Disposition": "attachment; filename=blocked_devices.csv"})
+
+
+# ── Settings ─────────────────────────────────────────────────────────────
+
+
+@router.get("/api/settings", response_model=SystemSettingsResponse)
+async def get_settings(request: Request) -> SystemSettingsResponse:
+    verify_basic_auth(request)
+    return SystemSettingsResponse(
+        ad_duration_seconds=settings.ad_duration_seconds,
+        session_duration_seconds=settings.session_duration_seconds,
+        anti_spam_window_seconds=settings.anti_spam_window_seconds,
+        omada_host=settings.omada_host,
+        environment=settings.environment,
+        app_name=settings.app_name,
+    )
+
+
+@router.patch("/api/settings")
+async def update_settings(
+    request: Request, body: SystemSettingsUpdate, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    updated: dict[str, Any] = {}
+    if body.ad_duration_seconds is not None:
+        settings.ad_duration_seconds = body.ad_duration_seconds
+        updated["ad_duration_seconds"] = body.ad_duration_seconds
+    if body.session_duration_seconds is not None:
+        settings.session_duration_seconds = body.session_duration_seconds
+        updated["session_duration_seconds"] = body.session_duration_seconds
+    if body.anti_spam_window_seconds is not None:
+        settings.anti_spam_window_seconds = body.anti_spam_window_seconds
+        updated["anti_spam_window_seconds"] = body.anti_spam_window_seconds
+    await record_audit(db, request, "update_settings", "settings", None, updated)
+    await db.commit()
+    return {"status": "updated", "changes": updated}
+
+
+@router.post("/api/settings/test-omada")
+async def test_omada_connection(request: Request) -> dict[str, Any]:
+    verify_basic_auth(request)
+    try:
+        omada = get_omada_client()
+        await omada.get_online_clients("Default")
+        return {"status": "ok", "message": "Omada connection successful"}
+    except (OmadaError, RuntimeError) as exc:
+        return {"status": "error", "message": str(exc)}
+
+
+# ── Hotspot Delete + Detail ──────────────────────────────────────────────
+
+
+@router.delete("/api/hotspots/{hotspot_id}")
+async def delete_hotspot(
+    request: Request, hotspot_id: int, db: AsyncSession = Depends(get_db),
+) -> dict[str, str]:
+    verify_basic_auth(request)
+    result = await db.execute(select(Hotspot).where(Hotspot.id == hotspot_id))
+    hotspot = result.scalar_one_or_none()
+    if not hotspot:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    await record_audit(db, request, "delete_hotspot", "hotspot", str(hotspot_id), {"name": hotspot.name})
+    await db.delete(hotspot)
+    await db.commit()
+    return {"status": "deleted"}
+
+
+@router.get("/api/hotspots/{hotspot_id}/detail")
+async def hotspot_detail(
+    request: Request, hotspot_id: int, db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    result = await db.execute(select(Hotspot).where(Hotspot.id == hotspot_id))
+    hotspot = result.scalar_one_or_none()
+    if not hotspot:
+        raise HTTPException(status_code=404, detail="Hotspot not found")
+    now = datetime.now(tz=timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    week_ago = now - timedelta(days=7)
+    visits_today = (await db.execute(
+        select(func.count(Visit.id)).where(Visit.hotspot_id == hotspot_id, Visit.visited_at >= today_start)
+    )).scalar_one() or 0
+    visits_week = (await db.execute(
+        select(func.count(Visit.id)).where(Visit.hotspot_id == hotspot_id, Visit.visited_at >= week_ago)
+    )).scalar_one() or 0
+    ads_today = (await db.execute(
+        select(func.count(AdView.id)).where(AdView.hotspot_id == hotspot_id, AdView.viewed_at >= today_start)
+    )).scalar_one() or 0
+    # Top devices
+    top_devices = await db.execute(
+        select(Visit.client_mac, func.count(Visit.id).label("cnt"))
+        .where(Visit.hotspot_id == hotspot_id, Visit.visited_at >= week_ago)
+        .group_by(Visit.client_mac)
+        .order_by(func.count(Visit.id).desc())
+        .limit(10)
+    )
+    # Daily trend
+    daily = await db.execute(
+        select(func.date(Visit.visited_at).label("day"), func.count(Visit.id).label("cnt"))
+        .where(Visit.hotspot_id == hotspot_id, Visit.visited_at >= week_ago)
+        .group_by(func.date(Visit.visited_at))
+        .order_by(func.date(Visit.visited_at))
+    )
+    return {
+        "hotspot": HotspotResponse.model_validate(hotspot).model_dump(mode="json"),
+        "visits_today": visits_today,
+        "visits_week": visits_week,
+        "ads_today": ads_today,
+        "top_devices": [{"mac": r.client_mac, "count": r.cnt} for r in top_devices.all()],
+        "daily_trend": [{"date": str(r.day), "count": r.cnt} for r in daily.all()],
     }

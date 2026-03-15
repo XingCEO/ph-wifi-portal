@@ -135,6 +135,46 @@ class AccessGrant(Base):
     )
 
 
+class BlockedDevice(Base):
+    __tablename__ = "blocked_devices"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    client_mac: Mapped[str] = mapped_column(String(17), unique=True, nullable=False)
+    reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    blocked_by: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    blocked_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+
+    __table_args__ = (
+        Index("ix_blocked_devices_client_mac", "client_mac"),
+        Index("ix_blocked_devices_expires_at", "expires_at"),
+    )
+
+
+class AdminAuditLog(Base):
+    __tablename__ = "admin_audit_log"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    admin_user: Mapped[str] = mapped_column(String(255), nullable=False)
+    action: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_type: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    target_id: Mapped[str | None] = mapped_column(String(100), nullable=True)
+    details: Mapped[Any] = mapped_column(JSON, nullable=True)
+    ip_address: Mapped[str | None] = mapped_column(String(45), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    __table_args__ = (
+        Index("ix_audit_log_admin_user", "admin_user"),
+        Index("ix_audit_log_action", "action"),
+        Index("ix_audit_log_created_at", "created_at"),
+    )
+
+
 def _make_engine() -> Any:
     return create_async_engine(
         settings.async_database_url,

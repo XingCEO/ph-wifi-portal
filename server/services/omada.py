@@ -31,7 +31,7 @@ class OmadaClient:
         self._csrf_token: str | None = None
         self._lock = asyncio.Lock()
         self._client = httpx.AsyncClient(
-            verify=False,
+            verify=settings.omada_verify_ssl,
             timeout=httpx.Timeout(10.0, connect=5.0),
             limits=httpx.Limits(max_connections=10, max_keepalive_connections=5),
         )
