@@ -34,6 +34,8 @@ def _load_template() -> str:
 def _render_template(template: str, context: dict[str, Any]) -> str:
     result = template
     for key, value in context.items():
+        # 支援 {{ key }} 和 {{key}} 兩種格式
+        result = result.replace(f"{{{{ {key} }}}}", str(value))
         result = result.replace(f"{{{{{key}}}}}", str(value))
     return result
 
