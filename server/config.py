@@ -1,4 +1,23 @@
+import os
 from pydantic_settings import BaseSettings
+
+
+def _get_database_url() -> str:
+    """支援多種 Zeabur 注入的資料庫變數名稱"""
+    for key in ["DATABASE_URL", "POSTGRES_URI", "POSTGRESQL_URI", "POSTGRES_CONNECTION_STRING"]:
+        val = os.environ.get(key, "")
+        if val and not val.startswith("${"):
+            return val
+    return "postgresql+asyncpg://user:pass@localhost/wifi_portal"
+
+
+def _get_redis_url() -> str:
+    """支援多種 Zeabur 注入的 Redis 變數名稱"""
+    for key in ["REDIS_URL", "REDIS_URI", "REDIS_CONNECTION_STRING"]:
+        val = os.environ.get(key, "")
+        if val and not val.startswith("${"):
+            return val
+    return "redis://localhost:6379/0"
 
 
 class Settings(BaseSettings):
@@ -7,12 +26,12 @@ class Settings(BaseSettings):
     environment: str = "production"
     secret_key: str = "change-me-in-production"
 
-    # Database — 支援 postgresql:// 和 postgresql+asyncpg:// 兩種格式
+    # Database
     database_url: str = "postgresql+asyncpg://user:pass@localhost/wifi_portal"
 
     @property
     def async_database_url(self) -> str:
-        url = self.database_url
+        url = _get_database_url()
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
@@ -21,6 +40,10 @@ class Settings(BaseSettings):
 
     # Redis
     redis_url: str = "redis://localhost:6379/0"
+
+    @property
+    def resolved_redis_url(self) -> str:
+        return _get_redis_url()
 
     # Omada OC200
     omada_host: str = "192.168.1.1"

@@ -51,7 +51,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log.info("app_starting", environment=settings.environment)
     await init_db()
     log.info("database_initialized")
-    redis: Redis = Redis.from_url(settings.redis_url, encoding="utf-8", decode_responses=True)
+    redis: Redis = Redis.from_url(settings.resolved_redis_url, encoding="utf-8", decode_responses=True)
     await redis.ping()
     set_redis_instance(redis)
     log.info("redis_connected")
