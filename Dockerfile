@@ -7,7 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY server/ ./server/
 COPY frontend/ ./frontend/
 
-ENV PYTHONPATH=/app
+ENV PYTHONPATH=/app:/app/server
 ENV PYTHONUNBUFFERED=1
 ENV PORT=8000
 
