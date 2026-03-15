@@ -1139,3 +1139,83 @@ async def get_live_users(request: Request, redis: Redis = Depends(get_redis), db
     except (OmadaError, RuntimeError):
         pass
     return {"total_active_users": total, "hotspots": live_data, "omada_clients": len(omada_data), "message": f"{total} active user(s) across {len(hotspots)} hotspot(s)"}
+
+
+@router.get("/api/visits")
+async def list_visits(
+    request: Request,
+    limit: int = Query(default=50, le=200),
+    offset: int = Query(default=0),
+    hotspot_id: int | None = Query(default=None),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    verify_basic_auth(request)
+    q = select(Visit, Hotspot.name.label("hotspot_name")).join(
+        Hotspot, Visit.hotspot_id == Hotspot.id, isouter=True
+    ).order_by(Visit.visited_at.desc()).limit(limit).offset(offset)
+    if hotspot_id:
+        q = q.where(Visit.hotspot_id == hotspot_id)
+    result = await db.execute(q)
+    rows = result.all()
+    total_q = select(func.count(Visit.id))
+    if hotspot_id:
+        total_q = total_q.where(Visit.hotspot_id == hotspot_id)
+    total = (await db.execute(total_q)).scalar_one()
+    return {
+        "total": total,
+        "items": [
+            {
+                "id": row.Visit.id,
+                "client_mac": row.Visit.client_mac,
+                "hotspot_name": row.hotspot_name or "Unknown",
+                "ip_address": row.Visit.ip_address,
+                "user_agent": row.Visit.user_agent,
+                "visited_at": row.Visit.visited_at.isoformat() if row.Visit.visited_at else None,
+            }
+            for row in rows
+        ],
+    }
+
+
+@router.get("/api/security")
+async def security_overview(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+    redis: Redis = Depends(get_redis),
+) -> dict:
+    verify_basic_auth(request)
+    from datetime import timedelta
+    now = datetime.now(tz=timezone.utc)
+    window_start = now - timedelta(hours=1)
+    # 近 1 小時請求量
+    recent_visits = await db.execute(
+        select(func.count(Visit.id)).where(Visit.visited_at >= window_start)
+    )
+    # 高頻 MAC（1小時內超過 5 次）
+    suspicious = await db.execute(
+        select(Visit.client_mac, func.count(Visit.id).label("cnt"))
+        .where(Visit.visited_at >= window_start)
+        .group_by(Visit.client_mac)
+        .having(func.count(Visit.id) > 5)
+        .order_by(func.count(Visit.id).desc())
+        .limit(20)
+    )
+    # 今日總量
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    today_visits = await db.execute(
+        select(func.count(Visit.id)).where(Visit.visited_at >= today_start)
+    )
+    today_ads = await db.execute(
+        select(func.count(AdView.id)).where(AdView.viewed_at >= today_start)
+    )
+    return {
+        "today_requests": today_visits.scalar_one() or 0,
+        "today_ad_views": today_ads.scalar_one() or 0,
+        "last_hour_requests": recent_visits.scalar_one() or 0,
+        "suspicious_macs": [
+            {"mac": row.client_mac, "count": row.cnt}
+            for row in suspicious.all()
+        ],
+        "rate_limit_active": True,
+        "auth_method": "Basic Auth (bcrypt recommended for production)",
+    }
