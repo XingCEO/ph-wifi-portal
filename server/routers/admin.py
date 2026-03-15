@@ -59,599 +59,998 @@ def verify_basic_auth(request: Request) -> None:
         )
 
 
-DASHBOARD_HTML = """<!DOCTYPE html>
+DASHBOARD_HTML = """
+<!DOCTYPE html>
 <html lang="zh-TW">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="light">
-<title>WiFi Portal — Admin Console</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>PH WiFi — Admin Console</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{color-scheme:light;
-  --bg:#f8f9fc;--surface:#fff;--surface2:#f1f3f9;
-  --border:#e2e6f0;--border2:#d0d5e8;
-  --text:#111827;--text2:#4b5563;--text3:#9ca3af;
-  --accent:#6366f1;--accent2:#818cf8;--accent-bg:rgba(99,102,241,.08);
-  --green:#10b981;--green-bg:rgba(16,185,129,.08);
-  --red:#ef4444;--red-bg:rgba(239,68,68,.08);
-  --yellow:#f59e0b;--yellow-bg:rgba(245,158,11,.08);
-  --blue:#3b82f6;--blue-bg:rgba(59,130,246,.08);
-  --sidebar-w:240px;
-  --radius:10px;--radius-lg:16px;
-  --shadow:0 1px 3px rgba(0,0,0,.06),0 1px 2px rgba(0,0,0,.04);
-  --shadow-md:0 4px 12px rgba(0,0,0,.08);
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --primary:#6366f1;--primary-light:#e0e7ff;--primary-dark:#4f46e5;
+  --success:#10b981;--warning:#f59e0b;--danger:#ef4444;--info:#3b82f6;
+  --gray-50:#f9fafb;--gray-100:#f3f4f6;--gray-200:#e5e7eb;--gray-300:#d1d5db;
+  --gray-400:#9ca3af;--gray-500:#6b7280;--gray-600:#4b5563;--gray-700:#374151;
+  --gray-800:#1f2937;--gray-900:#111827;
+  --sidebar-w:240px;--header-h:60px;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.06);
+  --shadow-md:0 4px 6px rgba(0,0,0,.07),0 2px 4px rgba(0,0,0,.06);
+  --shadow-lg:0 10px 15px rgba(0,0,0,.08),0 4px 6px rgba(0,0,0,.05);
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+html,body{height:100%;font-family:'Inter',system-ui,-apple-system,sans-serif;font-size:14px;color:var(--gray-800);background:var(--gray-50)}
 
-/* Sidebar */
-.sb{position:fixed;left:0;top:0;width:var(--sidebar-w);height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:100}
-.sb-logo{padding:20px 20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
-.sb-logo-icon{width:32px;height:32px;background:var(--accent);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px}
-.sb-logo-text{font-size:15px;font-weight:700;color:var(--text)}
-.sb-logo-text span{color:var(--accent)}
-.sb-section{padding:12px 12px 4px;font-size:10px;font-weight:600;color:var(--text3);letter-spacing:.08em;text-transform:uppercase}
-.sb-nav{padding:0 8px;flex:1;overflow-y:auto}
-.sb-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:8px;cursor:pointer;color:var(--text2);font-size:13px;font-weight:500;transition:all .15s;margin-bottom:1px}
-.sb-item:hover{background:var(--surface2);color:var(--text)}
-.sb-item.active{background:var(--accent-bg);color:var(--accent);font-weight:600}
-.sb-item .icon{width:18px;height:18px;opacity:.7;flex-shrink:0}
-.sb-item.active .icon{opacity:1}
-.sb-bottom{padding:12px;border-top:1px solid var(--border)}
-.sb-user{display:flex;align-items:center;gap:10px;padding:8px;border-radius:8px;background:var(--surface2)}
-.sb-avatar{width:32px;height:32px;border-radius:8px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700}
-.sb-user-info .name{font-size:12px;font-weight:600}
-.sb-user-info .role{font-size:11px;color:var(--text3)}
+/* ── Layout ── */
+#app{display:flex;height:100vh;overflow:hidden}
+#sidebar{width:var(--sidebar-w);min-width:var(--sidebar-w);background:#fff;border-right:1px solid var(--gray-200);display:flex;flex-direction:column;z-index:100;transition:transform .3s}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#topbar{height:var(--header-h);background:#fff;border-bottom:1px solid var(--gray-200);display:flex;align-items:center;padding:0 24px;gap:12px;flex-shrink:0}
+#content{flex:1;overflow-y:auto;padding:24px}
 
-/* Main */
-.main{margin-left:var(--sidebar-w);min-height:100vh;display:flex;flex-direction:column}
-.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:56px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
-.topbar-left{display:flex;align-items:center;gap:12px}
-.breadcrumb{font-size:13px;color:var(--text3)}
-.breadcrumb span{color:var(--text);font-weight:600}
-.topbar-right{display:flex;align-items:center;gap:8px}
-.topbar-badge{display:flex;align-items:center;gap:5px;background:var(--green-bg);color:var(--green);padding:5px 12px;border-radius:20px;font-size:11px;font-weight:600;border:1px solid rgba(16,185,129,.2)}
-.dot-pulse{width:6px;height:6px;border-radius:50%;background:currentColor;animation:blink 1.5s infinite}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
-.topbar-btn{padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--text2);font-size:12px;font-weight:500;cursor:pointer;transition:all .15s}
-.topbar-btn:hover{border-color:var(--accent);color:var(--accent)}
+/* ── Sidebar ── */
+.sidebar-logo{padding:18px 20px 16px;border-bottom:1px solid var(--gray-100)}
+.sidebar-logo h1{font-size:17px;font-weight:700;color:var(--primary);letter-spacing:-.3px}
+.sidebar-logo p{font-size:11px;color:var(--gray-400);margin-top:2px}
+.sidebar-nav{flex:1;padding:12px 10px;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--radius-sm);cursor:pointer;color:var(--gray-600);font-weight:500;font-size:13.5px;transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left}
+.nav-item:hover{background:var(--gray-100);color:var(--gray-900)}
+.nav-item.active{background:var(--primary-light);color:var(--primary);font-weight:600}
+.nav-item .icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.sidebar-footer{padding:16px;border-top:1px solid var(--gray-100);font-size:12px;color:var(--gray-400)}
 
-/* Content */
-.content{padding:24px 28px;flex:1}
-.page-header{margin-bottom:24px}
-.page-title{font-size:22px;font-weight:700;letter-spacing:-.02em}
-.page-sub{font-size:13px;color:var(--text3);margin-top:3px}
+/* ── Topbar ── */
+#menu-toggle{display:none;background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-600)}
+.topbar-title{font-weight:600;font-size:16px;color:var(--gray-900);flex:1}
+.topbar-badge{background:var(--primary-light);color:var(--primary);padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600}
+#last-update{font-size:12px;color:var(--gray-400)}
 
-/* Stats Grid */
-.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:20px;box-shadow:var(--shadow)}
-.stat-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
-.stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
-.stat-icon.purple{background:var(--accent-bg)}
-.stat-icon.green{background:var(--green-bg)}
-.stat-icon.blue{background:var(--blue-bg)}
-.stat-icon.yellow{background:var(--yellow-bg)}
-.stat-trend{font-size:11px;font-weight:600;padding:3px 8px;border-radius:20px}
-.stat-trend.up{background:var(--green-bg);color:var(--green)}
-.stat-trend.flat{background:var(--surface2);color:var(--text3)}
-.stat-val{font-size:30px;font-weight:800;letter-spacing:-.04em;color:var(--text)}
-.stat-label{font-size:12px;color:var(--text3);margin-top:4px;font-weight:500}
+/* ── Cards ── */
+.card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--gray-200);padding:20px}
+.card-title{font-size:13px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.5px;margin-bottom:16px}
 
-/* Cards */
-.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
-.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
-.card-title{font-size:14px;font-weight:600;color:var(--text)}
-.card-body{padding:20px}
-.card-actions{display:flex;gap:6px;align-items:center}
+/* ── KPI Grid ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:20px}
+.kpi-card{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow);border:1px solid var(--gray-200);padding:20px;display:flex;flex-direction:column;gap:6px}
+.kpi-label{font-size:12px;font-weight:500;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px}
+.kpi-value{font-size:28px;font-weight:700;color:var(--gray-900);line-height:1.2}
+.kpi-sub{font-size:12px;color:var(--gray-400)}
+.kpi-icon{font-size:24px;margin-bottom:4px}
+.kpi-card.success .kpi-value{color:var(--success)}
+.kpi-card.warning .kpi-value{color:var(--warning)}
+.kpi-card.danger .kpi-value{color:var(--danger)}
+.kpi-card.primary .kpi-value{color:var(--primary)}
 
-/* Grid Layouts */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}
-.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:16px;margin-bottom:16px}
-.mb16{margin-bottom:16px}
+/* ── Section Grid ── */
+.section-grid{display:grid;gap:16px}
+.section-grid.cols-2{grid-template-columns:1fr 1fr}
+.section-grid.cols-3{grid-template-columns:2fr 1fr}
 
-/* Table */
-.table-wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse}
-thead th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--border);white-space:nowrap}
-tbody td{padding:13px 16px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text2)}
-tbody tr:last-child td{border-bottom:none}
-tbody tr:hover td{background:var(--surface2)}
+/* ── Tables ── */
+.table-wrap{overflow-x:auto;border-radius:var(--radius-sm)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+thead th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--gray-500);text-transform:uppercase;letter-spacing:.4px;background:var(--gray-50);border-bottom:1px solid var(--gray-200)}
+tbody tr{border-bottom:1px solid var(--gray-100);transition:background .1s}
+tbody tr:nth-child(even){background:var(--gray-50)}
+tbody tr:hover{background:var(--primary-light)}
+tbody td{padding:10px 14px;color:var(--gray-700)}
 
-/* Badges */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
-.badge::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.7}
-.badge-green{background:var(--green-bg);color:var(--green)}
-.badge-red{background:var(--red-bg);color:var(--red)}
-.badge-yellow{background:var(--yellow-bg);color:var(--yellow)}
-.badge-blue{background:var(--blue-bg);color:var(--blue)}
-.badge-gray{background:var(--surface2);color:var(--text3)}
+/* ── Badge ── */
+.badge{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;line-height:1.4}
+.badge.success{background:#d1fae5;color:#065f46}
+.badge.warning{background:#fef3c7;color:#92400e}
+.badge.danger{background:#fee2e2;color:#991b1b}
+.badge.info{background:#dbeafe;color:#1e40af}
+.badge.gray{background:var(--gray-100);color:var(--gray-600)}
+.dot{width:7px;height:7px;border-radius:50%;display:inline-block}
+.dot.success{background:var(--success)}
+.dot.danger{background:var(--danger)}
+.dot.warning{background:var(--warning)}
 
-/* Buttons */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .15s;font-family:inherit}
-.btn-primary{background:var(--accent);color:#fff}
-.btn-primary:hover{background:#5254d4}
-.btn-secondary{background:var(--surface);color:var(--text2);border:1px solid var(--border)}
-.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
-.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,.2)}
-.btn-sm{padding:5px 12px;font-size:12px}
+/* ── Buttons ── */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer;border:1px solid transparent;transition:all .15s;line-height:1}
+.btn-primary{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn-primary:hover{background:var(--primary-dark)}
+.btn-outline{background:#fff;color:var(--gray-700);border-color:var(--gray-300)}
+.btn-outline:hover{background:var(--gray-50)}
+.btn-danger{background:var(--danger);color:#fff;border-color:var(--danger)}
+.btn-sm{padding:5px 10px;font-size:12px}
 
-/* Form */
-.form-group{margin-bottom:14px}
-.form-label{display:block;font-size:12px;font-weight:600;color:var(--text2);margin-bottom:5px}
-.form-input{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;background:var(--surface);color:var(--text);font-size:13px;outline:none;transition:border-color .15s;font-family:inherit}
-.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
-.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+/* ── Forms ── */
+.form-group{margin-bottom:16px}
+.form-label{display:block;font-size:13px;font-weight:500;color:var(--gray-700);margin-bottom:6px}
+.form-control{width:100%;padding:9px 12px;border:1px solid var(--gray-300);border-radius:var(--radius-sm);font-size:13px;color:var(--gray-800);background:#fff;outline:none;transition:border-color .15s}
+.form-control:focus{border-color:var(--primary);box-shadow:0 0 0 3px rgba(99,102,241,.1)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.form-select{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b7280' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
 
-/* Progress */
-.progress{height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;margin-top:6px}
-.progress-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--blue));border-radius:3px;transition:width .6s ease}
+/* ── Search ── */
+.search-wrap{position:relative;max-width:300px}
+.search-wrap input{padding-left:36px}
+.search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-400);font-size:14px;pointer-events:none}
 
-/* Health Items */
-.health-item{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border)}
-.health-item:last-child{border-bottom:none}
-.health-name{font-size:13px;font-weight:500;color:var(--text2)}
-.health-sub{font-size:11px;color:var(--text3);margin-top:2px}
+/* ── Tabs Content ── */
+.tab-pane{display:none;animation:fadeIn .2s ease}
+.tab-pane.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 
-/* Chart containers */
-.chart-wrap{position:relative;height:220px}
+/* ── Chart containers ── */
+.chart-container{position:relative;height:260px}
+.chart-sm{height:200px}
 
-/* Tab */
-.tab{display:none}.tab.active{display:block}
+/* ── Live monitor ── */
+.live-count{font-size:72px;font-weight:800;color:var(--primary);line-height:1;text-align:center;padding:20px 0}
+.live-label{text-align:center;font-size:15px;color:var(--gray-500);margin-bottom:24px}
+.pulse{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--success);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(16,185,129,.5)}50%{box-shadow:0 0 0 8px rgba(16,185,129,0)}}
 
-/* Config */
-.config-item{background:var(--surface2);border-radius:8px;padding:12px 14px;margin-bottom:8px}
-.config-key{font-size:11px;color:var(--text3);font-weight:600;margin-bottom:4px}
-.config-val{font-size:13px;color:var(--text);font-family:ui-monospace,monospace;word-break:break-all}
-code.copyable{cursor:pointer;padding:8px 12px;background:var(--surface);border:1px solid var(--border);border-radius:8px;display:block;font-size:12px;color:var(--accent);font-family:ui-monospace,monospace;margin-top:6px}
-code.copyable:hover{background:var(--accent-bg)}
+/* ── Health Grid ── */
+.health-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+.health-item{background:var(--gray-50);border:1px solid var(--gray-200);border-radius:var(--radius-sm);padding:14px;text-align:center}
+.health-item .h-label{font-size:11px;color:var(--gray-500);font-weight:500;text-transform:uppercase;letter-spacing:.4px}
+.health-item .h-value{font-size:18px;font-weight:700;margin-top:4px}
+.health-item.ok .h-value{color:var(--success)}
+.health-item.warn .h-value{color:var(--warning)}
+.health-item.err .h-value{color:var(--danger)}
 
-/* Empty state */
-.empty{text-align:center;padding:48px 24px;color:var(--text3)}
-.empty-icon{font-size:40px;margin-bottom:12px}
-.empty-text{font-size:14px;font-weight:500}
-.empty-sub{font-size:12px;margin-top:4px}
+/* ── Security ── */
+.sec-section{margin-bottom:20px}
+.sec-section h3{font-size:13px;font-weight:600;color:var(--gray-700);margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--gray-200)}
+.ip-stat-item{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--gray-100)}
+.ip-stat-item:last-child{border-bottom:none}
 
-/* Live metric */
-.live-num{font-size:48px;font-weight:800;letter-spacing:-.04em;color:var(--green)}
-.live-label{font-size:12px;color:var(--text3);font-weight:500;margin-top:4px}
+/* ── Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:#fff;border-radius:var(--radius);box-shadow:var(--shadow-lg);width:520px;max-width:95vw;max-height:90vh;overflow-y:auto}
+.modal-header{padding:20px 24px 16px;border-bottom:1px solid var(--gray-200);display:flex;justify-content:space-between;align-items:center}
+.modal-header h2{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;font-size:20px;cursor:pointer;color:var(--gray-400);line-height:1}
+.modal-body{padding:24px}
+.modal-footer{padding:16px 24px;border-top:1px solid var(--gray-200);display:flex;justify-content:flex-end;gap:10px}
+
+/* ── Toast ── */
+#toast-container{position:fixed;bottom:20px;right:20px;z-index:2000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;border-radius:var(--radius-sm);color:#fff;font-size:13px;font-weight:500;box-shadow:var(--shadow-md);animation:slideIn .3s ease;max-width:300px}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+.toast.info{background:var(--primary)}
+@keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── Spinner ── */
+.spinner{display:inline-block;width:20px;height:20px;border:2px solid var(--gray-200);border-top-color:var(--primary);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.loading-state{display:flex;align-items:center;gap:10px;color:var(--gray-500);padding:20px}
+.empty-state{text-align:center;padding:40px;color:var(--gray-400)}
+.empty-state .empty-icon{font-size:40px;margin-bottom:8px}
+
+/* ── Responsive ── */
+@media(max-width:768px){
+  #sidebar{position:fixed;top:0;left:0;height:100vh;transform:translateX(-100%)}
+  #sidebar.open{transform:translateX(0);box-shadow:var(--shadow-lg)}
+  #menu-toggle{display:block}
+  .section-grid.cols-2,.section-grid.cols-3{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .kpi-grid{grid-template-columns:1fr 1fr}
+  #content{padding:16px}
+}
+@media(max-width:480px){
+  .kpi-grid{grid-template-columns:1fr}
+  .live-count{font-size:54px}
+}
 </style>
 </head>
 <body>
+<div id="app">
 
-<!-- Sidebar -->
-<div class="sb">
-  <div class="sb-logo">
-    <div class="sb-logo-icon">📡</div>
-    <div class="sb-logo-text">WiFi<span>Portal</span></div>
+<!-- ══ Sidebar ══ -->
+<aside id="sidebar">
+  <div class="sidebar-logo">
+    <h1>&#128246; PH WiFi</h1>
+    <p>Admin Console v2.0</p>
   </div>
-  <div class="sb-nav">
-    <div class="sb-section">主要功能</div>
-    <div class="sb-item active" onclick="nav('overview',this)">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
-      Dashboard 總覽
-    </div>
-    <div class="sb-item" onclick="nav('hotspots',this)">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12.55a11 11 0 0114.08 0"/><path d="M1.42 9a16 16 0 0121.16 0"/><path d="M8.53 16.11a6 6 0 016.95 0"/><circle cx="12" cy="20" r="1"/></svg>
-      熱點管理
-    </div>
-    <div class="sb-item" onclick="nav('revenue',this)">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 100 7h5a3.5 3.5 0 110 7H6"/></svg>
-      收入分析
-    </div>
-    <div class="sb-item" onclick="nav('live',this)">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>
-      即時監控
-    </div>
-    <div class="sb-section">系統</div>
-    <div class="sb-item" onclick="nav('config',this)">
-      <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93l-1.41 1.41M4.93 4.93l1.41 1.41M12 2v2M12 20v2M19.07 19.07l-1.41-1.41M4.93 19.07l1.41-1.41M2 12h2M20 12h2"/></svg>
-      系統設定
-    </div>
+  <nav class="sidebar-nav">
+    <button class="nav-item active" onclick="switchTab('dashboard',this)" data-tab="dashboard">
+      <span class="icon">&#128202;</span>Dashboard
+    </button>
+    <button class="nav-item" onclick="switchTab('hotspots',this)" data-tab="hotspots">
+      <span class="icon">&#128225;</span>熱點管理
+    </button>
+    <button class="nav-item" onclick="switchTab('revenue',this)" data-tab="revenue">
+      <span class="icon">&#128176;</span>收入分析
+    </button>
+    <button class="nav-item" onclick="switchTab('live',this)" data-tab="live">
+      <span class="icon">&#128308;</span>即時監控
+    </button>
+    <button class="nav-item" onclick="switchTab('users',this)" data-tab="users">
+      <span class="icon">&#128101;</span>用戶記錄
+    </button>
+    <button class="nav-item" onclick="switchTab('security',this)" data-tab="security">
+      <span class="icon">&#128274;</span>資安中心
+    </button>
+  </nav>
+  <div class="sidebar-footer">
+    <div>PH WiFi System</div>
+    <div id="sf-time"></div>
   </div>
-  <div class="sb-bottom">
-    <div class="sb-user">
-      <div class="sb-avatar">X</div>
-      <div class="sb-user-info">
-        <div class="name">xingceo</div>
-        <div class="role">Administrator</div>
+</aside>
+
+<!-- ══ Main ══ -->
+<div id="main">
+  <header id="topbar">
+    <button id="menu-toggle" onclick="toggleSidebar()">&#9776;</button>
+    <div class="topbar-title" id="topbar-title">Dashboard</div>
+    <span id="live-indicator" style="display:none"><span class="pulse"></span></span>
+    <span class="topbar-badge" id="topbar-badge">LIVE</span>
+    <span id="last-update"></span>
+  </header>
+
+  <main id="content">
+
+    <!-- ── Tab: Dashboard ── -->
+    <div id="tab-dashboard" class="tab-pane active">
+      <div class="kpi-grid" id="dash-kpis">
+        <div class="loading-state"><span class="spinner"></span> 載入中...</div>
       </div>
+      <div class="section-grid cols-3" style="margin-bottom:20px">
+        <div class="card">
+          <div class="card-title">7 天訪問趨勢</div>
+          <div class="chart-container"><canvas id="chart-trend"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="card-title">&#128139; 系統健康</div>
+          <div id="health-grid" class="health-grid">
+            <div class="loading-state"><span class="spinner"></span></div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">&#128205; 熱點狀態概覽</div>
+        <div class="table-wrap">
+          <table id="dash-hotspot-table">
+            <thead><tr><th>名稱</th><th>地點</th><th>今日用戶</th><th>在線</th><th>狀態</th></tr></thead>
+            <tbody id="dash-hotspot-body">
+              <tr><td colspan="5"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Hotspots ── -->
+    <div id="tab-hotspots" class="tab-pane">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:gap">
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input class="form-control" id="hs-search" placeholder="搜尋熱點名稱或地點..." oninput="filterHotspots()" style="padding-left:36px">
+        </div>
+        <button class="btn btn-primary" onclick="openAddModal()">+ 新增熱點</button>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th><th>名稱</th><th>地點</th><th>AP MAC</th><th>Site</th><th>座標</th><th>今日訪問</th><th>狀態</th><th>操作</th>
+              </tr>
+            </thead>
+            <tbody id="hs-table-body">
+              <tr><td colspan="9"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Revenue ── -->
+    <div id="tab-revenue" class="tab-pane">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <label class="form-label" style="margin:0">月份：</label>
+        <input type="month" class="form-control" id="rev-month" style="width:160px" onchange="loadRevenue()">
+        <button class="btn btn-primary" onclick="loadRevenue()">查詢</button>
+      </div>
+      <div class="kpi-grid" id="rev-kpis">
+        <div class="loading-state"><span class="spinner"></span> 選擇月份後載入...</div>
+      </div>
+      <div class="section-grid cols-2" style="margin-top:16px">
+        <div class="card">
+          <div class="card-title">各熱點收入分解</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>熱點</th><th>地點</th><th>廣告展示</th><th>收入 (PHP)</th><th>佔比</th></tr></thead>
+              <tbody id="rev-table-body">
+                <tr><td colspan="5" class="empty-state">請選擇月份</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">收入分佈</div>
+          <div class="chart-container chart-sm"><canvas id="chart-revenue"></canvas></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Live ── -->
+    <div id="tab-live" class="tab-pane">
+      <div class="card" style="margin-bottom:16px;text-align:center">
+        <div class="live-count" id="live-total">—</div>
+        <div class="live-label">
+          <span class="pulse"></span>&nbsp;
+          目前在線人數 &nbsp;|&nbsp;
+          <span id="live-refresh-countdown">15</span>s 後自動刷新
+        </div>
+        <button class="btn btn-outline" onclick="loadLive()">立即刷新</button>
+      </div>
+      <div class="card">
+        <div class="card-title">各熱點即時狀態</div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>熱點</th><th>地點</th><th>在線人數</th><th>今日訪問</th><th>最後活動</th><th>狀態</th></tr></thead>
+            <tbody id="live-table-body">
+              <tr><td colspan="6"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Users ── -->
+    <div id="tab-users" class="tab-pane">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+        <div class="search-wrap">
+          <span class="search-icon">&#128269;</span>
+          <input class="form-control" id="usr-search" placeholder="搜尋 MAC / IP / 熱點..." oninput="filterUsers()" style="padding-left:36px">
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <select class="form-control form-select" id="usr-hotspot-filter" onchange="filterUsers()" style="width:160px">
+            <option value="">所有熱點</option>
+          </select>
+          <button class="btn btn-outline" onclick="loadUsers()">重新載入</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>MAC 地址</th><th>熱點</th><th>IP 地址</th><th>訪問時間</th><th>User Agent</th></tr>
+            </thead>
+            <tbody id="usr-table-body">
+              <tr><td colspan="6"><div class="loading-state"><span class="spinner"></span> 載入中...</div></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="usr-pagination" style="display:flex;justify-content:flex-end;padding:12px 0;gap:8px"></div>
+      </div>
+    </div>
+
+    <!-- ── Tab: Security ── -->
+    <div id="tab-security" class="tab-pane">
+      <div class="section-grid cols-2">
+        <div>
+          <div class="card sec-section" style="margin-bottom:16px">
+            <div class="sec-section">
+              <h3>&#128202; 今日請求統計</h3>
+              <div id="sec-stats">
+                <div class="loading-state"><span class="spinner"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="sec-section">
+              <h3>&#128683; 異常 MAC 地址（短時間多次請求）</h3>
+              <div id="sec-anomaly">
+                <div class="empty-state"><div class="empty-icon">&#10003;</div>暫無異常</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div class="card" style="margin-bottom:16px">
+            <div class="sec-section">
+              <h3>&#127758; IP 存取統計</h3>
+              <div id="sec-ip-stats">
+                <div class="loading-state"><span class="spinner"></span></div>
+              </div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="sec-section">
+              <h3>&#128221; Admin 登入記錄</h3>
+              <div id="sec-login-log">載入中...</div>
+            </div>
+            <div class="sec-section" style="margin-top:16px">
+              <h3>&#128295; 系統資訊</h3>
+              <div id="sec-sysinfo">
+                <div class="loading-state"><span class="spinner"></span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div><!-- #app -->
+
+<!-- ══ Add Hotspot Modal ══ -->
+<div class="modal-overlay" id="add-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>&#128205; 新增熱點</h2>
+      <button class="modal-close" onclick="closeModal()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">熱點名稱 *</label>
+          <input class="form-control" id="f-name" placeholder="e.g. Mall Entrance">
+        </div>
+        <div class="form-group">
+          <label class="form-label">地點 *</label>
+          <input class="form-control" id="f-location" placeholder="e.g. SM City Cebu">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">AP MAC 地址</label>
+          <input class="form-control" id="f-mac" placeholder="AA:BB:CC:DD:EE:FF">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Omada Site</label>
+          <input class="form-control" id="f-site" placeholder="default">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">緯度 (Latitude)</label>
+          <input class="form-control" id="f-lat" placeholder="10.3157" type="number" step="any">
+        </div>
+        <div class="form-group">
+          <label class="form-label">經度 (Longitude)</label>
+          <input class="form-control" id="f-lng" placeholder="123.8854" type="number" step="any">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">備註</label>
+        <input class="form-control" id="f-note" placeholder="選填備註">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitAddHotspot()">確認新增</button>
     </div>
   </div>
 </div>
 
-<!-- Main -->
-<div class="main">
-  <div class="topbar">
-    <div class="topbar-left">
-      <div class="breadcrumb">WiFi Portal / <span id="bc">Dashboard</span></div>
-    </div>
-    <div class="topbar-right">
-      <div class="topbar-badge"><span class="dot-pulse"></span> LIVE</div>
-      <button class="topbar-btn" onclick="refresh()">↻ 重新整理</button>
-      <div style="font-size:12px;color:var(--text3)" id="ts">-</div>
-    </div>
-  </div>
-
-  <div class="content">
-
-  <!-- ===== OVERVIEW ===== -->
-  <div class="tab active" id="tab-overview">
-    <div class="page-header">
-      <div class="page-title">Dashboard 總覽</div>
-      <div class="page-sub">系統整體運行狀況與關鍵指標</div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-header"><div class="stat-icon purple">👥</div><span class="stat-trend flat" id="t-visits">今日</span></div>
-        <div class="stat-val" id="s-visits">—</div>
-        <div class="stat-label">今日總連線次數</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-header"><div class="stat-icon green">📢</div><span class="stat-trend flat" id="t-ads">今日</span></div>
-        <div class="stat-val" id="s-ads">—</div>
-        <div class="stat-label">今日廣告瀏覽次數</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-header"><div class="stat-icon blue">🟢</div><span class="stat-trend up">LIVE</span></div>
-        <div class="stat-val" id="s-live" style="color:var(--green)">—</div>
-        <div class="stat-label">即時在線用戶</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-header"><div class="stat-icon yellow">💰</div><span class="stat-trend flat">月累計</span></div>
-        <div class="stat-val" id="s-rev">—</div>
-        <div class="stat-label">本月預估收入 (USD)</div>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header">
-          <div class="card-title">📊 今日連線趨勢</div>
-          <span style="font-size:11px;color:var(--text3)" id="chart-note">近 7 天數據</span>
-        </div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="visitChart"></canvas></div></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📡 熱點運行狀況</div></div>
-        <div class="card-body">
-          <table>
-            <thead><tr><th>熱點名稱</th><th>在線</th><th>今日</th><th>狀態</th></tr></thead>
-            <tbody id="ov-hs"><tr><td colspan="4"><div class="empty"><div class="empty-text">載入中...</div></div></td></tr></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="card">
-        <div class="card-header"><div class="card-title">🏥 系統健康狀態</div></div>
-        <div class="card-body" id="ov-health"></div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📈 廣告效益指標</div></div>
-        <div class="card-body">
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
-            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL VISITS</div><div style="font-size:24px;font-weight:700" id="m-tv">—</div></div>
-            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL AD VIEWS</div><div style="font-size:24px;font-weight:700" id="m-ta">—</div></div>
-            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">ACTIVE HOTSPOTS</div><div style="font-size:24px;font-weight:700" id="m-ah">—</div></div>
-            <div><div style="font-size:11px;color:var(--text3);font-weight:600;margin-bottom:6px">TOTAL REVENUE</div><div style="font-size:24px;font-weight:700;color:var(--green)" id="m-tr">—</div></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== HOTSPOTS ===== -->
-  <div class="tab" id="tab-hotspots">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div class="page-title">熱點管理</div><div class="page-sub">管理所有 WiFi 熱點部署點位</div></div>
-      <button class="btn btn-primary" onclick="showAddForm()">＋ 新增熱點</button>
-    </div>
-    <div class="card mb16" id="addFormCard" style="display:none">
-      <div class="card-header"><div class="card-title">新增熱點</div><button class="btn btn-secondary btn-sm" onclick="hideAddForm()">✕ 取消</button></div>
-      <div class="card-body">
-        <div class="form-grid">
-          <div class="form-group"><label class="form-label">熱點名稱 *</label><input class="form-input" id="hN" placeholder="e.g. 馬尼拉咖啡廳 A 店"/></div>
-          <div class="form-group"><label class="form-label">地點描述 *</label><input class="form-input" id="hL" placeholder="e.g. Makati City, Manila"/></div>
-          <div class="form-group"><label class="form-label">AP MAC 地址 *</label><input class="form-input" id="hM" placeholder="aa:bb:cc:dd:ee:ff"/></div>
-          <div class="form-group"><label class="form-label">Omada Site 名稱 *</label><input class="form-input" id="hS" placeholder="default"/></div>
-          <div class="form-group"><label class="form-label">緯度（選填）</label><input class="form-input" id="hLat" placeholder="14.5995"/></div>
-          <div class="form-group"><label class="form-label">經度（選填）</label><input class="form-input" id="hLng" placeholder="120.9842"/></div>
-        </div>
-        <button class="btn btn-primary" onclick="addHotspot()">✓ 確認新增</button>
-      </div>
-    </div>
-    <div class="card">
-      <div class="card-header">
-        <div class="card-title">所有熱點 <span id="hs-count" style="color:var(--text3);font-weight:400;font-size:13px"></span></div>
-        <div class="card-actions">
-          <input class="form-input" id="hs-search" placeholder="搜尋熱點..." style="width:200px" oninput="filterHotspots()" />
-        </div>
-      </div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>熱點名稱</th><th>地點</th><th>AP MAC</th><th>Site</th><th>今日連線</th><th>今日廣告</th><th>累計收入</th><th>狀態</th></tr></thead>
-          <tbody id="hs-table"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== REVENUE ===== -->
-  <div class="tab" id="tab-revenue">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div class="page-title">收入分析</div><div class="page-sub">廣告收益數據與各熱點分解</div></div>
-      <div style="display:flex;align-items:center;gap:8px">
-        <label style="font-size:12px;color:var(--text3)">月份</label>
-        <input type="month" class="form-input" id="revMonth" style="width:160px" onchange="loadRevenue()"/>
-      </div>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon purple">💵</div></div><div class="stat-val" id="r-adcash">—</div><div class="stat-label">Adcash 收入 (USD)</div></div>
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon yellow">🤝</div></div><div class="stat-val" id="r-direct">—</div><div class="stat-label">直接廣告商 (PHP)</div></div>
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon green">👁</div></div><div class="stat-val" id="r-views">—</div><div class="stat-label">廣告瀏覽次數</div></div>
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">📊</div></div><div class="stat-val" id="r-cpm">—</div><div class="stat-label">CPM (USD)</div></div>
-    </div>
-    <div class="grid-3">
-      <div class="card">
-        <div class="card-header"><div class="card-title">各熱點收入分解</div></div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th>#</th><th>熱點名稱</th><th>廣告瀏覽</th><th>收入 USD</th><th>佔比</th></tr></thead>
-            <tbody id="r-table"></tbody>
-          </table>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">收入分佈</div></div>
-        <div class="card-body"><div class="chart-wrap"><canvas id="revChart"></canvas></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== LIVE ===== -->
-  <div class="tab" id="tab-live">
-    <div class="page-header" style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div class="page-title">即時監控</div><div class="page-sub">當前正在使用 WiFi 的用戶統計</div></div>
-      <button class="btn btn-secondary" onclick="loadLive()">↻ 刷新</button>
-    </div>
-    <div class="stats-grid">
-      <div class="stat-card" style="grid-column:span 2;background:linear-gradient(135deg,#f0fdf4,#dcfce7);border-color:rgba(16,185,129,.2)">
-        <div class="stat-header"><div class="stat-icon green">🟢</div><span class="stat-trend up">LIVE</span></div>
-        <div class="live-num" id="live-total">—</div>
-        <div class="live-label">名用戶正在透過你的 WiFi 上網</div>
-      </div>
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon blue">📡</div></div><div class="stat-val" id="live-omada">—</div><div class="stat-label">OC200 連接設備</div></div>
-      <div class="stat-card"><div class="stat-header"><div class="stat-icon purple">📍</div></div><div class="stat-val" id="live-spots">—</div><div class="stat-label">活躍熱點數</div></div>
-    </div>
-    <div class="card">
-      <div class="card-header"><div class="card-title">各熱點即時狀況</div><span style="font-size:11px;color:var(--text3)" id="live-time">—</span></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>熱點名稱</th><th>即時用戶數</th><th>佔比</th><th>狀態</th></tr></thead>
-          <tbody id="live-table"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- ===== CONFIG ===== -->
-  <div class="tab" id="tab-config">
-    <div class="page-header"><div class="page-title">系統設定</div><div class="page-sub">Portal 設定資訊與 OC200 整合指南</div></div>
-    <div class="grid-2">
-      <div>
-        <div class="card mb16">
-          <div class="card-header"><div class="card-title">🔗 Portal 連線設定</div></div>
-          <div class="card-body">
-            <div class="form-group">
-              <label class="form-label">External Portal URL（複製填入 OC200）</label>
-              <code class="copyable" id="cfg-portal-url" onclick="copyText(this)">https://ph-wifi-portal.zeabur.app/portal</code>
-              <div style="font-size:11px;color:var(--text3);margin-top:4px">點擊複製</div>
-            </div>
-            <div class="form-group">
-              <label class="form-label">Health Check URL</label>
-              <code class="copyable" onclick="copyText(this)">https://ph-wifi-portal.zeabur.app/health</code>
-            </div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-              <div class="config-item"><div class="config-key">廣告觀看時間</div><div class="config-val">30 秒</div></div>
-              <div class="config-item"><div class="config-key">上網時長</div><div class="config-val">60 分鐘</div></div>
-            </div>
-          </div>
-        </div>
-        <div class="card">
-          <div class="card-header"><div class="card-title">🖥 系統資訊</div></div>
-          <div class="card-body" id="sys-info">
-            <div class="health-item"><div><div class="health-name">版本</div></div><span class="badge badge-blue">v1.0.0</span></div>
-            <div class="health-item"><div><div class="health-name">資料庫</div></div><span id="si-db" class="badge">—</span></div>
-            <div class="health-item"><div><div class="health-name">Redis 快取</div></div><span id="si-redis" class="badge">—</span></div>
-            <div class="health-item"><div><div class="health-name">OC200 控制器</div></div><span id="si-omada" class="badge badge-yellow">待設定</span></div>
-            <div class="health-item"><div><div class="health-name">環境</div></div><span id="si-env" class="badge badge-blue">production</span></div>
-          </div>
-        </div>
-      </div>
-      <div class="card">
-        <div class="card-header"><div class="card-title">📖 OC200 設定指南</div></div>
-        <div class="card-body">
-          <div style="display:flex;flex-direction:column;gap:16px">
-            <div style="display:flex;gap:12px">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">1</div>
-              <div><div style="font-size:13px;font-weight:600">登入 Omada 控制台</div><div style="font-size:12px;color:var(--text3);margin-top:2px">開啟瀏覽器訪問 OC200 管理介面（預設 192.168.0.1:8043）</div></div>
-            </div>
-            <div style="display:flex;gap:12px">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">2</div>
-              <div><div style="font-size:13px;font-weight:600">進入 Portal 設定</div><div style="font-size:12px;color:var(--text3);margin-top:2px">設定 → 認證 → Hotspot → External Web Portal</div></div>
-            </div>
-            <div style="display:flex;gap:12px">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">3</div>
-              <div><div style="font-size:13px;font-weight:600">填入 Portal URL</div><div style="font-size:12px;color:var(--text3);margin-top:2px">將上方 Portal URL 複製貼入「Portal URL」欄位</div></div>
-            </div>
-            <div style="display:flex;gap:12px">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--accent-bg);color:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">4</div>
-              <div><div style="font-size:13px;font-weight:600">設定 API 憑證</div><div style="font-size:12px;color:var(--text3);margin-top:2px">記錄 OC200 的 IP、Controller ID、帳號密碼，在後台環境變數中設定</div></div>
-            </div>
-            <div style="display:flex;gap:12px">
-              <div style="width:28px;height:28px;border-radius:50%;background:var(--green-bg);color:var(--green);display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;flex-shrink:0">5</div>
-              <div><div style="font-size:13px;font-weight:600;color:var(--green)">完成！</div><div style="font-size:12px;color:var(--text3);margin-top:2px">用戶連上 WiFi 後將自動跳轉到廣告頁面</div></div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  </div><!-- /content -->
-</div><!-- /main -->
+<div id="toast-container"></div>
 
 <script>
-let visitChartInst=null, revChartInst=null, _hsData=[];
+const AUTH = 'Basic eGluZ2Nlbzp4aW5nd2lmaTIwMjY=';
+const headers = { 'Authorization': AUTH, 'Content-Type': 'application/json' };
+const headersGet = { 'Authorization': AUTH };
 
-const PAGES={overview:'Dashboard',hotspots:'熱點管理',revenue:'收入分析',live:'即時監控',config:'系統設定'};
+let trendChart = null;
+let revenueChart = null;
+let liveTimer = null;
+let liveCountdown = 15;
+let allHotspots = [];
+let allUsers = [];
+let usersPage = 0;
+const PAGE_SIZE = 50;
 
-function nav(page, el){
-  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-  document.querySelectorAll('.sb-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('tab-'+page).classList.add('active');
+// ── Helpers ──
+function toast(msg, type='info') {
+  const d = document.createElement('div');
+  d.className = 'toast ' + type;
+  d.textContent = msg;
+  document.getElementById('toast-container').appendChild(d);
+  setTimeout(() => d.remove(), 3500);
+}
+
+function fmt(n) { return n == null ? '—' : Number(n).toLocaleString(); }
+function fmtDate(s) {
+  if (!s) return '—';
+  try { return new Date(s).toLocaleString('zh-TW', {hour12:false}); } catch(e) { return s; }
+}
+function truncate(s, n=40) { return s && s.length > n ? s.slice(0, n) + '...' : (s || '—'); }
+
+function setLastUpdate() {
+  document.getElementById('last-update').textContent = '更新：' + new Date().toLocaleTimeString('zh-TW', {hour12:false});
+}
+
+function sidebarTime() {
+  document.getElementById('sf-time').textContent = new Date().toLocaleTimeString('zh-TW', {hour12:false});
+}
+setInterval(sidebarTime, 1000);
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+document.addEventListener('click', e => {
+  const sb = document.getElementById('sidebar');
+  if (window.innerWidth <= 768 && !sb.contains(e.target) && !document.getElementById('menu-toggle').contains(e.target)) {
+    sb.classList.remove('open');
+  }
+});
+
+// ── Tab switching ──
+const tabTitles = { dashboard:'Dashboard', hotspots:'熱點管理', revenue:'收入分析', live:'即時監控', users:'用戶記錄', security:'資安中心' };
+function switchTab(tab, el) {
+  document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
   el.classList.add('active');
-  document.getElementById('bc').textContent=PAGES[page];
-  const fns={overview:loadOverview,hotspots:loadHotspots,revenue:loadRevenue,live:loadLive,config:loadConfig};
-  if(fns[page])fns[page]();
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('topbar-title').textContent = tabTitles[tab] || tab;
+  const li = document.getElementById('live-indicator');
+  if (tab === 'live') { li.style.display=''; startLiveTimer(); }
+  else { li.style.display='none'; stopLiveTimer(); }
+  if (tab === 'dashboard') loadDashboard();
+  if (tab === 'hotspots') loadHotspots();
+  if (tab === 'revenue') { setDefaultMonth(); loadRevenue(); }
+  if (tab === 'live') loadLive();
+  if (tab === 'users') loadUsers();
+  if (tab === 'security') loadSecurity();
 }
 
-function refresh(){
-  const active=document.querySelector('.sb-item.active');
-  if(active)active.click();
+// ── Dashboard ──
+async function loadDashboard() {
+  await Promise.all([loadStats(), loadHealth()]);
+  setLastUpdate();
 }
 
-function ts(){document.getElementById('ts').textContent='更新 '+new Date().toLocaleTimeString();}
-
-const _auth='Basic '+btoa('xingceo:xingwifi2026');
-async function get(url){const r=await fetch(url,{headers:{Authorization:_auth}});if(!r.ok)throw new Error(r.status);return r.json();}
-
-// Overview
-async function loadOverview(){
-  try{
-    const[s,l,h]=await Promise.all([get('/admin/api/stats'),get('/admin/api/live'),fetch('/health').then(r=>r.json()).catch(()=>({}))]);
-    document.getElementById('s-visits').textContent=(s.today_visits??0).toLocaleString();
-    document.getElementById('s-ads').textContent=(s.today_ad_views??0).toLocaleString();
-    document.getElementById('s-live').textContent=l.total_active_users??0;
-    document.getElementById('s-rev').textContent='$'+parseFloat(s.total_revenue_usd??0).toFixed(2);
-    document.getElementById('m-tv').textContent=(s.total_visits??0).toLocaleString();
-    document.getElementById('m-ta').textContent=(s.total_ad_views??0).toLocaleString();
-    document.getElementById('m-ah').textContent=(s.hotspots??[]).filter(h=>h.is_active).length;
-    document.getElementById('m-tr').textContent='$'+parseFloat(s.total_revenue_usd??0).toFixed(2);
-    // hotspot table
-    const lm={};(l.hotspots??[]).forEach(h=>{lm[h.hotspot_id]=h.active_users;});
-    const hs=s.hotspots??[];
-    document.getElementById('ov-hs').innerHTML=hs.length?hs.map(h=>`<tr><td><b>${h.name}</b></td><td style="color:var(--green);font-weight:700">${lm[h.id]??0}</td><td>${h.today_visits??0}</td><td><span class="badge ${h.is_active?'badge-green':'badge-red'}">${h.is_active?'運行中':'停用'}</span></td></tr>`).join(''):`<tr><td colspan="4"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">尚無熱點</div></div></td></tr>`;
-    // health
-    const hItems=[['資料庫',h.database??s.database_status??'ok','PostgreSQL'],['Redis 快取',h.redis??s.redis_status??'ok','Session & Rate Limit'],['OC200 控制器',s.omada_status??'unconfigured','TP-Link Omada SDK']];
-    document.getElementById('ov-health').innerHTML=hItems.map(([n,v,sub])=>`<div class="health-item"><div><div class="health-name">${n}</div><div class="health-sub">${sub}</div></div><span class="badge ${v==='ok'?'badge-green':v==='unconfigured'?'badge-yellow':'badge-red'}">${v==='ok'?'正常':v==='unconfigured'?'待設定':'異常'}</span></div>`).join('');
-    // Chart
-    const days=7,labels=[],data=[];
-    for(let i=days-1;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);labels.push((d.getMonth()+1)+'/'+(d.getDate()));}
-    for(let i=0;i<days;i++){data.push(i===days-1?s.today_visits??0:Math.floor(Math.random()*30));}
-    if(visitChartInst)visitChartInst.destroy();
-    visitChartInst=new Chart(document.getElementById('visitChart'),{type:'bar',data:{labels,datasets:[{data,backgroundColor:'rgba(99,102,241,.15)',borderColor:'rgba(99,102,241,.8)',borderWidth:2,borderRadius:6,hoverBackgroundColor:'rgba(99,102,241,.25)'}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:11}}},y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{size:11},maxTicksLimit:5}}}}});
-    ts();
-  }catch(e){console.error(e);}
-}
-
-// Hotspots
-async function loadHotspots(){
-  _hsData=await get('/admin/api/hotspots').catch(()=>[]);
-  document.getElementById('hs-count').textContent='('+_hsData.length+')';
-  renderHotspots(_hsData);
-}
-function renderHotspots(data){
-  document.getElementById('hs-table').innerHTML=data.length?data.map((h,i)=>`<tr>
-    <td><div style="font-weight:600">${h.name}</div><div style="font-size:11px;color:var(--text3)">#${h.id}</div></td>
-    <td>${h.location}</td>
-    <td style="font-family:ui-monospace;font-size:11px;color:var(--text3)">${h.ap_mac}</td>
-    <td style="font-size:11px">${h.site_name}</td>
-    <td style="font-weight:600">${h.today_visits??0}</td>
-    <td style="font-weight:600">${h.today_ad_views??0}</td>
-    <td style="color:var(--green);font-weight:600">$${parseFloat(h.total_revenue_usd??0).toFixed(2)}</td>
-    <td><span class="badge ${h.is_active?'badge-green':'badge-red'}">${h.is_active?'運行中':'停用'}</span></td>
-  </tr>`).join(''):`<tr><td colspan="8"><div class="empty"><div class="empty-icon">📡</div><div class="empty-text">尚無熱點</div><div class="empty-sub">點擊「新增熱點」開始部署</div></div></td></tr>`;
-}
-function filterHotspots(){const q=document.getElementById('hs-search').value.toLowerCase();renderHotspots(_hsData.filter(h=>(h.name+h.location+h.ap_mac).toLowerCase().includes(q)));}
-function showAddForm(){document.getElementById('addFormCard').style.display='block';window.scrollTo({top:0,behavior:'smooth'});}
-function hideAddForm(){document.getElementById('addFormCard').style.display='none';}
-async function addHotspot(){
-  const d={name:document.getElementById('hN').value,location:document.getElementById('hL').value,ap_mac:document.getElementById('hM').value,site_name:document.getElementById('hS').value};
-  const lat=document.getElementById('hLat').value,lng=document.getElementById('hLng').value;
-  if(lat)d.latitude=parseFloat(lat);if(lng)d.longitude=parseFloat(lng);
-  if(!d.name||!d.ap_mac||!d.site_name){alert('名稱、AP MAC、Site 名稱為必填');return;}
-  const r=await fetch('/admin/api/hotspots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)});
-  if(r.ok){hideAddForm();['hN','hL','hM','hS','hLat','hLng'].forEach(id=>document.getElementById(id).value='');loadHotspots();}
-  else{const e=await r.json().catch(()=>({}));alert('新增失敗：'+(e.detail||'請檢查資料格式'));}
-}
-
-// Revenue
-async function loadRevenue(){
-  const m=document.getElementById('revMonth').value;
-  if(!m)return;
-  const d=await get('/admin/api/revenue?month='+m).catch(()=>null);
-  if(!d)return;
-  document.getElementById('r-adcash').textContent='$'+parseFloat(d.adcash_revenue_usd??0).toFixed(2);
-  document.getElementById('r-direct').textContent='₱'+parseFloat(d.direct_revenue_php??0).toFixed(0);
-  document.getElementById('r-views').textContent=(d.total_ad_views??0).toLocaleString();
-  const cpm=d.total_ad_views>0?(parseFloat(d.adcash_revenue_usd??0)/d.total_ad_views*1000).toFixed(3):'0.000';
-  document.getElementById('r-cpm').textContent='$'+cpm;
-  const bk=d.breakdown_by_hotspot??[];
-  const total=bk.reduce((s,b)=>s+parseFloat(b.revenue_usd),0)||1;
-  document.getElementById('r-table').innerHTML=bk.length?bk.sort((a,b)=>parseFloat(b.revenue_usd)-parseFloat(a.revenue_usd)).map((b,i)=>{
-    const pct=(parseFloat(b.revenue_usd)/total*100).toFixed(1);
-    return `<tr><td style="color:var(--text3);font-size:12px">${i+1}</td><td><b>${b.hotspot_name}</b></td><td>${b.ad_views.toLocaleString()}</td><td style="color:var(--green);font-weight:600">$${parseFloat(b.revenue_usd).toFixed(2)}</td><td><div style="font-size:12px;color:var(--text3)">${pct}%</div><div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div></td></tr>`;
-  }).join(''):`<tr><td colspan="5"><div class="empty"><div class="empty-icon">💰</div><div class="empty-text">本月尚無收入資料</div></div></td></tr>`;
-  // Doughnut chart
-  if(revChartInst)revChartInst.destroy();
-  if(bk.length){
-    revChartInst=new Chart(document.getElementById('revChart'),{type:'doughnut',data:{labels:bk.map(b=>b.hotspot_name),datasets:[{data:bk.map(b=>parseFloat(b.revenue_usd)),backgroundColor:['#6366f1','#10b981','#3b82f6','#f59e0b','#ef4444'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{font:{size:11},padding:12}}}}});
+async function loadStats() {
+  try {
+    const r = await fetch('/admin/api/stats', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    renderDashKPIs(d);
+    renderDashHotspots(d.hotspots || []);
+    renderTrendChart(d.daily_trend || []);
+  } catch(e) {
+    document.getElementById('dash-kpis').innerHTML = '<div class="empty-state"><div class="empty-icon">&#9888;</div>載入失敗：' + e.message + '</div>';
   }
 }
 
-// Live
-async function loadLive(){
-  const d=await get('/admin/api/live').catch(()=>null);if(!d)return;
-  document.getElementById('live-total').textContent=d.total_active_users??0;
-  document.getElementById('live-omada').textContent=d.omada_clients??'—';
-  const hs=d.hotspots??[];
-  document.getElementById('live-spots').textContent=hs.filter(h=>h.active_users>0).length;
-  document.getElementById('live-time').textContent='更新 '+new Date().toLocaleTimeString();
-  const total=hs.reduce((s,h)=>s+h.active_users,0)||1;
-  document.getElementById('live-table').innerHTML=hs.length?hs.sort((a,b)=>b.active_users-a.active_users).map(h=>{
-    const pct=(h.active_users/total*100).toFixed(0);
-    return `<tr><td><b>${h.hotspot_name}</b></td><td style="color:var(--green);font-size:20px;font-weight:800">${h.active_users}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="progress" style="width:80px;flex-shrink:0"><div class="progress-fill" style="width:${pct}%"></div></div><span style="font-size:12px;color:var(--text3)">${pct}%</span></div></td><td><span class="badge ${h.active_users>0?'badge-green':'badge-gray'}">${h.active_users>0?'有用戶':'空閒'}</span></td></tr>`;
-  }).join(''):`<tr><td colspan="4"><div class="empty"><div class="empty-icon">🟢</div><div class="empty-text">暫無在線用戶</div></div></td></tr>`;
+function renderDashKPIs(d) {
+  const kpis = [
+    { label:'今日訪客', value: fmt(d.today_visitors), icon:'&#128100;', cls:'primary', sub:'當日訪問' },
+    { label:'總連線數', value: fmt(d.total_connections), icon:'&#128225;', cls:'success', sub:'累計紀錄' },
+    { label:'活躍熱點', value: fmt(d.active_hotspots) + ' / ' + fmt(d.total_hotspots), icon:'&#128205;', cls:'warning', sub:'熱點狀態' },
+    { label:'本月收入', value: 'PHP ' + fmt(d.monthly_revenue), icon:'&#128176;', cls:'primary', sub:'廣告收入' },
+  ];
+  document.getElementById('dash-kpis').innerHTML = kpis.map(k =>
+    '<div class="kpi-card ' + k.cls + '">' +
+    '<div class="kpi-icon">' + k.icon + '</div>' +
+    '<div class="kpi-label">' + k.label + '</div>' +
+    '<div class="kpi-value">' + k.value + '</div>' +
+    '<div class="kpi-sub">' + k.sub + '</div></div>'
+  ).join('');
 }
 
-// Config
-async function loadConfig(){
-  const d=await get('/admin/api/stats').catch(()=>null);if(!d)return;
-  document.getElementById('cfg-portal-url').textContent=window.location.origin+'/portal';
-  document.getElementById('si-env').textContent=d.environment||'production';
-  document.getElementById('si-db').className='badge '+(d.database_status==='ok'?'badge-green':'badge-red');
-  document.getElementById('si-db').textContent=d.database_status==='ok'?'正常':'異常';
-  document.getElementById('si-redis').className='badge '+(d.redis_status==='ok'?'badge-green':'badge-red');
-  document.getElementById('si-redis').textContent=d.redis_status==='ok'?'正常':'異常';
+function renderDashHotspots(hs) {
+  const tbody = document.getElementById('dash-hotspot-body');
+  if (!hs.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">無資料</div></td></tr>'; return; }
+  tbody.innerHTML = hs.map(h =>
+    '<tr><td><strong>' + (h.name || h.id || '—') + '</strong></td>' +
+    '<td>' + (h.location || '—') + '</td>' +
+    '<td>' + fmt(h.today_visits) + '</td>' +
+    '<td>' + fmt(h.online_users) + '</td>' +
+    '<td><span class="badge ' + (h.is_active ? 'success' : 'danger') + '"><span class="dot ' + (h.is_active ? 'success' : 'danger') + '"></span>' + (h.is_active ? '正常' : '離線') + '</span></td></tr>'
+  ).join('');
 }
 
-function copyText(el){
-  navigator.clipboard.writeText(el.textContent).then(()=>{
-    const orig=el.style.color;el.style.color='var(--green)';
-    setTimeout(()=>{el.style.color=orig;},800);
+function renderTrendChart(data) {
+  const ctx = document.getElementById('chart-trend');
+  if (!ctx) return;
+  if (trendChart) { trendChart.destroy(); trendChart = null; }
+  const labels = data.map(d => d.date || d.day || '').slice(-7);
+  const values = data.map(d => d.count || d.visits || 0).slice(-7);
+  trendChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{ label:'每日訪客', data: values, backgroundColor:'rgba(99,102,241,.7)', borderColor:'#6366f1', borderWidth:1, borderRadius:6 }]
+    },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ display:false } },
+      scales:{ y:{ beginAtZero:true, ticks:{ maxTicksLimit:5 }, grid:{ color:'rgba(0,0,0,.05)' } }, x:{ grid:{ display:false } } }
+    }
   });
 }
 
-// Init
-const now=new Date();
-document.getElementById('revMonth').value=now.getFullYear()+'-'+(String(now.getMonth()+1).padStart(2,'0'));
-loadOverview();
-setInterval(()=>{
-  if(document.getElementById('tab-overview').classList.contains('active'))loadOverview();
-  if(document.getElementById('tab-live').classList.contains('active'))loadLive();
-},20000);
+async function loadHealth() {
+  try {
+    const r = await fetch('/health', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    renderHealth(d);
+  } catch(e) {
+    document.getElementById('health-grid').innerHTML = '<div class="empty-state">&#9888; 無法取得健康狀態</div>';
+  }
+}
+
+function renderHealth(d) {
+  const items = [
+    { label:'DB', value: d.db || d.database || 'unknown' },
+    { label:'Redis', value: d.redis || 'unknown' },
+    { label:'版本', value: d.version || '—' },
+    { label:'狀態', value: d.status || d.overall || 'ok' },
+  ];
+  const grid = document.getElementById('health-grid');
+  grid.innerHTML = items.map(i => {
+    const v = String(i.value).toLowerCase();
+    const cls = v === 'ok' || v === 'healthy' || v === 'connected' ? 'ok' : v === 'warn' || v === 'degraded' ? 'warn' : 'ok';
+    return '<div class="health-item ' + cls + '"><div class="h-label">' + i.label + '</div><div class="h-value">' + i.value + '</div></div>';
+  }).join('');
+}
+
+// ── Hotspots ──
+async function loadHotspots() {
+  try {
+    const r = await fetch('/admin/api/hotspots', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    allHotspots = d.hotspots || d || [];
+    renderHotspotTable(allHotspots);
+    populateHotspotFilter(allHotspots);
+  } catch(e) {
+    document.getElementById('hs-table-body').innerHTML = '<tr><td colspan="9"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+  }
+}
+
+function renderHotspotTable(hs) {
+  const tbody = document.getElementById('hs-table-body');
+  if (!hs.length) { tbody.innerHTML = '<tr><td colspan="9"><div class="empty-state"><div class="empty-icon">&#128205;</div>無熱點資料</div></td></tr>'; return; }
+  tbody.innerHTML = hs.map(h =>
+    '<tr>' +
+    '<td>' + (h.id || '—') + '</td>' +
+    '<td><strong>' + (h.name || '—') + '</strong></td>' +
+    '<td>' + (h.location || '—') + '</td>' +
+    '<td><code style="font-size:11px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + (h.ap_mac || '—') + '</code></td>' +
+    '<td>' + (h.site_id || h.site || '—') + '</td>' +
+    '<td style="font-size:11px;color:var(--gray-500)">' + (h.latitude ? h.latitude.toFixed(4) + ', ' + (h.longitude || 0).toFixed(4) : '—') + '</td>' +
+    '<td>' + fmt(h.today_visits || 0) + '</td>' +
+    '<td><span class="badge ' + (h.is_active !== false ? 'success' : 'danger') + '">' + (h.is_active !== false ? '啟用' : '停用') + '</span></td>' +
+    '<td><button class="btn btn-outline btn-sm" onclick="toggleHotspot(' + h.id + ',' + (h.is_active !== false) + ')">' + (h.is_active !== false ? '停用' : '啟用') + '</button></td>' +
+    '</tr>'
+  ).join('');
+}
+
+function filterHotspots() {
+  const q = document.getElementById('hs-search').value.toLowerCase();
+  const filtered = allHotspots.filter(h => (h.name || '').toLowerCase().includes(q) || (h.location || '').toLowerCase().includes(q));
+  renderHotspotTable(filtered);
+}
+
+async function toggleHotspot(id, currentActive) {
+  try {
+    const r = await fetch('/admin/api/hotspots/' + id, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({ is_active: !currentActive })
+    });
+    if (!r.ok) throw new Error(r.status);
+    toast((currentActive ? '已停用' : '已啟用') + ' 熱點 #' + id, 'success');
+    loadHotspots();
+  } catch(e) {
+    toast('操作失敗：' + e.message, 'error');
+  }
+}
+
+function openAddModal() { document.getElementById('add-modal').classList.add('show'); }
+function closeModal() { document.getElementById('add-modal').classList.remove('show'); }
+
+async function submitAddHotspot() {
+  const name = document.getElementById('f-name').value.trim();
+  const location = document.getElementById('f-location').value.trim();
+  if (!name || !location) { toast('請填寫名稱與地點', 'error'); return; }
+  const payload = {
+    name, location,
+    ap_mac: document.getElementById('f-mac').value.trim() || null,
+    site_id: document.getElementById('f-site').value.trim() || null,
+    latitude: parseFloat(document.getElementById('f-lat').value) || null,
+    longitude: parseFloat(document.getElementById('f-lng').value) || null,
+    notes: document.getElementById('f-note').value.trim() || null,
+    is_active: true
+  };
+  try {
+    const r = await fetch('/admin/api/hotspots', { method:'POST', headers, body:JSON.stringify(payload) });
+    if (!r.ok) { const e = await r.json(); throw new Error(e.detail || r.status); }
+    toast('熱點新增成功！', 'success');
+    closeModal();
+    loadHotspots();
+    ['f-name','f-location','f-mac','f-site','f-lat','f-lng','f-note'].forEach(id => { document.getElementById(id).value = ''; });
+  } catch(e) {
+    toast('新增失敗：' + e.message, 'error');
+  }
+}
+
+function populateHotspotFilter(hs) {
+  const sel = document.getElementById('usr-hotspot-filter');
+  const cur = sel.value;
+  sel.innerHTML = '<option value="">所有熱點</option>' + hs.map(h => '<option value="' + h.id + '">' + (h.name || h.id) + '</option>').join('');
+  sel.value = cur;
+}
+
+// ── Revenue ──
+function setDefaultMonth() {
+  const el = document.getElementById('rev-month');
+  if (!el.value) {
+    const now = new Date();
+    el.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+  }
+}
+
+async function loadRevenue() {
+  const month = document.getElementById('rev-month').value;
+  if (!month) { toast('請選擇月份', 'error'); return; }
+  try {
+    const r = await fetch('/admin/api/revenue?month=' + month, { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    renderRevenueKPIs(d, month);
+    renderRevenueTable(d.breakdown || d.hotspots || []);
+    renderRevenueChart(d.breakdown || d.hotspots || []);
+  } catch(e) {
+    document.getElementById('rev-kpis').innerHTML = '<div class="empty-state">&#9888; 載入失敗：' + e.message + '</div>';
+  }
+}
+
+function renderRevenueKPIs(d, month) {
+  const kpis = [
+    { label:'月份', value: month, icon:'&#128197;', cls:'' },
+    { label:'總收入', value: 'PHP ' + fmt(d.total_revenue), icon:'&#128176;', cls:'success' },
+    { label:'廣告展示', value: fmt(d.total_ad_views), icon:'&#128247;', cls:'primary' },
+    { label:'總訪客', value: fmt(d.total_visitors), icon:'&#128100;', cls:'warning' },
+  ];
+  document.getElementById('rev-kpis').innerHTML = kpis.map(k =>
+    '<div class="kpi-card ' + k.cls + '"><div class="kpi-icon">' + k.icon + '</div><div class="kpi-label">' + k.label + '</div><div class="kpi-value">' + k.value + '</div></div>'
+  ).join('');
+}
+
+function renderRevenueTable(breakdown) {
+  const tbody = document.getElementById('rev-table-body');
+  if (!breakdown.length) { tbody.innerHTML = '<tr><td colspan="5"><div class="empty-state">無資料</div></td></tr>'; return; }
+  const total = breakdown.reduce((s, r) => s + (r.revenue || 0), 0);
+  tbody.innerHTML = breakdown.map(r => {
+    const pct = total > 0 ? ((r.revenue || 0) / total * 100).toFixed(1) : 0;
+    return '<tr><td><strong>' + (r.hotspot_name || r.name || '—') + '</strong></td>' +
+      '<td>' + (r.location || '—') + '</td>' +
+      '<td>' + fmt(r.ad_views || r.views || 0) + '</td>' +
+      '<td><strong>PHP ' + fmt(r.revenue || 0) + '</strong></td>' +
+      '<td><div style="display:flex;align-items:center;gap:8px"><div style="background:var(--primary-light);border-radius:4px;height:8px;width:80px;overflow:hidden"><div style="background:var(--primary);height:100%;width:' + pct + '%"></div></div>' + pct + '%</div></td></tr>';
+  }).join('');
+}
+
+function renderRevenueChart(breakdown) {
+  const ctx = document.getElementById('chart-revenue');
+  if (!ctx) return;
+  if (revenueChart) { revenueChart.destroy(); revenueChart = null; }
+  if (!breakdown.length) return;
+  const labels = breakdown.map(r => r.hotspot_name || r.name || '?');
+  const data = breakdown.map(r => r.revenue || 0);
+  const colors = ['#6366f1','#10b981','#f59e0b','#ef4444','#3b82f6','#8b5cf6','#ec4899','#14b8a6'];
+  revenueChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors.slice(0, data.length), borderWidth:2, borderColor:'#fff' }] },
+    options: {
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{ position:'bottom', labels:{ boxWidth:12, font:{ size:11 } } } }
+    }
+  });
+}
+
+// ── Live ──
+function startLiveTimer() {
+  stopLiveTimer();
+  liveCountdown = 15;
+  liveTimer = setInterval(() => {
+    liveCountdown--;
+    const el = document.getElementById('live-refresh-countdown');
+    if (el) el.textContent = liveCountdown;
+    if (liveCountdown <= 0) {
+      liveCountdown = 15;
+      loadLive();
+    }
+  }, 1000);
+}
+
+function stopLiveTimer() {
+  if (liveTimer) { clearInterval(liveTimer); liveTimer = null; }
+}
+
+async function loadLive() {
+  liveCountdown = 15;
+  try {
+    const r = await fetch('/admin/api/live', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const total = d.total_online || d.total || 0;
+    document.getElementById('live-total').textContent = fmt(total);
+    renderLiveTable(d.hotspots || []);
+    setLastUpdate();
+  } catch(e) {
+    document.getElementById('live-total').textContent = '—';
+    document.getElementById('live-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+  }
+}
+
+function renderLiveTable(hs) {
+  const tbody = document.getElementById('live-table-body');
+  if (!hs.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state">無熱點在線</div></td></tr>'; return; }
+  tbody.innerHTML = hs.map(h =>
+    '<tr>' +
+    '<td><strong>' + (h.name || '—') + '</strong></td>' +
+    '<td>' + (h.location || '—') + '</td>' +
+    '<td style="font-size:18px;font-weight:700;color:var(--primary)">' + fmt(h.online || h.online_users || 0) + '</td>' +
+    '<td>' + fmt(h.today_visits || 0) + '</td>' +
+    '<td>' + fmtDate(h.last_activity || h.last_seen) + '</td>' +
+    '<td><span class="badge ' + (h.is_active !== false ? 'success' : 'danger') + '"><span class="dot ' + (h.is_active !== false ? 'success' : 'danger') + '"></span>' + (h.is_active !== false ? '在線' : '離線') + '</span></td>' +
+    '</tr>'
+  ).join('');
+}
+
+// ── Users ──
+async function loadUsers() {
+  usersPage = 0;
+  try {
+    const r = await fetch('/admin/api/stats', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    allUsers = d.recent_visits || d.visits || [];
+    if (allHotspots.length === 0 && d.hotspots) {
+      allHotspots = d.hotspots;
+      populateHotspotFilter(allHotspots);
+    }
+    renderUsersTable();
+  } catch(e) {
+    try {
+      const r2 = await fetch('/admin/api/hotspots', { headers: headersGet });
+      const d2 = await r2.json();
+      allHotspots = d2.hotspots || d2 || [];
+      populateHotspotFilter(allHotspots);
+    } catch(_) {}
+    document.getElementById('usr-table-body').innerHTML = '<tr><td colspan="6"><div class="empty-state">&#9888; 載入失敗：' + e.message + '</div></td></tr>';
+  }
+}
+
+function filterUsers() {
+  usersPage = 0;
+  renderUsersTable();
+}
+
+function renderUsersTable() {
+  const q = document.getElementById('usr-search').value.toLowerCase();
+  const hsFilter = document.getElementById('usr-hotspot-filter').value;
+  let filtered = allUsers.filter(u => {
+    const matchQ = !q || (u.mac || '').toLowerCase().includes(q) || (u.ip || '').toLowerCase().includes(q) || (u.hotspot_name || '').toLowerCase().includes(q);
+    const matchHs = !hsFilter || String(u.hotspot_id) === hsFilter;
+    return matchQ && matchHs;
+  });
+  const total = filtered.length;
+  const paged = filtered.slice(usersPage * PAGE_SIZE, (usersPage + 1) * PAGE_SIZE);
+  const tbody = document.getElementById('usr-table-body');
+  if (!paged.length) { tbody.innerHTML = '<tr><td colspan="6"><div class="empty-state"><div class="empty-icon">&#128100;</div>無訪問記錄</div></td></tr>'; }
+  else {
+    tbody.innerHTML = paged.map((u, i) =>
+      '<tr>' +
+      '<td>' + (usersPage * PAGE_SIZE + i + 1) + '</td>' +
+      '<td><code style="font-size:12px;background:var(--gray-100);padding:2px 6px;border-radius:4px">' + (u.mac || u.mac_address || '—') + '</code></td>' +
+      '<td>' + (u.hotspot_name || u.hotspot || '—') + '</td>' +
+      '<td><code style="font-size:12px">' + (u.ip || u.ip_address || '—') + '</code></td>' +
+      '<td>' + fmtDate(u.created_at || u.timestamp || u.visited_at) + '</td>' +
+      '<td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="' + (u.user_agent || '') + '">' + truncate(u.user_agent, 35) + '</td>' +
+      '</tr>'
+    ).join('');
+  }
+  const pg = document.getElementById('usr-pagination');
+  const totalPages = Math.ceil(total / PAGE_SIZE);
+  let pgHtml = '<span style="color:var(--gray-500);font-size:12px;align-self:center">共 ' + total + ' 筆</span>';
+  if (totalPages > 1) {
+    pgHtml += '<button class="btn btn-outline btn-sm" onclick="setPage(' + (usersPage - 1) + ')" ' + (usersPage === 0 ? 'disabled' : '') + '>上一頁</button>';
+    pgHtml += '<span style="font-size:13px;color:var(--gray-600)">' + (usersPage + 1) + ' / ' + totalPages + '</span>';
+    pgHtml += '<button class="btn btn-outline btn-sm" onclick="setPage(' + (usersPage + 1) + ')" ' + (usersPage >= totalPages - 1 ? 'disabled' : '') + '>下一頁</button>';
+  }
+  pg.innerHTML = pgHtml;
+}
+
+function setPage(p) { usersPage = p; renderUsersTable(); }
+
+// ── Security ──
+async function loadSecurity() {
+  recordAdminLogin();
+  renderLoginLog();
+  await Promise.all([loadSecurityStats(), loadSysInfo()]);
+}
+
+function recordAdminLogin() {
+  const now = new Date().toISOString();
+  let logs = JSON.parse(localStorage.getItem('admin_logins') || '[]');
+  logs.unshift({ time: now, ua: navigator.userAgent.slice(0, 80) });
+  if (logs.length > 20) logs = logs.slice(0, 20);
+  localStorage.setItem('admin_logins', JSON.stringify(logs));
+}
+
+function renderLoginLog() {
+  const logs = JSON.parse(localStorage.getItem('admin_logins') || '[]');
+  const div = document.getElementById('sec-login-log');
+  if (!logs.length) { div.innerHTML = '<div class="empty-state">無記錄</div>'; return; }
+  div.innerHTML = logs.slice(0, 10).map((l, i) =>
+    '<div class="ip-stat-item">' +
+    '<div><strong>' + fmtDate(l.time) + '</strong>' + (i === 0 ? ' <span class="badge success">本次</span>' : '') +
+    '<div style="font-size:11px;color:var(--gray-400);margin-top:2px">' + truncate(l.ua, 50) + '</div></div>' +
+    '</div>'
+  ).join('');
+}
+
+async function loadSecurityStats() {
+  try {
+    const r = await fetch('/admin/api/stats', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    const today = d.today_visitors || 0;
+    const total = d.total_connections || 0;
+    const hs = d.hotspots || [];
+    document.getElementById('sec-stats').innerHTML =
+      '<div class="ip-stat-item"><span>今日訪客</span><span class="badge info">' + fmt(today) + '</span></div>' +
+      '<div class="ip-stat-item"><span>累計連線</span><span class="badge gray">' + fmt(total) + '</span></div>' +
+      '<div class="ip-stat-item"><span>活躍熱點</span><span class="badge success">' + fmt(d.active_hotspots || hs.filter(h => h.is_active).length) + '</span></div>' +
+      '<div class="ip-stat-item"><span>離線熱點</span><span class="badge ' + (d.inactive_hotspots > 0 ? 'danger' : 'gray') + '">' + fmt(d.inactive_hotspots || hs.filter(h => !h.is_active).length) + '</span></div>';
+    const visits = d.recent_visits || [];
+    const macCount = {};
+    visits.forEach(v => { const m = v.mac || v.mac_address; if (m) macCount[m] = (macCount[m] || 0) + 1; });
+    const anomaly = Object.entries(macCount).filter(([,c]) => c >= 5).sort((a,b) => b[1]-a[1]);
+    const ipCount = {};
+    visits.forEach(v => { const ip = v.ip || v.ip_address; if (ip) ipCount[ip] = (ipCount[ip] || 0) + 1; });
+    const topIPs = Object.entries(ipCount).sort((a,b) => b[1]-a[1]).slice(0, 8);
+    if (anomaly.length) {
+      document.getElementById('sec-anomaly').innerHTML = anomaly.map(([mac, c]) =>
+        '<div class="ip-stat-item"><code style="font-size:12px">' + mac + '</code><span class="badge danger">' + c + ' 次</span></div>'
+      ).join('');
+    }
+    if (topIPs.length) {
+      document.getElementById('sec-ip-stats').innerHTML = topIPs.map(([ip, c]) =>
+        '<div class="ip-stat-item"><code style="font-size:12px">' + ip + '</code><span class="badge info">' + c + ' 次</span></div>'
+      ).join('');
+    } else {
+      document.getElementById('sec-ip-stats').innerHTML = '<div class="empty-state">無 IP 統計資料</div>';
+    }
+  } catch(e) {
+    document.getElementById('sec-stats').innerHTML = '<div class="empty-state">&#9888; ' + e.message + '</div>';
+  }
+}
+
+async function loadSysInfo() {
+  try {
+    const r = await fetch('/health', { headers: headersGet });
+    if (!r.ok) throw new Error(r.status);
+    const d = await r.json();
+    document.getElementById('sec-sysinfo').innerHTML =
+      Object.entries(d).map(([k, v]) =>
+        '<div class="ip-stat-item"><span style="font-weight:500">' + k + '</span>' +
+        '<span class="badge ' + (String(v).toLowerCase() === 'ok' || String(v).toLowerCase() === 'healthy' ? 'success' : 'gray') + '">' + v + '</span></div>'
+      ).join('') +
+      '<div class="ip-stat-item"><span>當前時間</span><span style="font-size:12px;color:var(--gray-500)">' + new Date().toLocaleString('zh-TW') + '</span></div>';
+  } catch(e) {
+    document.getElementById('sec-sysinfo').innerHTML = '<div class="empty-state">無法取得系統資訊</div>';
+  }
+}
+
+// ── Init ──
+(function init() {
+  loadDashboard();
+  setDefaultMonth();
+})();
 </script>
-</body></html>"""
+</body>
+</html>
+"""
 
 
 import base64
