@@ -1,58 +1,167 @@
-from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from fastapi.responses import JSONResponse
-from models.database import init_db
-from routers import portal, auth, admin
-import logging, time, uuid
+from __future__ import annotations
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-logger = logging.getLogger(__name__)
+import time
+import uuid
+from collections import defaultdict
+from contextlib import asynccontextmanager
+from typing import Any, AsyncGenerator
+
+import structlog
+from fastapi import FastAPI, Request, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from redis.asyncio import Redis
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
+from slowapi.util import get_remote_address
+
+from config import settings
+from models.database import init_db
+from models.schemas import ErrorResponse, HealthResponse
+from routers import admin, auth, portal
+from services import omada as omada_module
+from services.redis_service import set_redis_instance
+
+structlog.configure(
+    processors=[
+        structlog.contextvars.merge_contextvars,
+        structlog.processors.add_log_level,
+        structlog.processors.TimeStamper(fmt="iso"),
+        structlog.processors.StackInfoRenderer(),
+        structlog.processors.JSONRenderer(),
+    ],
+    wrapper_class=structlog.make_filtering_bound_logger(20),
+    context_class=dict,
+    logger_factory=structlog.PrintLoggerFactory(),
+    cache_logger_on_first_use=True,
+)
+
+logger = structlog.get_logger(__name__)
+limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+_metrics: dict[str, int] = defaultdict(int)
+
+
+def increment_metric(name: str) -> None:
+    _metrics[name] += 1
+
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Starting up — initializing database...")
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
+    log = logger.bind(action="startup")
+    log.info("app_starting", environment=settings.environment)
     await init_db()
-    logger.info("Database initialized")
+    log.info("database_initialized")
+    redis: Redis = Redis.from_url(settings.redis_url, encoding="utf-8", decode_responses=True)
+    await redis.ping()
+    set_redis_instance(redis)
+    log.info("redis_connected")
+    omada_module.omada_client = omada_module.OmadaClient()
+    log.info("omada_client_initialized")
+    log.info("app_started")
     yield
-    logger.info("Shutting down")
+    log.info("app_shutting_down")
+    await redis.aclose()
+    if omada_module.omada_client:
+        await omada_module.omada_client.close()
+    log.info("app_shutdown_complete")
 
-app = FastAPI(
-    title="PH WiFi Portal",
-    description="Enterprise WiFi Ad Monetization System",
-    version="1.0.0",
-    lifespan=lifespan,
-    docs_url="/docs" if __import__("os").getenv("ENVIRONMENT") != "production" else None
-)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
+def create_app() -> FastAPI:
+    application = FastAPI(
+        title=settings.app_name,
+        version="1.0.0",
+        description="Enterprise WiFi Ad Monetization System",
+        lifespan=lifespan,
+        docs_url="/docs" if settings.environment != "production" else None,
+        redoc_url=None,
+    )
 
-@app.middleware("http")
-async def add_request_id(request: Request, call_next):
-    request_id = str(uuid.uuid4())[:8]
-    start = time.time()
-    response = await call_next(request)
-    duration = round((time.time() - start) * 1000)
-    response.headers["X-Request-ID"] = request_id
-    logger.info(f"{request.method} {request.url.path} {response.status_code} {duration}ms [{request_id}]")
-    return response
+    application.state.limiter = limiter
+    application.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-@app.exception_handler(Exception)
-async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled exception: {exc}", exc_info=True)
-    return JSONResponse(status_code=500, content={"error_code": "INTERNAL_ERROR", "message": "An unexpected error occurred"})
+    application.add_middleware(
+        CORSMiddleware,
+        allow_origins=settings.cors_origins,
+        allow_credentials=True,
+        allow_methods=["GET", "POST", "DELETE"],
+        allow_headers=["*"],
+    )
 
-app.mount("/static", StaticFiles(directory="../frontend/static"), name="static")
-app.include_router(portal.router)
-app.include_router(auth.router)
-app.include_router(admin.router)
+    @application.middleware("http")
+    async def request_id_middleware(request: Request, call_next: Any) -> Any:
+        request_id = str(uuid.uuid4())
+        request.state.request_id = request_id
+        structlog.contextvars.clear_contextvars()
+        structlog.contextvars.bind_contextvars(request_id=request_id, method=request.method, path=request.url.path)
+        start_time = time.monotonic()
+        response = await call_next(request)
+        duration_ms = (time.monotonic() - start_time) * 1000
+        logger.info("request_completed", status_code=response.status_code, duration_ms=round(duration_ms, 2))
+        response.headers["X-Request-ID"] = request_id
+        increment_metric("requests_total")
+        return response
 
-@app.get("/health")
-async def health():
-    return {"status": "ok", "service": "ph-wifi-portal"}
+    @application.exception_handler(Exception)
+    async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", None)
+        logger.error("unhandled_exception", error=str(exc), error_type=type(exc).__name__, request_id=request_id)
+        increment_metric("errors_total")
+        error = ErrorResponse(
+            error_code="INTERNAL_SERVER_ERROR",
+            message="An unexpected error occurred",
+            detail=str(exc) if settings.environment != "production" else None,
+            request_id=request_id,
+        )
+        return JSONResponse(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, content=error.model_dump())
+
+    @application.exception_handler(404)
+    async def not_found_handler(request: Request, exc: Exception) -> JSONResponse:
+        request_id = getattr(request.state, "request_id", None)
+        error = ErrorResponse(error_code="NOT_FOUND", message="The requested resource was not found", request_id=request_id)
+        return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content=error.model_dump())
+
+    application.include_router(portal.router)
+    application.include_router(auth.router)
+    application.include_router(admin.router)
+
+    @application.get("/health", response_model=HealthResponse)
+    async def health_check(request: Request) -> HealthResponse:
+        from services.redis_service import get_redis as _get_redis
+        redis_status = "ok"
+        try:
+            r = _get_redis()
+            await r.ping()
+        except Exception:
+            redis_status = "error"
+        db_status = "ok"
+        try:
+            from models.database import async_engine
+            import sqlalchemy
+            async with async_engine.connect() as conn:
+                await conn.execute(sqlalchemy.text("SELECT 1"))
+        except Exception:
+            db_status = "error"
+        return HealthResponse(
+            status="ok" if (redis_status == "ok" and db_status == "ok") else "degraded",
+            version="1.0.0",
+            environment=settings.environment,
+            database=db_status,
+            redis=redis_status,
+        )
+
+    @application.get("/metrics")
+    async def metrics_endpoint() -> dict[str, Any]:
+        from services.redis_service import get_redis as _get_redis
+        redis_key_count = 0
+        try:
+            r = _get_redis()
+            info = await r.info("keyspace")
+            redis_key_count = sum(int(v.get("keys", 0)) for v in info.values() if isinstance(v, dict))
+        except Exception:
+            pass
+        return {"version": "1.0.0", "environment": settings.environment, "counters": dict(_metrics), "redis_keys": redis_key_count}
+
+    return application
+
+
+app = create_app()
