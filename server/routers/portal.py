@@ -164,3 +164,41 @@ async def thanks_page() -> HTMLResponse:
     if _THANKS_CACHE is None:
         _THANKS_CACHE = THANKS_TEMPLATE_PATH.read_text(encoding="utf-8")
     return HTMLResponse(content=_THANKS_CACHE, status_code=200)
+
+
+@router.get("/")
+async def homepage() -> HTMLResponse:
+    """Landing page for Adcash/advertiser review."""
+    html = """<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Free WiFi Portal — Powered by Smart Ads</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,sans-serif;background:#0a0a0f;color:#e0e0e8;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px}
+.logo{font-size:48px;margin-bottom:16px}
+h1{font-size:28px;font-weight:800;letter-spacing:-.03em;margin-bottom:8px}
+h1 span{color:#00e676}
+p{color:#888;font-size:15px;max-width:420px;text-align:center;line-height:1.7;margin-bottom:24px}
+.stats{display:flex;gap:32px;margin-bottom:32px}
+.stat{text-align:center}
+.stat-num{font-size:28px;font-weight:700;color:#00e676}
+.stat-label{font-size:11px;color:#666;text-transform:uppercase;letter-spacing:.06em;margin-top:2px}
+.badge{display:inline-block;background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.2);color:#00e676;padding:6px 16px;border-radius:20px;font-size:12px;font-weight:600}
+</style>
+</head>
+<body>
+<div class="logo">📡</div>
+<h1>Free WiFi <span>Portal</span></h1>
+<p>A smart captive portal system that connects users to free WiFi in exchange for viewing relevant advertisements. Deployed across public hotspots in Southeast Asia.</p>
+<div class="stats">
+  <div class="stat"><div class="stat-num">30s</div><div class="stat-label">Ad Duration</div></div>
+  <div class="stat"><div class="stat-num">1hr</div><div class="stat-label">Free Access</div></div>
+  <div class="stat"><div class="stat-num">100%</div><div class="stat-label">Viewability</div></div>
+</div>
+<span class="badge">✓ Publisher Platform</span>
+</body>
+</html>"""
+    return HTMLResponse(content=html)
