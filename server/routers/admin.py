@@ -522,7 +522,8 @@ function refresh(){
 
 function ts(){document.getElementById('ts').textContent='更新 '+new Date().toLocaleTimeString();}
 
-async function get(url){const r=await fetch(url);if(!r.ok)throw new Error(r.status);return r.json();}
+const _auth='Basic '+btoa('xingceo:xingwifi2026');
+async function get(url){const r=await fetch(url,{headers:{Authorization:_auth}});if(!r.ok)throw new Error(r.status);return r.json();}
 
 // Overview
 async function loadOverview(){
