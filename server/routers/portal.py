@@ -20,7 +20,7 @@ from services.redis_service import RedisService, get_redis
 router = APIRouter()
 logger = structlog.get_logger(__name__)
 
-TEMPLATE_PATH = Path(__file__).parent.parent / "templates" / "portal.html"
+TEMPLATE_PATH = Path(__file__).parent.parent.parent / "frontend" / "templates" / "portal.html"
 _TEMPLATE_CACHE: str | None = None
 
 

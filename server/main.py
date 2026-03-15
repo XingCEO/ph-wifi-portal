@@ -7,9 +7,12 @@ from contextlib import asynccontextmanager
 from typing import Any, AsyncGenerator
 
 import structlog
+from pathlib import Path
+
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
@@ -130,6 +133,11 @@ def create_app() -> FastAPI:
     application.include_router(portal.router)
     application.include_router(auth.router)
     application.include_router(admin.router)
+
+    # Static files
+    static_path = Path(__file__).parent.parent / "frontend" / "static"
+    if static_path.exists():
+        application.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
     @application.get("/health", response_model=HealthResponse)
     async def health_check(request: Request) -> HealthResponse:
