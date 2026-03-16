@@ -120,7 +120,7 @@ export default function Stories({ dict }: { dict: Dictionary }) {
 
             return (
               <AnimateIn key={key} delay={0.15 + i * 0.1}>
-                <div className="p-8 rounded-2xl bg-white border border-[#eae6e0] hover:shadow-lg hover:shadow-black/[0.04] transition-all group h-full flex flex-col">
+                <div className="p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:shadow-lg hover:shadow-black/[0.04] transition-all group h-full flex flex-col">
                   <div className="mb-6 opacity-70 group-hover:opacity-100 transition-opacity">
                     <Illustration />
                   </div>

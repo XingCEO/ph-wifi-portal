@@ -52,7 +52,7 @@ export default function Vision({ dict }: { dict: Dictionary }) {
             {stats.map((stat) => (
               <div
                 key={stat.label}
-                className="text-center p-6 sm:p-8 rounded-2xl bg-[var(--color-warm-white)] border border-[#eae6e0]"
+                className="text-center p-6 sm:p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40"
               >
                 <div
                   className="text-3xl sm:text-4xl font-800 text-[var(--color-brand-green)] mb-2"

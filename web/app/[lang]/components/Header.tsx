@@ -21,7 +21,7 @@ export default function Header({
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-warm-white)]/90 backdrop-blur-md border-b border-[#e8e4de]">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-warm-white)]/72 backdrop-blur-xl saturate-[1.8] border-b border-white/30">
       <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center justify-between h-16">
         <Link
           href={`/${lang}`}
@@ -90,7 +90,7 @@ export default function Header({
             className="fixed inset-0 top-16 bg-black/40 backdrop-blur-md z-40 md:hidden"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-[var(--color-warm-white)]/95 backdrop-blur-sm border-t border-[#e8e4de] px-5 py-6 shadow-2xl rounded-b-2xl mx-2">
+          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-white/72 backdrop-blur-xl saturate-[1.8] border-t border-white/30 px-5 py-6 shadow-2xl rounded-b-2xl mx-2">
             <nav className="flex flex-col gap-4">
               <a
                 href="#how-it-works"

@@ -80,7 +80,7 @@ export default function WhyItMatters({ dict }: { dict: Dictionary }) {
 
               return (
                 <AnimateIn key={point.key} delay={0.15 + i * 0.1} direction="right">
-                  <div className="flex gap-5 p-6 rounded-2xl bg-[var(--color-warm-white)] border border-[#eae6e0] hover:border-[var(--color-brand-green)]/20 transition-all duration-300 hover:shadow-lg hover:shadow-[var(--color-brand-green)]/[0.04] hover:-translate-y-0.5 group">
+                  <div className="flex gap-5 p-6 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:border-[var(--color-brand-green)]/20 transition-all duration-300 hover:shadow-lg hover:shadow-[var(--color-brand-green)]/[0.04] hover:-translate-y-0.5 group">
                     <div className="w-12 h-12 rounded-xl bg-[var(--color-brand-gold)]/10 flex items-center justify-center shrink-0 group-hover:bg-[var(--color-brand-gold)]/15 transition-colors">
                       <Icon
                         size={22}

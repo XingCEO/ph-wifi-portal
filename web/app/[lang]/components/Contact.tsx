@@ -12,7 +12,7 @@ export default function Contact({ dict }: { dict: Dictionary }) {
 
       <div className="max-w-6xl mx-auto px-5 sm:px-8 relative">
         <AnimateIn>
-          <div className="max-w-2xl mx-auto text-center p-10 sm:p-14 rounded-3xl bg-white border border-[#eae6e0] shadow-xl shadow-black/[0.03]">
+          <div className="max-w-2xl mx-auto text-center p-10 sm:p-14 rounded-3xl bg-white/60 backdrop-blur-xl border border-white/40 shadow-xl shadow-black/[0.03]">
             <p className="text-sm font-semibold text-[var(--color-brand-green)] tracking-wide uppercase mb-3">
               {dict.contact.label}
             </p>

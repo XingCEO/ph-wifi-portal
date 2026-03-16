@@ -91,7 +91,7 @@ export default function Advertising({ dict }: { dict: Dictionary }) {
 
                 return (
                   <AnimateIn key={benefit.key} delay={0.25 + i * 0.08}>
-                    <div className="p-5 rounded-xl bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.07] transition-colors">
+                    <div className="p-5 rounded-xl bg-white/[0.06] backdrop-blur-lg border border-white/[0.1] hover:bg-white/[0.1] transition-colors">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="w-8 h-8 rounded-lg bg-[var(--color-brand-gold)]/15 flex items-center justify-center">
                           <Icon size={16} className="text-[var(--color-brand-gold)]" strokeWidth={1.8} />

@@ -45,7 +45,7 @@ export default function Coverage({ dict }: { dict: Dictionary; lang: string }) {
             const Icon = loc.icon;
             return (
               <AnimateIn key={loc.key} delay={0.1 + i * 0.06}>
-                <div className="flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-white border border-[#eae6e0] hover:border-[var(--color-brand-green)]/20 hover:shadow-lg hover:shadow-[var(--color-brand-green)]/[0.04] transition-all duration-300 hover:-translate-y-1 group">
+                <div className="flex flex-col items-center gap-3 p-6 sm:p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:border-[var(--color-brand-green)]/20 hover:shadow-lg hover:shadow-[var(--color-brand-green)]/[0.04] transition-all duration-300 hover:-translate-y-1 group">
                   <div className="w-12 h-12 rounded-xl bg-[var(--color-brand-green)]/6 flex items-center justify-center group-hover:bg-[var(--color-brand-green)]/10 transition-colors">
                     <Icon
                       size={24}

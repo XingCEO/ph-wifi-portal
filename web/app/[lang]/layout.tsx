@@ -64,6 +64,10 @@ export default async function LangLayout({
 
   return (
     <html lang={lang === "zh-hant" ? "zh-Hant" : lang} suppressHydrationWarning>
+      <head>
+        <meta name="color-scheme" content="light only" />
+        <meta name="theme-color" content="#faf8f5" />
+      </head>
       <body className={`${nunito.variable} ${plusJakarta.variable} antialiased`}>
         {children}
       </body>

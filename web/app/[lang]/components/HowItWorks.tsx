@@ -57,7 +57,7 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
               <div key={step.key} className="contents">
                 {i > 0 && <StepConnector />}
                 <AnimateIn delay={0.15 + i * 0.12} className="flex-1 w-full max-w-xs">
-                  <div className="relative p-8 rounded-2xl bg-white border border-[#eae6e0] hover:border-[var(--color-brand-green)]/25 transition-all hover:shadow-lg hover:shadow-[var(--color-brand-green)]/5 group h-full text-center md:text-left">
+                  <div className="relative p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:border-[var(--color-brand-green)]/25 transition-all hover:shadow-lg hover:shadow-[var(--color-brand-green)]/5 group h-full text-center md:text-left">
                     {/* Step number */}
                     <div
                       className="absolute top-6 right-6 text-5xl font-800 leading-none"

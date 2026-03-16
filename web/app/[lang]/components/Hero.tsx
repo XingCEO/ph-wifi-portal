@@ -97,7 +97,7 @@ export default function Hero({ dict }: { dict: Dictionary }) {
           {/* Left - Text */}
           <div>
             <AnimateIn delay={0.05}>
-              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-[var(--color-brand-green)]/8 border border-[var(--color-brand-green)]/12">
+              <div className="inline-flex items-center gap-2 px-4 py-2 mb-8 rounded-full bg-[var(--color-brand-green)]/8 backdrop-blur-sm border border-[var(--color-brand-green)]/12">
                 <div className="w-1.5 h-1.5 rounded-full bg-[var(--color-brand-green)] animate-pulse" />
                 <span className="text-sm font-semibold text-[var(--color-brand-green)] tracking-wide">
                   AbotKamay WiFi
