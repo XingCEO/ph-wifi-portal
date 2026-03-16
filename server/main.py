@@ -179,10 +179,36 @@ def create_app() -> FastAPI:
             pass
         return {"version": "1.0.0", "environment": settings.environment, "counters": dict(_metrics), "redis_keys": redis_key_count}
 
-    # Next.js brand website (static export) — MUST be last (catch-all)
+    # Next.js brand website (static export) — catch-all via route, not mount
     web_out_path = Path(__file__).parent.parent / "web" / "out"
+
     if web_out_path.exists():
-        application.mount("/", StaticFiles(directory=str(web_out_path), html=True), name="brand-site")
+        from fastapi.responses import FileResponse, HTMLResponse
+
+        @application.get("/{full_path:path}")
+        async def serve_nextjs(full_path: str):
+            """Catch-all: serve Next.js static files for unmatched routes."""
+            # Try exact file
+            file_path = web_out_path / full_path
+            if file_path.is_file():
+                return FileResponse(file_path)
+
+            # Try with index.html (directory)
+            index_path = file_path / "index.html"
+            if index_path.is_file():
+                return FileResponse(index_path)
+
+            # Try .html extension
+            html_path = web_out_path / f"{full_path}.html"
+            if html_path.is_file():
+                return FileResponse(html_path)
+
+            # Fallback to root index.html (SPA-style)
+            root_index = web_out_path / "index.html"
+            if root_index.is_file():
+                return FileResponse(root_index)
+
+            return HTMLResponse(content="Not Found", status_code=404)
 
     return application
 
