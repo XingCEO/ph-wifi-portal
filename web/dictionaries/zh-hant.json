@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "AbotKamay — 免費網路，觸手可及",
+    "description": "遍佈菲律賓的免費公共 WiFi。觀看一則短廣告，即可使用 10 分鐘的網路。一個熱點接一個熱點，串連每個社區。"
+  },
+  "nav": {
+    "howItWorks": "如何運作",
+    "about": "關於我們",
+    "advertise": "廣告合作",
+    "contact": "聯絡我們"
+  },
+  "hero": {
+    "title": "免費網路，",
+    "titleHighlight": "觸手可及",
+    "description": "AbotKamay WiFi 為菲律賓各地社區提供免費的網路連線。只要觀看一段簡短的廣告，就能獲得 10 分鐘的免費上網時間。",
+    "mission": "我們的使命是讓每個人都能輕鬆連上網路。",
+    "cta": "與我們合作"
+  },
+  "howItWorks": {
+    "label": "如何運作",
+    "title": "三個簡單步驟，即刻上網",
+    "step1Title": "連接 WiFi",
+    "step1Desc": "找到附近的 AbotKamay 熱點，連接你的裝置。不需要密碼。",
+    "step2Title": "觀看短廣告",
+    "step2Desc": "觀看一段來自在地或全國品牌的簡短廣告，只需要幾十秒。",
+    "step3Title": "自由瀏覽",
+    "step3Desc": "享受 10 分鐘的免費網路。傳訊息給家人、滑一下動態、處理事情。"
+  },
+  "why": {
+    "label": "為什麼這很重要",
+    "title": "讓每個人都能連上網路",
+    "description": "在菲律賓，數百萬家庭依賴行動數據保持連線。對許多社區而言，上網費用仍然是一道門檻。",
+    "point1Title": "社區獲得網路連線",
+    "point1Desc": "在雜貨店、社區中心、交通樞紐和公共場所設置公共 WiFi——這些都是人們本來就會聚集的地方。",
+    "point2Title": "商家觸及在地客群",
+    "point2Desc": "廣告主透過簡短的廣告直接與社區連結，在使用者上網前自然地展示品牌訊息。",
+    "point3Title": "讓連線更加平等",
+    "point3Desc": "當上網不再需要付費，每個人都能參與數位世界——不論收入高低。",
+    "closing": "連線不該是少數人的特權，而是每個人都觸手可及的基本需求。"
+  },
+  "stories": {
+    "label": "保持聯繫",
+    "title": "拉近家人之間的距離",
+    "description": "數百萬菲律賓家庭有成員在海外工作。網路讓他們能透過訊息、通話和視訊保持聯繫——無論相隔多遠。",
+    "story1Title": "學生完成功課",
+    "story1Desc": "從社區的 WiFi 熱點就能取得教學資源、查資料、完成作業。",
+    "story2Title": "家人跨越距離",
+    "story2Desc": "媽媽和在海外工作的爸爸視訊通話。阿嬤第一次在螢幕上看到孫子。這些時刻無可取代。",
+    "story3Title": "小生意持續成長",
+    "story3Desc": "雜貨店老闆查看訂單、收數位支付、聯繫供應商——全靠免費 WiFi。"
+  },
+  "advertising": {
+    "label": "廣告合作",
+    "title": "觸及遍佈菲律賓的社區",
+    "description": "AbotKamay 同時也是一個廣告平台，讓商家透過在使用者上網前播放的短廣告，直接與消費者建立連結。",
+    "benefit1Title": "高能見度",
+    "benefit1Desc": "全螢幕廣告，使用者全神貫注。沒有跳過，沒有滑走。",
+    "benefit2Title": "在地精準投放",
+    "benefit2Desc": "鎖定特定社區和街坊，直達你的目標客群所在地。",
+    "benefit3Title": "可量化的成效",
+    "benefit3Desc": "追蹤每個熱點的曝光次數、互動率和觸及範圍。",
+    "benefit4Title": "高性價比",
+    "benefit4Desc": "每次曝光成本低於傳統媒體，互動率卻更高。"
+  },
+  "vision": {
+    "label": "我們的願景",
+    "title": "為菲律賓打造連線基礎設施",
+    "description": "我們的長期目標是建立菲律賓最大的數位廣告與連線平台之一。結合公共 WiFi 基礎設施與廣告技術，AbotKamay 致力於打造一個串連社區、支持在地商家的網路。",
+    "stat1Value": "10分鐘",
+    "stat1Label": "每次免費上網時間",
+    "stat2Value": "全天候",
+    "stat2Label": "隨時可用",
+    "stat3Value": "100%",
+    "stat3Label": "使用者完全免費"
+  },
+  "contact": {
+    "label": "聯絡我們",
+    "title": "與我們合作",
+    "description": "想在你的區域部署 WiFi，或是在我們的平台上投放廣告？歡迎與我們聯繫。",
+    "emailLabel": "寄信給我們",
+    "email": "Founder@abotkamay.net"
+  },
+  "footer": {
+    "tagline": "免費網路，觸手可及。",
+    "copyright": "AbotKamay 版權所有。"
+  }
+}

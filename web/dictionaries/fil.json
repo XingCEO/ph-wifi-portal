@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "AbotKamay — Libreng Internet, Abot-Kamay Mo",
+    "description": "Libreng pampublikong WiFi sa buong Pilipinas. Manood ng maikling ad, makakuha ng 10 minutong internet access. Ikinokonekta ang mga komunidad, isa-isang hotspot."
+  },
+  "nav": {
+    "howItWorks": "Paano Ito Gumagana",
+    "about": "Tungkol",
+    "advertise": "Mag-advertise",
+    "contact": "Makipag-ugnayan"
+  },
+  "hero": {
+    "title": "Libreng Internet,",
+    "titleHighlight": "Abot-Kamay Mo",
+    "description": "Nagbibigay ang AbotKamay WiFi ng libreng internet sa mga komunidad sa buong Pilipinas. Manood lang ng maikling advertisement para makakuha ng 10 minutong internet access.",
+    "mission": "Ang misyon namin ay gawing accessible ang connectivity para sa lahat.",
+    "cta": "Makipagtulungan"
+  },
+  "howItWorks": {
+    "label": "Paano Ito Gumagana",
+    "title": "Tatlong simpleng hakbang para makaonline",
+    "step1Title": "Kumonekta sa WiFi",
+    "step1Desc": "Hanapin ang AbotKamay hotspot sa inyong lugar at ikonekta ang inyong device. Hindi kailangan ng password.",
+    "step2Title": "Manood ng Maikling Ad",
+    "step2Desc": "Panoorin ang isang maikling advertisement mula sa isang lokal o pambansang brand. Ilang sandali lang.",
+    "step3Title": "Mag-browse Nang Malaya",
+    "step3Desc": "Mag-enjoy ng 10 minutong libreng internet. Mag-message sa pamilya, mag-check ng feed, tapusin ang mga gawain."
+  },
+  "why": {
+    "label": "Bakit Ito Mahalaga",
+    "title": "Accessible na Internet Para sa Lahat",
+    "description": "Sa Pilipinas, milyon-milyong pamilya ang umaasa sa mobile data para manatiling konektado. Sa maraming komunidad, limitado pa rin ang internet access dahil sa gastos.",
+    "point1Title": "Nagkakaroon ng internet access ang mga komunidad",
+    "point1Desc": "Pampublikong WiFi sa mga tindahan, community centers, transport hubs, at public spaces — kung saan nagtitipon-tipon na ang mga tao.",
+    "point2Title": "Naabot ng mga negosyo ang mga lokal na audience",
+    "point2Desc": "Direktang nakakakonekta ang mga advertiser sa mga komunidad sa pamamagitan ng maikling advertisement bago ma-grant ang access.",
+    "point3Title": "Nagiging inclusive ang connectivity",
+    "point3Desc": "Kapag libre ang internet access, lahat ay makakalahok sa digital world — anuman ang kita.",
+    "closing": "Hindi dapat pribilehiyo ang connectivity. Dapat ito ay accessible sa lahat."
+  },
+  "stories": {
+    "label": "Manatiling Konektado",
+    "title": "Pinapalapít ang mga pamilya",
+    "description": "Milyon-milyong pamilyang Pilipino ang may miyembrong nagtatrabaho sa ibang bansa. Sa pamamagitan ng internet, nakakapag-message, nakakatawag, at nakaka-video call sila — kahit gaano kalayo.",
+    "story1Title": "Mga estudyanteng gumagawa ng homework",
+    "story1Desc": "Access sa educational resources at online research, mula mismo sa WiFi hotspot sa kapitbahayan.",
+    "story2Title": "Mga pamilyang tumatawid sa layo",
+    "story2Desc": "Isang nanay na naka-video call sa asawang nagtatrabaho sa abroad. Isang lola na unang beses nakita ang apo. Mahalaga ang mga sandaling ito.",
+    "story3Title": "Mga maliliit na negosyong lumalago",
+    "story3Desc": "Mga may-ari ng sari-sari store na nagche-check ng orders, tumatanggap ng digital payments, at kumokonekta sa mga supplier — lahat mula sa libreng WiFi."
+  },
+  "advertising": {
+    "label": "Para sa mga Advertiser",
+    "title": "Abutin ang mga komunidad sa buong Pilipinas",
+    "description": "Ang AbotKamay ay isang platform na nagkokonekta sa mga negosyo sa mga user sa pamamagitan ng maikling advertisement na ipinapakita bago ibigay ang internet access.",
+    "benefit1Title": "Mataas na Visibility",
+    "benefit1Desc": "Full-screen ads na may buong atensyon ng user. Walang skip, walang scroll past.",
+    "benefit2Title": "Lokal na Targeting",
+    "benefit2Desc": "Abutin ang mga partikular na komunidad at kapitbahayan kung saan nakatira at namimili ang iyong audience.",
+    "benefit3Title": "Nasusukat na Resulta",
+    "benefit3Desc": "I-track ang impressions, engagement, at reach sa bawat hotspot sa network.",
+    "benefit4Title": "Cost-Efficient",
+    "benefit4Desc": "Mas mababang cost per impression kaysa traditional media, na may mas mataas na engagement rates."
+  },
+  "vision": {
+    "label": "Ang Aming Bisyon",
+    "title": "Nagtatayo ng connectivity infrastructure para sa Pilipinas",
+    "description": "Ang pangmatagalang layunin namin ay bumuo ng isa sa mga pinakamalaking digital advertising at connectivity platform sa Pilipinas. Sa pamamagitan ng pagsasama ng pampublikong WiFi infrastructure at advertising technology, layunin ng AbotKamay na lumikha ng network na nagkokonekta sa mga komunidad habang sinusuportahan ang mga lokal na negosyo.",
+    "stat1Value": "10min",
+    "stat1Label": "Libreng access bawat session",
+    "stat2Value": "24/7",
+    "stat2Label": "Laging available",
+    "stat3Value": "100%",
+    "stat3Label": "Libre para sa users"
+  },
+  "contact": {
+    "label": "Makipag-ugnayan",
+    "title": "Makipagtulungan sa amin",
+    "description": "Interesado ka bang mag-deploy ng WiFi sa inyong lugar o mag-advertise sa aming platform? Gusto naming marinig ang iyong mensahe.",
+    "emailLabel": "I-email kami",
+    "email": "Founder@abotkamay.net"
+  },
+  "footer": {
+    "tagline": "Libreng internet, abot-kamay mo.",
+    "copyright": "AbotKamay. Lahat ng karapatan ay nakalaan."
+  }
+}

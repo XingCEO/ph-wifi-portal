@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --color-brand-green: #2d6a4f;
+  --color-brand-green-light: #40916c;
+  --color-brand-gold: #e9a319;
+  --color-brand-gold-light: #f2c14e;
+  --color-warm-white: #faf8f5;
+  --color-warm-gray: #f0ece6;
+  --color-text-primary: #1a1a1a;
+  --color-text-secondary: #4a4a4a;
+  --color-text-muted: #7a7a7a;
+}
+
+@theme inline {
+  --color-brand-green: var(--color-brand-green);
+  --color-brand-green-light: var(--color-brand-green-light);
+  --color-brand-gold: var(--color-brand-gold);
+  --color-brand-gold-light: var(--color-brand-gold-light);
+  --color-warm-white: var(--color-warm-white);
+  --color-warm-gray: var(--color-warm-gray);
+  --color-text-primary: var(--color-text-primary);
+  --color-text-secondary: var(--color-text-secondary);
+  --color-text-muted: var(--color-text-muted);
+  --font-sans: var(--font-nunito);
+  --font-display: var(--font-plus-jakarta);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--color-warm-white);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: var(--color-brand-green);
+  color: white;
+}

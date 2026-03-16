@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "title": "AbotKamay — Free Internet Within Reach",
+    "description": "Free public WiFi across the Philippines. Watch a short ad, get 10 minutes of internet access. Connecting communities, one hotspot at a time."
+  },
+  "nav": {
+    "howItWorks": "How It Works",
+    "about": "About",
+    "advertise": "Advertise",
+    "contact": "Contact"
+  },
+  "hero": {
+    "title": "Free Internet",
+    "titleHighlight": "Within Reach",
+    "description": "AbotKamay WiFi provides free internet access to communities across the Philippines. Watch a short advertisement to unlock 10 minutes of internet access.",
+    "mission": "Our mission is to make connectivity accessible to everyone.",
+    "cta": "Partner With Us"
+  },
+  "howItWorks": {
+    "label": "How It Works",
+    "title": "Three simple steps to get online",
+    "step1Title": "Connect to WiFi",
+    "step1Desc": "Find an AbotKamay hotspot in your area and connect your device. No password needed.",
+    "step2Title": "Watch a Short Ad",
+    "step2Desc": "View a brief advertisement from a local or national brand. It only takes a moment.",
+    "step3Title": "Browse Freely",
+    "step3Desc": "Enjoy 10 minutes of free internet. Message your family, check your feed, get things done."
+  },
+  "why": {
+    "label": "Why It Matters",
+    "title": "Accessible Internet for Everyone",
+    "description": "In the Philippines, millions of families rely on mobile data to stay connected. For many communities, internet access is still limited by affordability.",
+    "point1Title": "Communities gain internet access",
+    "point1Desc": "Public WiFi in local stores, community centers, transport hubs, and public spaces — where people already gather.",
+    "point2Title": "Businesses reach local audiences",
+    "point2Desc": "Advertisers connect directly with communities through short, respectful advertisements shown before access is granted.",
+    "point3Title": "Connectivity becomes inclusive",
+    "point3Desc": "When internet access is free at the point of use, everyone can participate in the digital world — regardless of income.",
+    "closing": "Connectivity should not be a privilege. It should be accessible to everyone."
+  },
+  "stories": {
+    "label": "Stay Connected",
+    "title": "Bringing families closer",
+    "description": "Millions of Filipino families have members working overseas. Internet connectivity allows them to stay in touch through messaging, calls, and video — no matter the distance.",
+    "story1Title": "Students finishing homework",
+    "story1Desc": "Access to educational resources and online research, right from the neighborhood WiFi hotspot.",
+    "story2Title": "Families bridging distance",
+    "story2Desc": "A mother video-calling her husband working abroad. A grandmother seeing her grandchild for the first time. These moments matter.",
+    "story3Title": "Small businesses growing",
+    "story3Desc": "Sari-sari store owners checking orders, accepting digital payments, and connecting with suppliers — all from free WiFi."
+  },
+  "advertising": {
+    "label": "For Advertisers",
+    "title": "Reach communities across the Philippines",
+    "description": "AbotKamay serves as a platform that connects businesses with users directly through short advertisements displayed before internet access is granted.",
+    "benefit1Title": "High Visibility",
+    "benefit1Desc": "Full-screen ads with complete user attention. No skipping, no scrolling past.",
+    "benefit2Title": "Local Targeting",
+    "benefit2Desc": "Reach specific communities and neighborhoods where your audience lives and shops.",
+    "benefit3Title": "Measurable Results",
+    "benefit3Desc": "Track impressions, engagement, and reach across every hotspot in the network.",
+    "benefit4Title": "Cost-Efficient",
+    "benefit4Desc": "Lower cost per impression than traditional media, with higher engagement rates."
+  },
+  "vision": {
+    "label": "Our Vision",
+    "title": "Building connectivity infrastructure for the Philippines",
+    "description": "Our long-term goal is to build one of the largest digital advertising and connectivity platforms in the Philippines. By combining public WiFi infrastructure with advertising technology, AbotKamay aims to create a network that connects communities while supporting local businesses.",
+    "stat1Value": "10min",
+    "stat1Label": "Free access per session",
+    "stat2Value": "24/7",
+    "stat2Label": "Always available",
+    "stat3Value": "100%",
+    "stat3Label": "Free for users"
+  },
+  "contact": {
+    "label": "Get In Touch",
+    "title": "Partner with us",
+    "description": "Interested in deploying WiFi in your area or advertising on our platform? We would love to hear from you.",
+    "emailLabel": "Email us",
+    "email": "Founder@abotkamay.net"
+  },
+  "footer": {
+    "tagline": "Free internet within reach.",
+    "copyright": "AbotKamay. All rights reserved."
+  }
+}
