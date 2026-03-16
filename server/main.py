@@ -135,10 +135,15 @@ def create_app() -> FastAPI:
     application.include_router(auth.router)
     application.include_router(admin.router)
 
-    # Static files
+    # Static files (frontend assets)
     static_path = Path(__file__).parent.parent / "frontend" / "static"
     if static_path.exists():
         application.mount("/static", StaticFiles(directory=str(static_path)), name="static")
+
+    # Next.js brand website (static export)
+    web_out_path = Path(__file__).parent.parent / "web" / "out"
+    if web_out_path.exists():
+        application.mount("/site", StaticFiles(directory=str(web_out_path), html=True), name="brand-site")
 
     @application.get("/health", response_model=HealthResponse)
     async def health_check(request: Request) -> HealthResponse:
