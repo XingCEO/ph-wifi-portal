@@ -50,7 +50,7 @@ class OmadaClient:
         try:
             resp = await self._client.post(
                 f"{self._base_url}{_OMADA_LOGIN_PATH}",
-                json={"username": settings.omada_operator, "password": settings.omada_password},
+                json={"name": settings.omada_operator, "password": settings.omada_password},
             )
             resp.raise_for_status()
             data = resp.json()
@@ -114,7 +114,7 @@ class OmadaClient:
             result = await self._request_with_retry(
                 "POST", _OMADA_AUTH_PATH,
                 json={"clientMac": client_mac, "apMac": ap_mac, "ssidName": ssid_name,
-                      "radioId": radio_id, "site": site, "time": duration_seconds, "traffic": traffic_mb},
+                      "radioId": radio_id, "time": duration_seconds, "authType": 4},
             )
             log.info("omada_grant_access_success")
             return result.get("result", {})
