@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime, timezone
 from typing import Any
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from httpx import AsyncClient
@@ -186,24 +186,27 @@ async def test_grant_access_anti_spam_blocked_returns_429(
 
 
 @pytest.mark.asyncio
-async def test_grant_access_omada_failure_returns_503(
+async def test_grant_access_omada_failure_continues_in_test_mode(
     client: AsyncClient,
     mock_redis: MagicMock,
     mock_omada: MagicMock,
 ) -> None:
-    """OC200 API failure returns 503."""
+    """OC200 API failure still grants access in test mode (omada_controller_id set)."""
     session_data = _make_session_data()
     _setup_valid_session(mock_redis, session_data)
     mock_omada.grant_access = AsyncMock(
         side_effect=OmadaError("Connection refused", error_code=-1)
     )
 
-    response = await client.post(
-        "/api/grant-access",
-        json={"session_id": "valid-session"},
-    )
+    with patch("routers.auth.settings.omada_controller_id", "test-controller"):
+        response = await client.post(
+            "/api/grant-access",
+            json={"session_id": "valid-session"},
+        )
 
-    assert response.status_code == 503
+    # Test mode: Omada failure doesn't block access
+    assert response.status_code == 200
+    assert response.json()["status"] == "granted"
 
 
 @pytest.mark.asyncio
@@ -224,7 +227,7 @@ async def test_grant_access_calls_omada_with_correct_params(
     mock_redis: MagicMock,
     mock_omada: MagicMock,
 ) -> None:
-    """Omada.grant_access is called with correct MAC and site."""
+    """Omada.grant_access is called with correct MAC and site when controller is configured."""
     session_data = _make_session_data(
         client_mac="BB:CC:DD:EE:FF:00",
         ap_mac="11:22:33:44:55:66",
@@ -233,10 +236,11 @@ async def test_grant_access_calls_omada_with_correct_params(
     _setup_valid_session(mock_redis, session_data)
     mock_omada.grant_access = AsyncMock(return_value={})
 
-    await client.post(
-        "/api/grant-access",
-        json={"session_id": "check-params-session"},
-    )
+    with patch("routers.auth.settings.omada_controller_id", "test-controller"):
+        await client.post(
+            "/api/grant-access",
+            json={"session_id": "check-params-session"},
+        )
 
     mock_omada.grant_access.assert_called_once()
     call_kwargs = mock_omada.grant_access.call_args[1]
