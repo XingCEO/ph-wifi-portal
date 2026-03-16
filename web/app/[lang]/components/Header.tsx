@@ -83,54 +83,61 @@ export default function Header({
         </button>
       </div>
 
+      {/* Mobile menu backdrop + panel */}
       {menuOpen && (
-        <div className="md:hidden bg-[var(--color-warm-white)] border-t border-[#e8e4de] px-5 py-6">
-          <nav className="flex flex-col gap-4">
-            <a
-              href="#how-it-works"
-              onClick={() => setMenuOpen(false)}
-              className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
-            >
-              {dict.nav.howItWorks}
-            </a>
-            <a
-              href="#why"
-              onClick={() => setMenuOpen(false)}
-              className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
-            >
-              {dict.nav.about}
-            </a>
-            <a
-              href="#advertising"
-              onClick={() => setMenuOpen(false)}
-              className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
-            >
-              {dict.nav.advertise}
-            </a>
-            <a
-              href="#contact"
-              onClick={() => setMenuOpen(false)}
-              className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
-            >
-              {dict.nav.contact}
-            </a>
-            <div className="flex items-center gap-2 pt-4 border-t border-[#e8e4de]">
-              {languages.map((l) => (
-                <Link
-                  key={l.code}
-                  href={`/${l.code}`}
-                  className={`text-sm px-3 py-1.5 rounded-md no-underline ${
-                    lang === l.code
-                      ? "bg-[var(--color-brand-green)] text-white font-semibold"
-                      : "text-[var(--color-text-muted)] bg-[var(--color-warm-gray)]"
-                  }`}
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-          </nav>
-        </div>
+        <>
+          <div
+            className="fixed inset-0 top-16 bg-black/20 backdrop-blur-sm z-40 md:hidden"
+            onClick={() => setMenuOpen(false)}
+          />
+          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-[var(--color-warm-white)] border-t border-[#e8e4de] px-5 py-6 shadow-lg">
+            <nav className="flex flex-col gap-4">
+              <a
+                href="#how-it-works"
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
+              >
+                {dict.nav.howItWorks}
+              </a>
+              <a
+                href="#why"
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
+              >
+                {dict.nav.about}
+              </a>
+              <a
+                href="#advertising"
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
+              >
+                {dict.nav.advertise}
+              </a>
+              <a
+                href="#contact"
+                onClick={() => setMenuOpen(false)}
+                className="text-base font-medium text-[var(--color-text-secondary)] no-underline"
+              >
+                {dict.nav.contact}
+              </a>
+              <div className="flex items-center gap-2 pt-4 border-t border-[#e8e4de]">
+                {languages.map((l) => (
+                  <Link
+                    key={l.code}
+                    href={`/${l.code}`}
+                    className={`text-sm px-3 py-1.5 rounded-md no-underline ${
+                      lang === l.code
+                        ? "bg-[var(--color-brand-green)] text-white font-semibold"
+                        : "text-[var(--color-text-muted)] bg-[var(--color-warm-gray)]"
+                    }`}
+                  >
+                    {l.label}
+                  </Link>
+                ))}
+              </div>
+            </nav>
+          </div>
+        </>
       )}
     </header>
   );
