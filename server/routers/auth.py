@@ -77,8 +77,8 @@ async def grant_access(
                 detail="This device has been blocked",
             )
 
-    # 3. Anti-spam check
-    is_allowed = await redis_svc.check_anti_spam(session.client_mac, settings.anti_spam_window_seconds)
+    # 3. Anti-spam check (atomic check-and-record to prevent TOCTOU race)
+    is_allowed = await redis_svc.check_and_record_anti_spam(session.client_mac, settings.anti_spam_window_seconds)
     if not is_allowed:
         log.warning("anti_spam_blocked")
         raise HTTPException(status_code=status.HTTP_429_TOO_MANY_REQUESTS, detail="Too many access requests. Please wait before trying again.")
@@ -135,10 +135,7 @@ async def grant_access(
                   note="WiFi access was granted but DB record was NOT saved")
         await db.rollback()
 
-    # 5. Record anti-spam
-    await redis_svc.record_anti_spam(session.client_mac, settings.anti_spam_window_seconds)
-
-    # 6. Increment active users
+    # 5. Increment active users
     if session.hotspot_id > 0:
         await redis_svc.increment_active_users(session.hotspot_id, ttl=settings.session_duration_seconds)
 

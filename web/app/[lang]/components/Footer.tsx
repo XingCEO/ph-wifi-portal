@@ -31,7 +31,7 @@ export default function Footer({
           {/* Navigation */}
           <div>
             <h4 className="text-white text-sm font-semibold mb-4 uppercase tracking-wider">
-              {lang === "fil" ? "Mga Link" : lang === "zh-hant" ? "快速連結" : "Quick Links"}
+              {dict.footer.quickLinks}
             </h4>
             <nav className="flex flex-col gap-2.5">
               <a href="#how-it-works" className="text-sm hover:text-white transition-colors no-underline">

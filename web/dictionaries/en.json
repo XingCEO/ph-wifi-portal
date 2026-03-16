@@ -80,8 +80,20 @@
     "emailLabel": "Email us",
     "email": "Founder@abotkamay.net"
   },
+  "coverage": {
+    "label": "Where We Are",
+    "title": "WiFi wherever you are",
+    "description": "We deploy hotspots in the places where people need connectivity the most.",
+    "sariSari": "Sari-sari Stores",
+    "cafes": "Cafés & Restaurants",
+    "community": "Community Centers",
+    "transport": "Transport Hubs",
+    "public": "Public Spaces",
+    "markets": "Markets & Malls"
+  },
   "footer": {
     "tagline": "Free internet within reach.",
-    "copyright": "AbotKamay. All rights reserved."
+    "copyright": "AbotKamay. All rights reserved.",
+    "quickLinks": "Quick Links"
   }
 }

@@ -174,8 +174,8 @@ async def test_grant_access_anti_spam_blocked_returns_429(
     pipeline_mock.delete = AsyncMock()
     pipeline_mock.execute = AsyncMock(return_value=[json.dumps(session_data), 1])
     mock_redis.pipeline = MagicMock(return_value=pipeline_mock)
-    # Anti-spam key exists → blocked
-    mock_redis.exists = AsyncMock(return_value=1)
+    # Anti-spam: SET NX returns None when key already exists → blocked
+    mock_redis.set = AsyncMock(return_value=None)
 
     response = await client.post(
         "/api/grant-access",

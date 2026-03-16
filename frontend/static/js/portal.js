@@ -26,9 +26,9 @@
 
   function onComplete() {
     $number.classList.add('done');
-    $hint.textContent = 'Your 1 hour of free WiFi is ready';
+    $hint.textContent = 'Your free WiFi is ready!';
     $hint.classList.add('success');
-    $tagalog.textContent = 'Handa na ang iyong libreng internet';
+    $tagalog.textContent = 'Handa na ang iyong libreng internet!';
     $btn.classList.add('visible');
   }
 
@@ -73,7 +73,7 @@
       granted = false;
       $btn.disabled = false;
       $btn.classList.remove('loading');
-      $btn.textContent = 'Get Free WiFi — 1 Hour';
+      $btn.textContent = 'Get Free WiFi';
       $error.textContent = err.message || 'Connection failed. Please try again.';
       $error.classList.add('visible');
     }

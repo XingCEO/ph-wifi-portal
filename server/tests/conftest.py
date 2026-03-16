@@ -109,6 +109,7 @@ async def app(
         patch("services.redis_service._redis_instance", mock_redis),
         patch("services.omada.omada_client", mock_omada),
         patch("models.database.init_db", new_callable=lambda: lambda: AsyncMock()),
+        patch("config.settings.admin_password", "testpass123"),
     ):
         from main import create_app
 

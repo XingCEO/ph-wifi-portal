@@ -69,7 +69,7 @@ class Settings(BaseSettings):
     admin_password: str = ""
 
     # CORS - allowed origins (set via env var in production)
-    cors_origins: list[str] = ["*"]
+    cors_origins: list[str] = []
 
     model_config = {
         "env_file": ".env",
@@ -81,11 +81,19 @@ settings = Settings()
 
 
 def validate_settings() -> None:
-    """Warn about insecure defaults on startup."""
+    """Validate settings on startup. Raise RuntimeError for insecure defaults in production."""
+    # Bounds validation for business rules (all environments)
+    if not (1 <= settings.ad_duration_seconds <= 300):
+        raise RuntimeError(f"ad_duration_seconds must be 1-300, got {settings.ad_duration_seconds}")
+    if not (60 <= settings.session_duration_seconds <= 86400):
+        raise RuntimeError(f"session_duration_seconds must be 60-86400, got {settings.session_duration_seconds}")
+    if not (1 <= settings.anti_spam_window_seconds <= 86400):
+        raise RuntimeError(f"anti_spam_window_seconds must be 1-86400, got {settings.anti_spam_window_seconds}")
+
     if settings.environment == "production":
         if settings.secret_key == "change-me-in-production":
-            warnings.warn("SECRET_KEY is using the default value — set it in .env", stacklevel=2)
+            raise RuntimeError("SECRET_KEY is using the default value — set it in .env before running in production")
         if not settings.admin_password:
-            warnings.warn("ADMIN_PASSWORD is empty — set it in .env", stacklevel=2)
+            raise RuntimeError("ADMIN_PASSWORD is empty — set it in .env before running in production")
         if settings.cors_origins == ["*"]:
             warnings.warn("CORS_ORIGINS allows all origins — restrict in production", stacklevel=2)

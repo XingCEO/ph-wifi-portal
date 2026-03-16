@@ -46,6 +46,13 @@ logger = structlog.get_logger(__name__)
 
 def verify_basic_auth(request: Request) -> None:
     client_ip = request.client.host if request.client else "unknown"
+    if not settings.admin_password:
+        logger.warning("admin_password_not_configured", ip=client_ip)
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin password not configured",
+            headers={"WWW-Authenticate": "Basic realm=Admin Panel"},
+        )
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Basic "):
         logger.warning("admin_auth_missing", ip=client_ip, path=request.url.path)
@@ -325,7 +332,7 @@ async def get_live_users(request: Request, redis: Redis = Depends(get_redis), db
 async def list_visits(
     request: Request,
     limit: int = Query(default=50, le=200),
-    offset: int = Query(default=0),
+    offset: int = Query(default=0, ge=0),
     hotspot_id: int | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> dict:
@@ -614,7 +621,7 @@ async def revoke_session(
 async def list_audit_log(
     request: Request,
     limit: int = Query(default=50, le=200),
-    offset: int = Query(default=0),
+    offset: int = Query(default=0, ge=0),
     action: str | None = Query(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
@@ -764,6 +771,13 @@ async def update_settings(
     request: Request, body: SystemSettingsUpdate, db: AsyncSession = Depends(get_db),
 ) -> dict[str, Any]:
     verify_basic_auth(request)
+    # Bounds validation
+    if body.ad_duration_seconds is not None and not (1 <= body.ad_duration_seconds <= 300):
+        raise HTTPException(status_code=400, detail="ad_duration_seconds must be between 1 and 300")
+    if body.session_duration_seconds is not None and not (60 <= body.session_duration_seconds <= 86400):
+        raise HTTPException(status_code=400, detail="session_duration_seconds must be between 60 and 86400")
+    if body.anti_spam_window_seconds is not None and not (1 <= body.anti_spam_window_seconds <= 86400):
+        raise HTTPException(status_code=400, detail="anti_spam_window_seconds must be between 1 and 86400")
     updated: dict[str, Any] = {}
     if body.ad_duration_seconds is not None:
         settings.ad_duration_seconds = body.ad_duration_seconds

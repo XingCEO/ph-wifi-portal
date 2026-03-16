@@ -17,7 +17,7 @@ from models.database import (
 
 
 def _auth_headers() -> dict[str, str]:
-    creds = base64.b64encode(b"admin:").decode()
+    creds = base64.b64encode(b"admin:testpass123").decode()
     return {"Authorization": f"Basic {creds}"}
 
 

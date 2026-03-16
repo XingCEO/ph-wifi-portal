@@ -154,7 +154,7 @@ document.addEventListener('alpine:init', () => {
       const canvas = document.getElementById('chart-trend');
       if (!canvas) return;
 
-      const trend = this.dashStats?.uv_trend || [];
+      const trend = this.dashStats?.hotspots || [];
       if (!trend.length) return;
 
       if (this.trendChart) {
@@ -165,10 +165,10 @@ document.addEventListener('alpine:init', () => {
       this.trendChart = new Chart(canvas, {
         type: 'bar',
         data: {
-          labels: trend.map(t => t.label || t.date || ''),
+          labels: trend.map(t => t.hotspot_name || ''),
           datasets: [{
-            label: 'Unique Visitors',
-            data: trend.map(t => t.value || t.count || 0),
+            label: 'Visits Today',
+            data: trend.map(t => t.visits_today || 0),
             backgroundColor: 'rgba(0, 230, 118, 0.6)',
             borderColor: '#00e676',
             borderWidth: 1,
@@ -345,15 +345,15 @@ document.addEventListener('alpine:init', () => {
         '#00e676', '#2979ff', '#ff9100', '#e040fb', '#ffea00', '#00e5ff',
       ];
 
-      if (data.by_hotspot && data.by_hotspot.length) {
-        data.by_hotspot.forEach((h, i) => {
-          labels.push(h.name || 'Hotspot ' + (i + 1));
-          values.push(h.revenue || 0);
+      if (data.breakdown_by_hotspot && data.breakdown_by_hotspot.length) {
+        data.breakdown_by_hotspot.forEach((h, i) => {
+          labels.push(h.hotspot_name || 'Hotspot ' + (i + 1));
+          values.push(parseFloat(h.revenue_usd) || 0);
           colors.push(colorPalette[i % colorPalette.length]);
         });
       } else {
         labels.push('Ad Revenue', 'Direct Ads');
-        values.push(data.ad_revenue || 0, data.direct_revenue || 0);
+        values.push(parseFloat(data.adcash_revenue_usd) || 0, parseFloat(data.direct_revenue_php) || 0);
         colors.push('#00e676', '#2979ff');
       }
 
@@ -390,7 +390,7 @@ document.addEventListener('alpine:init', () => {
         this.revDailyChart = null;
       }
 
-      const daily = Array.isArray(this.revDailyData) ? this.revDailyData : (this.revDailyData.daily || []);
+      const daily = Array.isArray(this.revDailyData) ? this.revDailyData : (this.revDailyData.days || []);
 
       this.revDailyChart = new Chart(canvas, {
         type: 'line',
@@ -472,7 +472,6 @@ document.addEventListener('alpine:init', () => {
         const params = new URLSearchParams();
         params.set('limit', '50');
         params.set('offset', String(this.usersPage * 50));
-        if (this.userSearch) params.set('search', this.userSearch);
         if (this.userHotspotFilter) params.set('hotspot_id', this.userHotspotFilter);
 
         const res = await fetch('/admin/api/visits?' + params.toString());
@@ -628,7 +627,7 @@ document.addEventListener('alpine:init', () => {
     },
 
     openBlockModal() {
-      this.blockForm = { mac_address: '', reason: '' };
+      this.blockForm = { mac: '', reason: '', expires_at: '' };
       this.showBlockModal = true;
     },
 

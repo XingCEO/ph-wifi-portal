@@ -90,10 +90,10 @@ async def portal_page(
 
     if not is_valid_mac(clientMac):
         log.warning("invalid_client_mac", mac=clientMac)
-        raise HTTPException(status_code=400, detail=f"Invalid clientMac format: {clientMac}")
+        raise HTTPException(status_code=400, detail="Invalid client MAC address format")
     if not is_valid_mac(apMac):
         log.warning("invalid_ap_mac", mac=apMac)
-        raise HTTPException(status_code=400, detail=f"Invalid apMac format: {apMac}")
+        raise HTTPException(status_code=400, detail="Invalid access point MAC address format")
 
     if not redirectUrl.startswith(("http://", "https://")):
         redirectUrl = "https://google.com"

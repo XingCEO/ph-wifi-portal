@@ -60,6 +60,21 @@ class RedisService:
         await self._redis.set(key, "1", ex=window_seconds, nx=True)
         logger.info("anti_spam_recorded", client_mac=client_mac, window_seconds=window_seconds)
 
+    async def check_and_record_anti_spam(self, client_mac: str, window_seconds: int) -> bool:
+        """Atomic anti-spam check and record using SET NX.
+
+        Returns True if the request is allowed (key did not exist),
+        False if blocked (key already existed).
+        """
+        key = f"{_ANTI_SPAM_PREFIX}{client_mac}"
+        result = await self._redis.set(key, "1", ex=window_seconds, nx=True)
+        is_allowed = result is not None
+        if not is_allowed:
+            logger.warning("anti_spam_blocked", client_mac=client_mac, window_seconds=window_seconds)
+        else:
+            logger.info("anti_spam_recorded", client_mac=client_mac, window_seconds=window_seconds)
+        return is_allowed
+
     async def increment_active_users(self, hotspot_id: int, ttl: int = 3600) -> None:
         key = f"{_ACTIVE_USERS_PREFIX}{hotspot_id}"
         await self._redis.incr(key)

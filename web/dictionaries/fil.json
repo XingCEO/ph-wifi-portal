@@ -80,8 +80,20 @@
     "emailLabel": "I-email kami",
     "email": "Founder@abotkamay.net"
   },
+  "coverage": {
+    "label": "Saan Kami Matatagpuan",
+    "title": "WiFi kung saan ka man naroroon",
+    "description": "Nagde-deploy kami ng mga hotspot sa mga lugar kung saan pinaka-kailangan ng mga tao ang connectivity.",
+    "sariSari": "Mga Sari-sari Store",
+    "cafes": "Mga Café at Restaurant",
+    "community": "Mga Community Center",
+    "transport": "Mga Transport Hub",
+    "public": "Mga Pampublikong Lugar",
+    "markets": "Mga Palengke at Mall"
+  },
   "footer": {
     "tagline": "Libreng internet, abot-kamay mo.",
-    "copyright": "AbotKamay. Lahat ng karapatan ay nakalaan."
+    "copyright": "AbotKamay. Lahat ng karapatan ay nakalaan.",
+    "quickLinks": "Mga Link"
   }
 }

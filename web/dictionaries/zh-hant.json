@@ -80,8 +80,20 @@
     "emailLabel": "寄信給我們",
     "email": "Founder@abotkamay.net"
   },
+  "coverage": {
+    "label": "部署地點",
+    "title": "在你所到之處，都有 WiFi",
+    "description": "我們在人們最需要連線的地方部署熱點。",
+    "sariSari": "雜貨店",
+    "cafes": "咖啡廳與餐廳",
+    "community": "社區中心",
+    "transport": "交通樞紐",
+    "public": "公共空間",
+    "markets": "市場與商場"
+  },
   "footer": {
     "tagline": "免費網路，觸手可及。",
-    "copyright": "AbotKamay 版權所有。"
+    "copyright": "AbotKamay 版權所有。",
+    "quickLinks": "快速連結"
   }
 }

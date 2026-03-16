@@ -93,7 +93,7 @@ def create_app() -> FastAPI:
     application.add_middleware(
         CORSMiddleware,
         allow_origins=settings.cors_origins,
-        allow_credentials=True,
+        allow_credentials="*" not in settings.cors_origins,
         allow_methods=["GET", "POST", "PATCH", "DELETE"],
         allow_headers=["*"],
     )
@@ -188,10 +188,4 @@ app = create_app()
 # Emergency health check — 繞過所有中間件
 @app.get("/_health")
 async def emergency_health():
-    import os
-    return {
-        "status": "alive",
-        "port": os.environ.get("PORT", "not set"),
-        "db_url_key": next((k for k in ["DATABASE_URL","POSTGRES_URI","POSTGRESQL_URI"] if os.environ.get(k) and not os.environ.get(k,"").startswith("${")), "none"),
-        "redis_url_key": next((k for k in ["REDIS_URL","REDIS_URI"] if os.environ.get(k) and not os.environ.get(k,"").startswith("${")), "none"),
-    }
+    return {"status": "alive"}

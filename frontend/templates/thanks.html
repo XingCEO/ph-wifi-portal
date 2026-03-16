@@ -3,15 +3,16 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Connected — Free WiFi</title>
+  <meta name="theme-color" content="#faf8f5">
+  <title>Connected — AbotKamay WiFi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Inter', system-ui, sans-serif;
-      background: #09090b;
-      color: #fafafa;
+      font-family: 'Nunito', system-ui, sans-serif;
+      background: #faf8f5;
+      color: #1a1a1a;
       min-height: 100vh;
       display: flex;
       align-items: center;
@@ -23,12 +24,17 @@
       text-align: center;
       max-width: 360px;
       width: 100%;
+      background: #ffffff;
+      border: 1px solid #eae6e0;
+      border-radius: 16px;
+      padding: 32px 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
     }
     .icon-wrap {
       width: 72px;
       height: 72px;
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.3);
+      background: rgba(45,106,79,0.08);
+      border: 1px solid rgba(45,106,79,0.18);
       border-radius: 50%;
       display: flex;
       align-items: center;
@@ -36,55 +42,70 @@
       margin: 0 auto 24px;
     }
     .title {
+      font-family: 'Plus Jakarta Sans', 'Nunito', sans-serif;
       font-size: 22px;
       font-weight: 700;
       letter-spacing: -0.03em;
       margin-bottom: 8px;
+      color: #1a1a1a;
     }
     .subtitle {
       font-size: 14px;
-      color: #a1a1aa;
+      color: #4a4a4a;
       line-height: 1.6;
       margin-bottom: 6px;
     }
     .tagalog {
       font-size: 12px;
-      color: #71717a;
+      color: #7a7a7a;
     }
     .badge {
       display: inline-flex;
       align-items: center;
       gap: 6px;
-      background: rgba(34, 197, 94, 0.1);
-      border: 1px solid rgba(34, 197, 94, 0.2);
+      background: rgba(45,106,79,0.08);
+      border: 1px solid rgba(45,106,79,0.18);
       border-radius: 20px;
       padding: 6px 14px;
       font-size: 13px;
-      color: #22c55e;
-      font-weight: 500;
+      color: #2d6a4f;
+      font-weight: 600;
       margin: 20px 0;
     }
     .redirect-btn {
       display: block;
       width: 100%;
       height: 48px;
-      background: transparent;
-      border: 1px solid #3f3f46;
-      border-radius: 10px;
-      color: #a1a1aa;
+      background: #2d6a4f;
+      border: none;
+      border-radius: 12px;
+      color: #ffffff;
       font-size: 14px;
-      font-family: inherit;
+      font-weight: 700;
+      font-family: 'Nunito', system-ui, sans-serif;
       cursor: pointer;
-      transition: border-color 0.15s, color 0.15s;
+      transition: background 0.15s, transform 0.15s;
       margin-top: 12px;
+      box-shadow: 0 2px 8px rgba(45,106,79,0.25);
     }
-    .redirect-btn:hover { border-color: #71717a; color: #fafafa; }
+    .redirect-btn:hover { background: #40916c; transform: translateY(-1px); }
+    .redirect-btn:active { transform: scale(0.98) translateY(0); }
+    .brand-footer {
+      margin-top: 20px;
+      font-size: 11px;
+      color: #7a7a7a;
+      letter-spacing: 0.04em;
+    }
+    .brand-footer strong {
+      color: #2d6a4f;
+      font-weight: 700;
+    }
   </style>
 </head>
 <body>
   <div class="card">
     <div class="icon-wrap">
-      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#2d6a4f" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
     </div>
@@ -98,8 +119,9 @@
     <p class="subtitle">You are now connected to the internet.</p>
     <p class="tagalog">Nakakonekta ka na sa internet — 1 oras na libreng paggamit</p>
     <button class="redirect-btn" onclick="window.location.href='https://google.com'">
-      Continue browsing →
+      Continue browsing
     </button>
+    <p class="brand-footer">Powered by <strong>AbotKamay</strong></p>
   </div>
   <script>
     const raw = new URLSearchParams(window.location.search).get('to') || 'https://google.com';
