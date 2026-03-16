@@ -87,10 +87,10 @@ export default function Header({
       {menuOpen && (
         <>
           <div
-            className="fixed inset-0 top-0 bg-white/60 backdrop-blur-xl z-40 md:hidden"
+            className="fixed inset-0 top-0 bg-[var(--color-warm-white)] z-40 md:hidden"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="fixed top-16 left-4 right-4 z-50 md:hidden bg-white/80 backdrop-blur-2xl border border-white/50 px-5 py-6 shadow-2xl rounded-2xl">
+          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-[var(--color-warm-white)] px-6 py-8">
             <nav className="flex flex-col gap-4">
               <a
                 href="#how-it-works"
