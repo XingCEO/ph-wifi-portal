@@ -4,32 +4,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Philippines WiFi ad monetization system — users connect to free WiFi, watch a 30-second Adcash ad, then get 1 hour of internet access via TP-Link OC200 hardware controller.
+**AbotKamay WiFi** — Free public WiFi platform for the Philippines. Users connect to WiFi, watch a short ad, and get 10 minutes of free internet via TP-Link OC200 hardware controller. The project has two frontends: a Next.js brand website and a FastAPI-served captive portal.
 
 ## Tech Stack
 
+- **Brand website:** Next.js 16 (App Router, static export), Tailwind CSS 4, Framer Motion, Lucide icons, i18n (EN/Filipino/繁體中文)
 - **Backend:** Python 3.12, FastAPI 0.115.0, Uvicorn (async)
 - **Database:** PostgreSQL 16 (SQLAlchemy 2.0 async + asyncpg)
 - **Cache:** Redis 7 (redis-asyncio) for sessions and anti-spam
-- **Frontend:** Vanilla HTML/JS/CSS (no framework), Chart.js for admin dashboard
-- **Infrastructure:** Docker Compose (Nginx + App + Postgres + Redis + Certbot)
-- **Logging:** structlog (JSON-formatted structured logging throughout)
+- **Portal frontend:** Vanilla HTML/CSS/JS, Alpine.js + Chart.js for admin dashboard
+- **Infrastructure:** Docker Compose (Nginx + Next.js + FastAPI + Postgres + Redis + Certbot)
+- **Logging:** structlog (JSON-formatted structured logging)
 
 ## Commands
 
 ```bash
-# Run locally (from server/)
+# Backend (from server/)
 cd server
 cp .env.example .env          # configure env vars first
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
-# Run with Docker
+# Brand website (from web/)
+cd web && npm install
+npm run dev                    # dev server (port 3000)
+npm run build                  # static export to out/
+
+# Docker (production)
 cd deploy && docker-compose up -d
 
 # Tests
-cd server && pytest tests/                  # all tests
-cd server && pytest tests/test_portal.py    # single file
-cd server && pytest tests/ -v --cov         # with coverage
+cd server && pytest tests/                    # all tests (54 total)
+cd server && pytest tests/test_portal.py      # single file
+cd server && pytest tests/ -v --cov           # with coverage
 
 # Type checking
 mypy server/
@@ -40,29 +46,23 @@ cd server && alembic upgrade head
 
 ## Architecture
 
-**Request flow:** User phone → OC200 captive portal redirect → `GET /portal` (creates Redis session, records visit) → 30s ad countdown → `POST /api/grant-access` (consumes session, calls Omada API to authorize MAC) → 1hr WiFi access.
+**Request flow:** User phone → OC200 captive portal redirect → `GET /portal` (creates Redis session, records visit) → ad countdown → `POST /api/grant-access` (atomic session consume, anti-spam SET NX, calls Omada API to authorize MAC) → 10min WiFi access.
 
-**Key modules:**
-- `server/main.py` — App factory (`create_app()`) with lifespan handler (init DB, Redis, Omada on startup). Rate limiting via slowapi.
-- `server/routers/portal.py` — Captive portal page, validates MAC params from OC200 redirect, loads template from `frontend/templates/portal.html`
-- `server/routers/auth.py` — `/api/grant-access` endpoint, orchestrates session→Omada→DB flow. Checks blocked devices and anti-spam before granting.
-- `server/routers/admin.py` — Admin dashboard + all `/admin/api/*` JSON endpoints (~850 lines). Serves `frontend/templates/admin/dashboard.html`.
-- `server/services/omada.py` — OmadaClient: authenticates with OC200 controller, authorizes/deauthorizes MACs via HTTP API. Uses httpx with session/CSRF token management.
-- `server/services/redis_service.py` — `RedisService` class: session management (create/consume with atomic pipeline), anti-spam cooldowns, active user tracking per hotspot. Module-level singleton pattern via `set_redis_instance()`/`get_redis()`.
-- `server/models/database.py` — SQLAlchemy 2.0 ORM with mapped_column style. Also contains `get_db()` async generator (auto-commit/rollback) and `is_valid_mac()` helper.
-- `server/models/schemas.py` — Pydantic v2 request/response models
-- `server/config.py` — Pydantic Settings. Auto-detects Zeabur-injected DB/Redis env var names (checks multiple keys like `DATABASE_URL`, `POSTGRES_URI`, etc.).
-- `server/main_wrapper.py` — Fallback wrapper used in Zeabur deployment; loads real app but exposes health/debug endpoints if import fails.
+**Two frontends, one repo:**
+- `web/` — Next.js brand website (abotkamay.net). Static export (`output: "export"`), client-side locale detection redirects `/` to `/en/`, `/fil/`, or `/zh-hant/` based on `navigator.language`. Translations in `web/dictionaries/*.json`.
+- `frontend/` — FastAPI-served portal pages (captive portal, thanks, admin dashboard). Vanilla HTML with brand-consistent styling (warm white theme, brand green `#2d6a4f`).
 
-**Frontend structure:**
-- `frontend/templates/portal.html` — User-facing captive portal page
-- `frontend/templates/admin/dashboard.html` — Admin dashboard HTML
-- `frontend/static/css/` — `portal.css`, `admin.css`
-- `frontend/static/js/` — `portal.js`, `admin.js`
-- `frontend/templates/thanks.html` — Post-grant thank you page
-- `frontend/templates/error.html` — Error page
+**Key backend modules:**
+- `server/main.py` — App factory (`create_app()`) with lifespan handler (init DB, Redis, Omada). Rate limiting via slowapi. CORS credentials disabled when origins contain `"*"`.
+- `server/routers/portal.py` — Captive portal page, validates MAC params, loads `frontend/templates/portal.html`. Also serves `GET /` (legacy landing) and `GET /thanks`.
+- `server/routers/auth.py` — `/api/grant-access` endpoint. Uses atomic `check_and_record_anti_spam` (Redis SET NX) to prevent TOCTOU race. Skips Omada call when `omada_controller_id` is empty (test mode).
+- `server/routers/admin.py` — Admin dashboard + all `/admin/api/*` JSON endpoints. `verify_basic_auth()` rejects requests when `admin_password` is empty.
+- `server/services/omada.py` — OmadaClient: authenticates with OC200, authorizes/deauthorizes MACs via httpx with session/CSRF token management.
+- `server/services/redis_service.py` — Session management (atomic pipeline consume), `check_and_record_anti_spam` (SET NX), active user tracking. Module-level singleton via `set_redis_instance()`/`get_redis()`.
+- `server/models/database.py` — SQLAlchemy 2.0 ORM (mapped_column), `get_db()` async generator (auto-commit/rollback), `is_valid_mac()`.
+- `server/config.py` — Pydantic Settings with bounds validation on startup. Production requires non-empty `admin_password` and non-default `secret_key` (RuntimeError if missing). Auto-detects Zeabur-injected env var names.
 
-**Auth:** Admin endpoints use HTTP Basic Auth (`verify_basic_auth()` in admin.py with `secrets.compare_digest`). Portal/grant endpoints are public but session-validated via Redis.
+**Auth:** Admin endpoints use HTTP Basic Auth (`secrets.compare_digest`). Empty password is rejected with 401. Portal/grant endpoints are public but session-validated via Redis.
 
 **Database tables:** `hotspots`, `visits`, `ad_views`, `access_grants`, `direct_advertisers`, `blocked_devices`, `admin_audit_log`. Migrations in `server/alembic/versions/`.
 
@@ -73,34 +73,40 @@ cd server && alembic upgrade head
 | `GET /portal` | None | Captive portal page (OC200 redirects here) |
 | `POST /api/grant-access` | Session | Grant WiFi after ad view |
 | `GET /health` | None | Health check (DB + Redis status) |
-| `GET /_health` | None | Emergency health (bypasses middleware) |
+| `GET /_health` | None | Emergency health (minimal, bypasses middleware) |
 | `GET /metrics` | Basic | App metrics |
 | `GET /admin/` | Basic | Admin dashboard |
 | `GET /admin/api/stats` | Basic | Overall statistics |
-| `GET /admin/api/hotspots` | Basic | Hotspot list |
-| `POST /admin/api/hotspots` | Basic | Create hotspot |
-| `PATCH /admin/api/hotspots/{id}` | Basic | Update/toggle hotspot |
+| `GET /admin/api/hotspots` | Basic | Hotspot CRUD |
 | `GET /admin/api/revenue` | Basic | Revenue analytics |
+| `GET /admin/api/revenue/daily` | Basic | Daily revenue breakdown |
 | `GET /admin/api/live` | Basic | Real-time online users |
 | `GET /admin/api/visits` | Basic | Visit history (paginated) |
 | `GET /admin/api/security` | Basic | Security overview |
+| `PATCH /admin/api/settings` | Basic | Update runtime settings (bounded: ad 1-300s, session 60-86400s, anti-spam 1-86400s) |
 
 ## Testing Notes
 
-- Tests use **SQLite in-memory** DB via `aiosqlite` (not asyncpg) — see `server/tests/conftest.py`
+- Tests use **SQLite in-memory** DB via `aiosqlite` — see `server/tests/conftest.py`
 - Redis is mocked with `MagicMock`/`AsyncMock` (including pipeline transactions)
 - Omada API calls are fully mocked
-- The test app fixture overrides the lifespan to avoid connecting to real services
+- `conftest.py` patches `admin_password` to `"testpass123"` — admin tests use matching Basic Auth header
+- Tests that need Omada calls must patch `settings.omada_controller_id` to a non-empty value (otherwise test mode skips Omada)
 - Test client uses `httpx.AsyncClient` with `ASGITransport`
-- Test files: `test_portal.py`, `test_omada.py`
+- Test files: `test_portal.py`, `test_auth.py`, `test_admin_api.py`, `test_omada.py` (54 tests total)
 
 ## Deployment
 
-Two options: **Zeabur** (config in `zeabur.json`, uses `main_wrapper.py` entrypoint) or **self-hosted VPS** (`deploy/setup.sh` for Ubuntu 22.04 one-click setup, `deploy/update.sh` for rolling updates, `deploy/backup.sh` for DB backups).
+**Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 5 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis. Nginx routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js.
+
+**Zeabur:** Config in `zeabur.json`. Only deploys FastAPI backend; brand website needs separate hosting.
 
 ## Key Patterns
 
 - All async — DB sessions, Redis calls, and HTTP (Omada) are async throughout
-- Redis sessions are consumed atomically via pipeline (get + delete in one transaction) to prevent replay
+- Redis sessions consumed atomically via pipeline (GET + DELETE) to prevent replay
+- Anti-spam uses atomic `SET NX` to prevent TOCTOU race conditions
+- Next.js uses static export (`output: "export"`) with client-side locale redirect, no server runtime needed
 - Config supports multiple env var names for the same service (Zeabur compatibility)
 - Comments in codebase mix English and Traditional Chinese (繁體中文)
+- Portal and thanks pages use AbotKamay brand design (warm white `#faf8f5`, brand green `#2d6a4f`, Nunito + Plus Jakarta Sans fonts)

@@ -166,8 +166,4 @@ async def thanks_page() -> HTMLResponse:
     return HTMLResponse(content=_THANKS_CACHE, status_code=200)
 
 
-@router.get("/")
-async def homepage():
-    """Redirect root to Next.js brand site."""
-    from fastapi.responses import RedirectResponse
-    return RedirectResponse(url="/site/", status_code=302)
+

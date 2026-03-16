@@ -140,11 +140,6 @@ def create_app() -> FastAPI:
     if static_path.exists():
         application.mount("/static", StaticFiles(directory=str(static_path)), name="static")
 
-    # Next.js brand website (static export)
-    web_out_path = Path(__file__).parent.parent / "web" / "out"
-    if web_out_path.exists():
-        application.mount("/site", StaticFiles(directory=str(web_out_path), html=True), name="brand-site")
-
     @application.get("/health", response_model=HealthResponse)
     async def health_check(request: Request) -> HealthResponse:
         from services.redis_service import get_redis as _get_redis
@@ -183,6 +178,11 @@ def create_app() -> FastAPI:
         except Exception:
             pass
         return {"version": "1.0.0", "environment": settings.environment, "counters": dict(_metrics), "redis_keys": redis_key_count}
+
+    # Next.js brand website (static export) — MUST be last (catch-all)
+    web_out_path = Path(__file__).parent.parent / "web" / "out"
+    if web_out_path.exists():
+        application.mount("/", StaticFiles(directory=str(web_out_path), html=True), name="brand-site")
 
     return application
 
