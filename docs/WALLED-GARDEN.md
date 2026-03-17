@@ -1,6 +1,6 @@
 # Walled Garden 設定清單
 
-OC200 的 Walled Garden 必須允許以下域名，
+Omada Controller（軟體版或 OC200 硬體）的 Walled Garden 必須允許以下域名，
 用戶在看廣告（未認證）期間才能正常載入頁面和廣告。
 
 ## 必須加入的域名
@@ -35,9 +35,10 @@ captive.apple.com
 www.apple.com
 ```
 
-## OC200 設定路徑
+## Omada Controller 設定路徑
 
-Omada Controller → Hotspot → Portal → Walled Garden
+Omada Controller 管理介面 → Hotspot → Portal → Walled Garden
+（軟體版：`https://omada.你的域名`，OC200：`https://OC200_IP:8043`）
 
 每行加一個域名，支援萬用字元 `*`。
 

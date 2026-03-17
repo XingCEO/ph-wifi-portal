@@ -1,6 +1,8 @@
 # 第一次部署完整指南（從零開始）
 
-> 預計時間：2-3 小時  
+> **⚠️ 此文件為早期 Zeabur + OC200 硬體方案的部署指南。** 目前推薦使用自架 VPS 一鍵部署（含 Omada Software Controller），只需執行 `sudo bash deploy/setup.sh`。詳見 [README.md](../README.md) 和 [DEPLOYMENT-GUIDE.md](DEPLOYMENT-GUIDE.md)。
+
+> 預計時間：2-3 小時
 > 難度：中等（有基本 Git 和網路知識即可）
 
 ---

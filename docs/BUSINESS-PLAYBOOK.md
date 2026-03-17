@@ -233,5 +233,5 @@ Contact: [你的名字] | [電話] | [Email]
 1. **語言**：Tagalog + English 都要準備（提案、廣告都是）
 2. **支付**：GCash 最普及，場地業主分潤建議用 GCash 轉帳
 3. **季節性**：聖誕假期（11月-1月）人流量最高，廣告 CPM 也最高
-4. **停電**：準備 UPS 不斷電系統給 OC200 和 Router（菲律賓停電頻繁）
+4. **停電**：準備 UPS 不斷電系統給 Router 和 AP（菲律賓停電頻繁），Omada Controller 在雲端 VPS 不受影響
 5. **競爭**：Globe/Smart 的 Free WiFi 也在搶地盤，主打「更快更穩定」差異化

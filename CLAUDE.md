@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AbotKamay WiFi** — Free public WiFi platform for the Philippines. Users connect to WiFi, watch a short ad, and get 10 minutes of free internet via TP-Link OC200 hardware controller. The project has two frontends: a Next.js brand website and a FastAPI-served captive portal. Evolving into a SaaS platform with multi-tenant organization support.
+**AbotKamay WiFi** — Free public WiFi SaaS platform for the Philippines. Users connect to WiFi, watch a short ad, and get free internet (default 1 hour). Omada Software Controller (Docker) replaces the physical OC200 hardware. The project has two frontends: a Next.js brand website and a FastAPI-served captive portal, plus a multi-tenant SaaS layer.
 
 ## Tech Stack
 
@@ -49,7 +49,7 @@ cd server && alembic upgrade head
 
 ## Architecture
 
-**Request flow:** User phone → OC200 captive portal redirect → `GET /portal` (creates Redis session, records visit) → ad countdown → `POST /api/grant-access` (atomic session consume, anti-spam SET NX, calls Omada API to authorize MAC) → 10min WiFi access.
+**Request flow:** User phone → Omada Controller captive portal redirect → `GET /portal` (creates Redis session, records visit) → ad countdown → `POST /api/grant-access` (atomic session consume, anti-spam SET NX, calls Omada API to authorize MAC) → 1hr WiFi access.
 
 **Two frontends, one repo:**
 - `web/` — Next.js brand website (abotkamay.net). Static export (`output: "export"`), client-side locale detection redirects `/` to `/en/`, `/fil/`, or `/zh-hant/` based on `navigator.language`. Translations in `web/dictionaries/*.json`.
@@ -63,7 +63,8 @@ cd server && alembic upgrade head
 - `server/routers/saas_auth.py` — SaaS customer auth: registration, login, JWT token management. Uses passlib/bcrypt for password hashing.
 - `server/routers/dashboard.py` — SaaS customer dashboard API (per-organization stats, hotspot management).
 - `server/routers/superadmin.py` — Platform-wide super admin API (all organizations, subscriptions, platform metrics).
-- `server/services/omada.py` — OmadaClient: authenticates with OC200, authorizes/deauthorizes MACs via httpx with session/CSRF token management.
+- `server/services/omada.py` — OmadaClient: authenticates with Omada Controller (software or OC200), authorizes/deauthorizes MACs via httpx with session/CSRF token management.
+- `server/rate_limit.py` — Shared slowapi Limiter instance (imported by main.py and routers to avoid circular imports).
 - `server/services/redis_service.py` — Session management (atomic pipeline consume), `check_and_record_anti_spam` (SET NX), active user tracking. Module-level singleton via `set_redis_instance()`/`get_redis()`.
 - `server/models/database.py` — SQLAlchemy 2.0 ORM (mapped_column), `get_db()` async generator (auto-commit/rollback), `is_valid_mac()`. Includes SaaS models: `Organization`, `SaasUser`, `Subscription`.
 - `server/config.py` — Pydantic Settings with bounds validation on startup. Production requires non-empty `admin_password` and non-default `secret_key` (RuntimeError if missing). Auto-detects Zeabur-injected env var names.
@@ -79,7 +80,7 @@ cd server && alembic upgrade head
 
 | Endpoint | Auth | Purpose |
 |----------|------|---------|
-| `GET /portal` | None | Captive portal page (OC200 redirects here) |
+| `GET /portal` | None | Captive portal page (Omada Controller redirects here) |
 | `POST /api/grant-access` | Session | Grant WiFi after ad view |
 | `GET /health` | None | Health check (DB + Redis status) |
 | `GET /_health` | None | Emergency health (minimal, bypasses middleware) |

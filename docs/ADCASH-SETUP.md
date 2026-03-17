@@ -90,7 +90,7 @@ Portal 前端會自動讀取此設定並載入廣告。
 
 ## 5. Walled Garden — 加入 Adcash CDN
 
-在 OC200 Walled Garden 加入以下域名，讓未認證用戶也能載入廣告：
+在 Omada Controller Walled Garden 加入以下域名，讓未認證用戶也能載入廣告（設定路徑見 [WALLED-GARDEN.md](WALLED-GARDEN.md)）：
 
 ```
 cdn.acint.net

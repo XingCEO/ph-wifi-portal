@@ -1,6 +1,9 @@
 # 菲律賓 WiFi 廣告系統 — 完整規劃
+
+> **⚠️ 歷史文件** — 此為初始規劃文件，部分內容已過時。目前系統已改用 Omada Software Controller (Docker) 取代 OC200 硬體，並演進為 SaaS 多租戶平台。最新部署方式請參閱 [README.md](README.md)。
+
 > 2026-03-15 | Felix 🦞
-> 硬體：TP-Link EAP225 + EAP650-Outdoor + OC200 | 伺服器：Zeabur
+> 硬體：TP-Link EAP225 + EAP650-Outdoor + ~~OC200~~ Omada Software Controller | 伺服器：自架 VPS 或 Zeabur
 
 ---
 

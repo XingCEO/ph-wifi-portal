@@ -1,5 +1,7 @@
 # OC200 硬體控制器設定指南
 
+> **⚠️ 此文件適用於使用 OC200 實體硬體的情境。** 目前系統已支援 Omada Software Controller（Docker），不需要購買 OC200 硬體。如果使用軟體版，Portal/Walled Garden/Operator 的設定步驟相同，只是管理介面改從 `https://omada.你的域名` 登入。
+
 > **TP-Link OC200 Omada Hardware Controller**
 > 搭配 EAP225（室內）、EAP650-Outdoor（戶外 IP67）
 

@@ -1,6 +1,8 @@
 # PH WiFi Ad System — 系統架構文件
 
-> 菲律賓「看廣告換免費上網」服務架構設計  
+> **⚠️ 歷史文件** — 此為早期 MikroTik 方案的架構設計。目前系統已改用 TP-Link Omada Software Controller (Docker) + FastAPI + Next.js SaaS 架構。最新架構請參閱 [README.md](README.md) 和 [CLAUDE.md](CLAUDE.md)。
+
+> 菲律賓「看廣告換免費上網」服務架構設計
 > 參考 Purple WiFi 雲端模型，完全自建
 
 ---
