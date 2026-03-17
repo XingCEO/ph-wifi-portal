@@ -325,8 +325,19 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db() -> None:
+    """Initialize database: create all tables (idempotent)."""
     async with async_engine.begin() as conn:
+        # create_all is safe to run multiple times — skips existing tables
         await conn.run_sync(Base.metadata.create_all)
+        # Also ensure org_id column exists on hotspots (migration safety)
+        try:
+            await conn.execute(
+                __import__("sqlalchemy").text(
+                    "ALTER TABLE hotspots ADD COLUMN IF NOT EXISTS org_id INTEGER REFERENCES organizations(id)"
+                )
+            )
+        except Exception:
+            pass  # Column may already exist
 
 
 MAC_RE = re.compile(r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$")
