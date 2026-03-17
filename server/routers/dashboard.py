@@ -468,12 +468,12 @@ async def get_billing(
 
 # ─── Delete Hotspot ──────────────────────────────────────────────────────────
 
-@router.delete("/hotspots/{hotspot_id}", status_code=204)
+@router.delete("/hotspots/{hotspot_id}", status_code=200)
 async def delete_hotspot(
     hotspot_id: int,
     current_user: SaasUser = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
-) -> None:
+):
     """移除場所（軟刪除：設為 inactive）"""
     if not current_user.organization_id:
         raise HTTPException(status_code=400, detail="User has no organization")
@@ -491,3 +491,4 @@ async def delete_hotspot(
     hotspot.is_active = False
     await db.commit()
     logger.info("hotspot_deleted", hotspot_id=hotspot_id, user_id=current_user.id)
+    return {"status": "deleted", "hotspot_id": hotspot_id}

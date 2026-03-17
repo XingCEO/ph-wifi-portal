@@ -257,7 +257,7 @@ async def test_delete_hotspot(client: AsyncClient) -> None:
         f"/api/dashboard/hotspots/{hs_id}",
         headers={"Authorization": f"Bearer {token}"},
     )
-    assert del_resp.status_code == 204
+    assert del_resp.status_code == 200
 
 
 async def test_delete_hotspot_not_found(client: AsyncClient) -> None:
