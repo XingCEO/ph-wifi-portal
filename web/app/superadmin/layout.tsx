@@ -14,6 +14,8 @@ import {
   Menu,
   X,
   AlertTriangle,
+  Megaphone,
+  MapPin,
 } from "lucide-react";
 import { ToastContainer } from "../components/Toast";
 
@@ -65,13 +67,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
       const res = await superadminFetch("/api/superadmin/stats");
       if (res.status === 401) {
         clearSuperAdminAuth();
-        setLoginError("Invalid credentials");
+        setLoginError("帳號或密碼錯誤");
         return;
       }
       setIsLoggedIn(true);
     } catch {
       clearSuperAdminAuth();
-      setLoginError("Connection failed");
+      setLoginError("連線失敗，請稍後再試");
     }
   };
 
@@ -90,8 +92,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-500 rounded-2xl mb-4">
               <ShieldCheck size={24} className="text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">Super Admin</h1>
-            <p className="text-gray-400 mt-1 text-sm">Platform control panel</p>
+            <h1 className="text-2xl font-bold text-white">超級管理員</h1>
+            <p className="text-gray-400 mt-1 text-sm">平台控制後台</p>
           </div>
 
           <div className="bg-gray-900 border border-gray-800 rounded-2xl p-8">
@@ -103,7 +105,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             )}
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Username</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">帳號</label>
                 <input
                   type="text"
                   required
@@ -114,7 +116,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1.5">Password</label>
+                <label className="block text-sm font-medium text-gray-300 mb-1.5">密碼</label>
                 <input
                   type="password"
                   required
@@ -128,7 +130,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
                 type="submit"
                 className="w-full bg-amber-500 hover:bg-amber-400 text-gray-900 font-semibold py-3 rounded-xl transition-colors text-sm"
               >
-                Sign In to Control Panel
+                登入控制後台
               </button>
             </form>
           </div>
@@ -138,11 +140,13 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
   }
 
   const navItems = [
-    { href: "/superadmin", label: "Overview", icon: LayoutDashboard },
-    { href: "/superadmin/users", label: "Users", icon: Users },
-    { href: "/superadmin/hotspots", label: "Hotspots", icon: Wifi },
-    { href: "/superadmin/revenue", label: "Revenue", icon: DollarSign },
-    { href: "/superadmin/plans", label: "Plans", icon: CreditCard },
+    { href: "/superadmin", label: "總覽", icon: LayoutDashboard },
+    { href: "/superadmin/users", label: "用戶管理", icon: Users },
+    { href: "/superadmin/sites", label: "站點管理", icon: MapPin },
+    { href: "/superadmin/hotspots", label: "熱點列表", icon: Wifi },
+    { href: "/superadmin/ads", label: "廣告管理", icon: Megaphone },
+    { href: "/superadmin/revenue", label: "收入分析", icon: DollarSign },
+    { href: "/superadmin/plans", label: "方案管理", icon: CreditCard },
   ];
 
   return (
@@ -156,8 +160,8 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
           <div className="flex items-center gap-2">
             <ShieldCheck size={20} className="text-amber-400" />
             <div>
-              <p className="font-bold text-white text-sm">Super Admin</p>
-              <p className="text-xs text-gray-500">Platform Control</p>
+              <p className="font-bold text-white text-sm">超級管理員</p>
+              <p className="text-xs text-gray-500">平台控制</p>
             </div>
           </div>
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden text-gray-500 hover:text-white">
@@ -192,7 +196,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             className="flex items-center gap-2 text-sm text-gray-400 hover:text-white transition-colors w-full px-3 py-2 rounded-xl hover:bg-gray-800"
           >
             <LogOut size={16} />
-            Sign Out
+            登出
           </button>
         </div>
       </aside>
@@ -204,7 +208,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
             <Menu size={20} />
           </button>
           <span className="ml-3 text-sm font-semibold text-amber-400 flex items-center gap-1.5">
-            <ShieldCheck size={16} /> Super Admin
+            <ShieldCheck size={16} /> 超級管理員
           </span>
         </header>
 

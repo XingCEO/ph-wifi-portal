@@ -28,6 +28,13 @@ const PLAN_COLORS: Record<string, string> = {
   enterprise: "bg-purple-900/50 text-purple-400",
 };
 
+const PLAN_LABELS: Record<string, string> = {
+  free: "免費",
+  starter: "入門",
+  pro: "專業",
+  enterprise: "企業",
+};
+
 export default function SuperAdminUsersPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
@@ -45,7 +52,7 @@ export default function SuperAdminUsersPage() {
       if (!res.ok) throw new Error("Failed to load");
       setUsers(await res.json());
     } catch {
-      toast("error", "Failed to load users");
+      toast("error", "無法載入用戶資料");
     } finally {
       setLoading(false);
     }
@@ -69,9 +76,9 @@ export default function SuperAdminUsersPage() {
       if (!res.ok) throw new Error("Update failed");
       const updated: User = await res.json();
       setUsers((prev) => prev.map((u) => (u.id === updated.id ? updated : u)));
-      toast("success", `User ${updated.is_active ? "activated" : "deactivated"}`);
+      toast("success", `用戶已${updated.is_active ? "啟用" : "停用"}`);
     } catch {
-      toast("error", "Failed to update user");
+      toast("error", "更新用戶狀態失敗");
     } finally {
       setUpdatingId(null);
     }
@@ -81,8 +88,8 @@ export default function SuperAdminUsersPage() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Users</h1>
-          <p className="text-gray-500 text-sm mt-0.5">All SaaS platform users</p>
+          <h1 className="text-2xl font-bold text-white">用戶管理</h1>
+          <p className="text-gray-500 text-sm mt-0.5">所有 SaaS 平台用戶</p>
         </div>
         <form onSubmit={handleSearch} className="flex gap-2">
           <div className="relative">
@@ -91,7 +98,7 @@ export default function SuperAdminUsersPage() {
               type="text"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
-              placeholder="Search by email or name..."
+              placeholder="搜尋電子信箱或姓名..."
               className="bg-gray-800 border border-gray-700 rounded-xl pl-9 pr-4 py-2 text-sm text-white placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 w-64"
             />
           </div>
@@ -99,7 +106,7 @@ export default function SuperAdminUsersPage() {
             type="submit"
             className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-semibold rounded-xl transition-colors"
           >
-            Search
+            搜尋
           </button>
         </form>
       </div>
@@ -110,19 +117,19 @@ export default function SuperAdminUsersPage() {
             <Loader2 className="animate-spin text-amber-400" size={28} />
           </div>
         ) : users.length === 0 ? (
-          <div className="text-center text-gray-500 py-16 text-sm">No users found</div>
+          <div className="text-center text-gray-500 py-16 text-sm">找不到用戶</div>
         ) : (
           <>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-800 bg-gray-900/60">
-                    <th className="text-left px-5 py-3 text-gray-500 font-medium">User</th>
-                    <th className="text-left px-5 py-3 text-gray-500 font-medium">Organization</th>
-                    <th className="text-left px-5 py-3 text-gray-500 font-medium">Plan</th>
-                    <th className="text-left px-5 py-3 text-gray-500 font-medium">Status</th>
-                    <th className="text-left px-5 py-3 text-gray-500 font-medium">Joined</th>
-                    <th className="text-right px-5 py-3 text-gray-500 font-medium">Actions</th>
+                    <th className="text-left px-5 py-3 text-gray-500 font-medium">用戶</th>
+                    <th className="text-left px-5 py-3 text-gray-500 font-medium">所屬組織</th>
+                    <th className="text-left px-5 py-3 text-gray-500 font-medium">方案</th>
+                    <th className="text-left px-5 py-3 text-gray-500 font-medium">狀態</th>
+                    <th className="text-left px-5 py-3 text-gray-500 font-medium">加入時間</th>
+                    <th className="text-right px-5 py-3 text-gray-500 font-medium">操作</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -145,7 +152,7 @@ export default function SuperAdminUsersPage() {
                       <td className="px-5 py-3.5">
                         {user.plan ? (
                           <span className={`px-2 py-0.5 rounded-full text-xs font-medium capitalize ${PLAN_COLORS[user.plan] ?? "bg-gray-700 text-gray-300"}`}>
-                            {user.plan}
+                            {PLAN_LABELS[user.plan] ?? user.plan}
                           </span>
                         ) : <span className="text-gray-600 text-xs">—</span>}
                       </td>
@@ -156,12 +163,12 @@ export default function SuperAdminUsersPage() {
                             : <XCircle size={14} className="text-red-500" />
                           }
                           <span className={`text-xs ${user.is_active ? "text-emerald-400" : "text-red-400"}`}>
-                            {user.is_active ? "Active" : "Inactive"}
+                            {user.is_active ? "啟用中" : "已停用"}
                           </span>
                         </div>
                       </td>
                       <td className="px-5 py-3.5 text-gray-500 text-xs">
-                        {new Date(user.created_at).toLocaleDateString()}
+                        {new Date(user.created_at).toLocaleDateString("zh-TW")}
                       </td>
                       <td className="px-5 py-3.5 text-right">
                         <button
@@ -175,7 +182,7 @@ export default function SuperAdminUsersPage() {
                         >
                           {updatingId === user.id
                             ? <Loader2 size={12} className="animate-spin" />
-                            : user.is_active ? "Deactivate" : "Activate"
+                            : user.is_active ? "停用" : "啟用"
                           }
                         </button>
                       </td>
@@ -188,7 +195,7 @@ export default function SuperAdminUsersPage() {
             {/* Pagination */}
             <div className="flex items-center justify-between px-5 py-3 border-t border-gray-800">
               <p className="text-xs text-gray-500">
-                Page {page} · {users.length} results
+                第 {page} 頁 · {users.length} 筆結果
               </p>
               <div className="flex gap-2">
                 <button

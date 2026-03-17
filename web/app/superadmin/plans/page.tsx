@@ -14,6 +14,13 @@ interface Plan {
   active_subscribers: number;
 }
 
+const PLAN_DISPLAY: Record<string, string> = {
+  free: "免費",
+  starter: "入門",
+  pro: "專業",
+  enterprise: "企業",
+};
+
 export default function SuperAdminPlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,7 +40,7 @@ export default function SuperAdminPlansPage() {
       if (!res.ok) throw new Error("Failed to load");
       setPlans(await res.json());
     } catch {
-      toast("error", "Failed to load plans");
+      toast("error", "無法載入方案資料");
     } finally {
       setLoading(false);
     }
@@ -44,7 +51,7 @@ export default function SuperAdminPlansPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName || !formFee || !formShare || !formHotspots) {
-      toast("error", "Please fill all required fields");
+      toast("error", "請填寫所有必填欄位");
       return;
     }
     setSaving(true);
@@ -60,12 +67,12 @@ export default function SuperAdminPlansPage() {
         }),
       });
       if (!res.ok) throw new Error("Failed to create plan");
-      toast("success", "Plan saved!");
+      toast("success", "方案已儲存！");
       setShowForm(false);
       setFormName(""); setFormFee(""); setFormShare("70"); setFormHotspots("1"); setFormDesc("");
       await fetchPlans();
     } catch {
-      toast("error", "Failed to save plan");
+      toast("error", "儲存方案失敗");
     } finally {
       setSaving(false);
     }
@@ -75,36 +82,36 @@ export default function SuperAdminPlansPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Subscription Plans</h1>
-          <p className="text-gray-500 text-sm mt-0.5">Manage platform pricing tiers</p>
+          <h1 className="text-2xl font-bold text-white">方案管理</h1>
+          <p className="text-gray-500 text-sm mt-0.5">管理平台訂閱方案</p>
         </div>
         <button
           onClick={() => setShowForm(!showForm)}
           className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-semibold rounded-xl transition-colors"
         >
           <Plus size={16} />
-          New Plan
+          新增方案
         </button>
       </div>
 
       {/* New Plan Form */}
       {showForm && (
         <div className="bg-gray-900 border border-amber-500/30 rounded-2xl p-6 mb-6">
-          <h2 className="font-semibold text-white mb-4">Create / Update Plan</h2>
+          <h2 className="font-semibold text-white mb-4">新增 / 更新方案</h2>
           <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Plan Name *</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">方案名稱 *</label>
               <input
                 type="text"
                 required
                 value={formName}
                 onChange={(e) => setFormName(e.target.value)}
-                placeholder="e.g. pro"
+                placeholder="例如：pro"
                 className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Monthly Fee (USD) *</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">月費（USD）*</label>
               <input
                 type="number"
                 step="0.01"
@@ -117,7 +124,7 @@ export default function SuperAdminPlansPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Revenue Share % *</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">收益分潤 % *</label>
               <input
                 type="number"
                 step="1"
@@ -130,7 +137,7 @@ export default function SuperAdminPlansPage() {
               />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1">Max Hotspots *</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">最多站點數 *</label>
               <input
                 type="number"
                 min="1"
@@ -141,12 +148,12 @@ export default function SuperAdminPlansPage() {
               />
             </div>
             <div className="col-span-2">
-              <label className="block text-xs font-medium text-gray-400 mb-1">Description</label>
+              <label className="block text-xs font-medium text-gray-400 mb-1">方案說明</label>
               <input
                 type="text"
                 value={formDesc}
                 onChange={(e) => setFormDesc(e.target.value)}
-                placeholder="Optional description..."
+                placeholder="選填說明..."
                 className="w-full bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
             </div>
@@ -157,14 +164,14 @@ export default function SuperAdminPlansPage() {
                 className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-gray-900 text-sm font-semibold rounded-xl disabled:opacity-60 flex items-center gap-2"
               >
                 {saving ? <Loader2 size={15} className="animate-spin" /> : null}
-                Save Plan
+                儲存方案
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
                 className="px-5 py-2 bg-gray-800 text-gray-400 hover:text-white text-sm font-medium rounded-xl"
               >
-                Cancel
+                取消
               </button>
             </div>
           </form>
@@ -183,21 +190,23 @@ export default function SuperAdminPlansPage() {
                 <div className="p-2 rounded-xl bg-amber-500/15">
                   <CreditCard size={16} className="text-amber-400" />
                 </div>
-                <h3 className="font-bold text-white capitalize">{plan.name}</h3>
+                <h3 className="font-bold text-white capitalize">
+                  {PLAN_DISPLAY[plan.name] ?? plan.name}
+                </h3>
               </div>
 
               <p className="text-2xl font-bold text-amber-400 mb-1">
                 ${parseFloat(plan.monthly_fee_usd).toFixed(2)}
-                <span className="text-sm font-normal text-gray-500">/mo</span>
+                <span className="text-sm font-normal text-gray-500">/月</span>
               </p>
 
               <div className="space-y-1.5 text-sm mt-3 mb-4">
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Hotspots</span>
-                  <span className="text-white font-medium">{plan.max_hotspots}</span>
+                  <span className="text-gray-500">最多站點</span>
+                  <span className="text-white font-medium">{plan.max_hotspots} 個</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-500">Revenue share</span>
+                  <span className="text-gray-500">收益分潤</span>
                   <span className="text-emerald-400 font-medium">{plan.revenue_share_pct}%</span>
                 </div>
               </div>
@@ -208,7 +217,7 @@ export default function SuperAdminPlansPage() {
 
               <div className="flex items-center gap-1.5 text-xs text-gray-500 pt-3 border-t border-gray-800">
                 <Users size={12} />
-                <span>{plan.active_subscribers} active subscriber{plan.active_subscribers !== 1 ? "s" : ""}</span>
+                <span>{plan.active_subscribers} 位訂閱者</span>
               </div>
             </div>
           ))}

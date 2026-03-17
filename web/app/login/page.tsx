@@ -23,14 +23,14 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.detail || "Login failed");
+        throw new Error(data.detail || "登入失敗");
       }
       localStorage.setItem("saas_token", data.access_token);
       localStorage.setItem("saas_user_name", data.full_name);
       localStorage.setItem("saas_org_name", data.org_name || "");
       window.location.href = "/dashboard";
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Login failed");
+      setError(err instanceof Error ? err.message : "登入失敗");
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ export default function LoginPage() {
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-plus-jakarta, sans-serif)" }}>
             AbotKamay WiFi
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">Sign in to your dashboard</p>
+          <p className="text-gray-500 mt-1 text-sm">登入你的帳號</p>
         </div>
 
         <div className="glass-card rounded-2xl p-8">
@@ -68,7 +68,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1.5">Email</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1.5">電子信箱</label>
               <input
                 type="email"
                 required
@@ -82,9 +82,9 @@ export default function LoginPage() {
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-sm font-medium text-gray-700">Password</label>
+                <label className="block text-sm font-medium text-gray-700">密碼</label>
                 <Link href="/forgot-password" className="text-xs text-[#2d6a4f] hover:underline font-medium">
-                  Forgot password?
+                  忘記密碼？
                 </Link>
               </div>
               <div className="relative">
@@ -95,7 +95,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] transition-all pr-11"
-                  placeholder="Your password"
+                  placeholder="你的密碼"
                 />
                 <button
                   type="button"
@@ -114,15 +114,15 @@ export default function LoginPage() {
               style={{ background: "var(--color-brand-green)" }}
             >
               {loading && <Loader2 size={18} className="animate-spin" />}
-              {loading ? "Signing in..." : "Sign In"}
+              {loading ? "登入中..." : "登入"}
             </button>
           </form>
         </div>
 
         <p className="text-center mt-6 text-sm text-gray-500">
-          Don&apos;t have an account?{" "}
+          還沒有帳號？{" "}
           <Link href="/register" className="font-semibold hover:underline" style={{ color: "var(--color-brand-green)" }}>
-            Create one free
+            免費註冊
           </Link>
         </p>
       </div>

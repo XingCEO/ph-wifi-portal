@@ -12,6 +12,7 @@ import {
   LogOut,
   Menu,
   X,
+  BarChart2,
 } from "lucide-react";
 import { ToastContainer } from "../components/Toast";
 
@@ -31,7 +32,7 @@ export default function DashboardLayout({
       window.location.href = "/login";
       return;
     }
-    setUserName(localStorage.getItem("saas_user_name") || "User");
+    setUserName(localStorage.getItem("saas_user_name") || "用戶");
     setOrgName(localStorage.getItem("saas_org_name") || "");
   }, []);
 
@@ -43,11 +44,12 @@ export default function DashboardLayout({
   };
 
   const navItems = [
-    { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
-    { href: "/dashboard/hotspots", label: "Hotspots", icon: Wifi },
-    { href: "/dashboard/revenue", label: "Revenue", icon: DollarSign },
-    { href: "/dashboard/billing", label: "Billing", icon: CreditCard },
-    { href: "/dashboard/settings", label: "Settings", icon: Settings },
+    { href: "/dashboard", label: "總覽", icon: LayoutDashboard },
+    { href: "/dashboard/hotspots", label: "站點管理", icon: Wifi },
+    { href: "/dashboard/analytics", label: "數據分析", icon: BarChart2 },
+    { href: "/dashboard/revenue", label: "收入分析", icon: DollarSign },
+    { href: "/dashboard/billing", label: "訂閱與帳單", icon: CreditCard },
+    { href: "/dashboard/settings", label: "帳號設定", icon: Settings },
   ];
 
   return (
@@ -99,11 +101,11 @@ export default function DashboardLayout({
           <div className="flex items-center justify-between">
             <div className="min-w-0">
               <p className="text-sm font-medium text-white truncate max-w-[140px]">{userName}</p>
-              <p className="text-xs text-white/60">Owner</p>
+              <p className="text-xs text-white/60">擁有者</p>
             </div>
             <button
               onClick={handleLogout}
-              title="Logout"
+              title="登出"
               className="p-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors shrink-0"
             >
               <LogOut size={18} />

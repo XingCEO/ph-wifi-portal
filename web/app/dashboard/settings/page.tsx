@@ -61,7 +61,7 @@ export default function SettingsPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       const token = localStorage.getItem("saas_token");
-      if (!token) return;
+      if (!token) { window.location.href = "/login"; return; }
       try {
         const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Failed to load");

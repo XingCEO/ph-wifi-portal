@@ -49,7 +49,7 @@ export default function HotspotsPage() {
       if (!res.ok) throw new Error("Failed to load");
       setHotspots(await res.json());
     } catch {
-      setError("Could not load hotspots");
+      setError("無法載入站點資料");
     } finally {
       setLoading(false);
     }
@@ -74,12 +74,12 @@ export default function HotspotsPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed to provision");
+      if (!res.ok) throw new Error(data.detail || "佈建失敗");
       setProvisionResult(data);
       setShowForm(false);
       fetchHotspots();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unknown error");
+      setError(err instanceof Error ? err.message : "未知錯誤");
     } finally {
       setSubmitting(false);
     }
@@ -89,15 +89,15 @@ export default function HotspotsPage() {
     <div>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Hotspots</h1>
-          <p className="text-gray-500 mt-1">Manage your WiFi access points</p>
+          <h1 className="text-2xl font-bold text-gray-900">站點管理</h1>
+          <p className="text-gray-500 mt-1">管理你的 WiFi 存取點</p>
         </div>
         <button
           onClick={() => { setShowForm(true); setProvisionResult(null); setError(""); }}
           className="flex items-center gap-2 bg-[#2d6a4f] text-white font-semibold px-4 py-2 rounded-xl hover:bg-[#40916c] transition-colors"
         >
           <Plus size={18} />
-          Add Hotspot
+          新增站點
         </button>
       </div>
 
@@ -112,13 +112,13 @@ export default function HotspotsPage() {
         <div className="mb-6 bg-green-50 border border-green-200 rounded-2xl p-6">
           <div className="flex items-center gap-2 mb-3">
             <CheckCircle className="text-green-600" size={20} />
-            <h3 className="font-semibold text-green-800">Hotspot Registered!</h3>
+            <h3 className="font-semibold text-green-800">站點已成功登錄！</h3>
           </div>
           <p className="text-sm text-green-700 mb-3">
-            AP MAC: <code className="bg-green-100 px-1 rounded">{provisionResult.ap_mac}</code>
-            {" "}— Portal URL: <code className="bg-green-100 px-1 rounded text-xs">{provisionResult.portal_url}</code>
+            AP MAC：<code className="bg-green-100 px-1 rounded">{provisionResult.ap_mac}</code>
+            {" "}— Portal URL：<code className="bg-green-100 px-1 rounded text-xs">{provisionResult.portal_url}</code>
           </p>
-          <h4 className="font-medium text-green-800 mb-2 text-sm">Setup Instructions:</h4>
+          <h4 className="font-medium text-green-800 mb-2 text-sm">設定步驟：</h4>
           <ol className="space-y-1">
             {provisionResult.setup_instructions.map((step, i) => (
               <li key={i} className="text-sm text-green-700 flex items-start gap-2">
@@ -133,12 +133,12 @@ export default function HotspotsPage() {
       {/* Add Hotspot Form */}
       {showForm && (
         <div className="mb-6 bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-semibold text-gray-800 mb-4">Add New Hotspot</h3>
+          <h3 className="font-semibold text-gray-800 mb-4">新增站點</h3>
           <form onSubmit={handleProvision} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  EAP / AP MAC Address *
+                  EAP / AP MAC 位址 *
                 </label>
                 <input
                   type="text"
@@ -152,11 +152,11 @@ export default function HotspotsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hotspot Name *
+                  站點名稱 *
                 </label>
                 <input
                   type="text"
-                  placeholder="My Coffee Shop"
+                  placeholder="我的咖啡廳"
                   value={form.hotspot_name}
                   onChange={(e) => setForm({ ...form, hotspot_name: e.target.value })}
                   required
@@ -165,7 +165,7 @@ export default function HotspotsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Location *
+                  地點 *
                 </label>
                 <input
                   type="text"
@@ -178,7 +178,7 @@ export default function HotspotsPage() {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Omada Site Name
+                  Omada 站點名稱
                 </label>
                 <input
                   type="text"
@@ -196,14 +196,14 @@ export default function HotspotsPage() {
                 className="flex items-center gap-2 bg-[#2d6a4f] text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-colors"
               >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
-                Register & Get Instructions
+                登錄並取得設定教學
               </button>
               <button
                 type="button"
                 onClick={() => setShowForm(false)}
                 className="px-5 py-2.5 rounded-xl border border-gray-300 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
               >
-                Cancel
+                取消
               </button>
             </div>
           </form>
@@ -218,8 +218,8 @@ export default function HotspotsPage() {
       ) : hotspots.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
           <Wifi className="mx-auto text-gray-300" size={48} />
-          <p className="mt-3 text-gray-500">No hotspots yet.</p>
-          <p className="text-sm text-gray-400 mt-1">Click "Add Hotspot" to get started.</p>
+          <p className="mt-3 text-gray-500">尚無站點。</p>
+          <p className="text-sm text-gray-400 mt-1">點擊「新增站點」開始使用。</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -240,15 +240,24 @@ export default function HotspotsPage() {
               <p className="text-xs font-mono text-gray-400 bg-gray-50 px-2 py-1 rounded-lg mb-3">
                 {hs.ap_mac}
               </p>
-              <div className="flex justify-between text-sm">
-                <div>
-                  <p className="text-gray-400 text-xs">Connections</p>
-                  <p className="font-semibold text-gray-800">{hs.connections_count}</p>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div className="bg-gray-50 rounded-xl p-3">
+                  <p className="text-gray-400 text-xs">連線次數（30天）</p>
+                  <p className="font-semibold text-gray-800 mt-0.5">{hs.connections_count.toLocaleString()}</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-gray-400 text-xs">Revenue</p>
-                  <p className="font-semibold text-gray-800">${parseFloat(hs.revenue_usd).toFixed(4)}</p>
+                <div className="bg-emerald-50 rounded-xl p-3">
+                  <p className="text-gray-400 text-xs">收入（30天）</p>
+                  <p className="font-semibold text-emerald-700 mt-0.5">${parseFloat(hs.revenue_usd).toFixed(4)}</p>
                 </div>
+              </div>
+              <div className="mt-3 flex items-center gap-2">
+                <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                  hs.is_active
+                    ? "bg-green-100 text-green-700"
+                    : "bg-gray-100 text-gray-500"
+                }`}>
+                  {hs.is_active ? "運作中" : "已停用"}
+                </span>
               </div>
             </div>
           ))}

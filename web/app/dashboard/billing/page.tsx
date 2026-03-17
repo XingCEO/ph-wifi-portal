@@ -94,7 +94,7 @@ export default function BillingPage() {
 
   const fetchData = async () => {
     const token = localStorage.getItem("saas_token");
-    if (!token) return;
+    if (!token) { window.location.href = "/login"; return; }
     try {
       const [subRes, billRes] = await Promise.all([
         fetch("/api/dashboard/subscription", { headers: { Authorization: `Bearer ${token}` } }),

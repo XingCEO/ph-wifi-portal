@@ -32,7 +32,7 @@ export default function RevenuePage() {
   useEffect(() => {
     const fetchRevenue = async () => {
       const token = localStorage.getItem("saas_token");
-      if (!token) return;
+      if (!token) { window.location.href = "/login"; return; }
       try {
         const res = await fetch("/api/dashboard/revenue?limit=24", {
           headers: { Authorization: `Bearer ${token}` },
