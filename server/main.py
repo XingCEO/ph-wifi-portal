@@ -21,7 +21,7 @@ from slowapi.util import get_remote_address
 from config import settings, validate_settings
 from models.database import init_db
 from models.schemas import ErrorResponse, HealthResponse
-from routers import admin, auth, portal
+from routers import admin, auth, dashboard, portal, saas_auth, superadmin
 from services import omada as omada_module
 from services.redis_service import set_redis_instance
 
@@ -134,6 +134,9 @@ def create_app() -> FastAPI:
     application.include_router(portal.router)
     application.include_router(auth.router)
     application.include_router(admin.router)
+    application.include_router(saas_auth.router)
+    application.include_router(dashboard.router)
+    application.include_router(superadmin.router)
 
     # Static files (frontend assets)
     static_path = Path(__file__).parent.parent / "frontend" / "static"

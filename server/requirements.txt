@@ -11,3 +11,5 @@ structlog==24.4.0
 slowapi==0.1.9
 alembic==1.13.2
 aiosqlite==0.20.0
+passlib[bcrypt]==1.7.4
+python-jose[cryptography]==3.5.0

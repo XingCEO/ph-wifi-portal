@@ -9,6 +9,7 @@ from sqlalchemy import (
     JSON,
     Boolean,
     DateTime,
+    Enum,
     ForeignKey,
     Index,
     Integer,
@@ -31,6 +32,117 @@ class Base(DeclarativeBase):
     pass
 
 
+# ─── SaaS Multi-Tenant Tables ───────────────────────────────────────────────
+
+class Organization(Base):
+    """SaaS 客戶的組織/公司"""
+    __tablename__ = "organizations"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+    slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False)
+    contact_email: Mapped[str] = mapped_column(String(255), nullable=False)
+    contact_phone: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    users: Mapped[list["SaasUser"]] = relationship("SaasUser", back_populates="organization")
+    hotspots: Mapped[list["Hotspot"]] = relationship("Hotspot", back_populates="organization")
+    subscriptions: Mapped[list["Subscription"]] = relationship("Subscription", back_populates="organization")
+    revenue_splits: Mapped[list["RevenueSplit"]] = relationship("RevenueSplit", back_populates="organization")
+
+    __table_args__ = (
+        Index("ix_organizations_slug", "slug"),
+    )
+
+
+class SaasUser(Base):
+    """SaaS 平台客戶帳號"""
+    __tablename__ = "saas_users"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
+    hashed_password: Mapped[str] = mapped_column(String(255), nullable=False)
+    full_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    organization_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True)
+    role: Mapped[str] = mapped_column(String(50), default="owner", nullable=False)  # owner, member, admin
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+    )
+
+    organization: Mapped["Organization | None"] = relationship("Organization", back_populates="users")
+
+    __table_args__ = (
+        Index("ix_saas_users_email", "email"),
+        Index("ix_saas_users_org_id", "organization_id"),
+    )
+
+
+class Subscription(Base):
+    """組織的訂閱方案"""
+    __tablename__ = "subscriptions"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=False)
+    plan: Mapped[str] = mapped_column(String(50), nullable=False)  # free, starter, pro, enterprise
+    status: Mapped[str] = mapped_column(String(50), default="active", nullable=False)  # active, cancelled, expired
+    monthly_fee_usd: Mapped[Decimal] = mapped_column(Numeric(10, 2), nullable=False, default=Decimal("0.00"))
+    revenue_share_pct: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=Decimal("70.00"))  # % 給客戶
+    max_hotspots: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    starts_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    ends_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    organization: Mapped["Organization"] = relationship("Organization", back_populates="subscriptions")
+
+    __table_args__ = (
+        Index("ix_subscriptions_org_id", "organization_id"),
+    )
+
+
+class RevenueSplit(Base):
+    """廣告收入拆帳記錄"""
+    __tablename__ = "revenue_splits"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    organization_id: Mapped[int] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=False)
+    hotspot_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("hotspots.id"), nullable=True)
+    period_start: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    period_end: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    total_revenue_usd: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
+    platform_pct: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=Decimal("30.00"))
+    partner_pct: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False, default=Decimal("70.00"))
+    platform_amount_usd: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
+    partner_amount_usd: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False, default=Decimal("0.0000"))
+    ad_views_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(50), default="pending", nullable=False)  # pending, paid
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+
+    organization: Mapped["Organization"] = relationship("Organization", back_populates="revenue_splits")
+
+    __table_args__ = (
+        Index("ix_revenue_splits_org_id", "organization_id"),
+        Index("ix_revenue_splits_period", "period_start", "period_end"),
+    )
+
+
+# ─── Original Tables ─────────────────────────────────────────────────────────
+
 class Hotspot(Base):
     __tablename__ = "hotspots"
 
@@ -42,6 +154,7 @@ class Hotspot(Base):
     latitude: Mapped[float | None] = mapped_column(Numeric(10, 6), nullable=True)
     longitude: Mapped[float | None] = mapped_column(Numeric(10, 6), nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    org_id: Mapped[int | None] = mapped_column(Integer, ForeignKey("organizations.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -52,6 +165,11 @@ class Hotspot(Base):
     visits: Mapped[list["Visit"]] = relationship("Visit", back_populates="hotspot")
     ad_views: Mapped[list["AdView"]] = relationship("AdView", back_populates="hotspot")
     access_grants: Mapped[list["AccessGrant"]] = relationship("AccessGrant", back_populates="hotspot")
+    organization: Mapped["Organization | None"] = relationship("Organization", back_populates="hotspots")
+
+    __table_args__ = (
+        Index("ix_hotspots_org_id", "org_id"),
+    )
 
 
 class Visit(Base):

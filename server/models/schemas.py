@@ -212,6 +212,131 @@ class SystemSettingsUpdate(BaseModel):
     anti_spam_window_seconds: int | None = None
 
 
+# ─── SaaS Schemas ────────────────────────────────────────────────────────────
+
+class OrganizationCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    slug: str = Field(..., min_length=2, max_length=100, pattern=r"^[a-z0-9\-]+$")
+    contact_email: str = Field(..., min_length=1, max_length=255)
+    contact_phone: str | None = None
+
+
+class OrganizationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    slug: str
+    contact_email: str
+    contact_phone: str | None
+    is_active: bool
+    created_at: datetime
+
+
+class RegisterRequest(BaseModel):
+    email: str = Field(..., min_length=1, max_length=255)
+    password: str = Field(..., min_length=8, max_length=100)
+    full_name: str = Field(..., min_length=1, max_length=255)
+    org_name: str = Field(..., min_length=1, max_length=255)
+    org_slug: str = Field(..., min_length=2, max_length=100, pattern=r"^[a-z0-9\-]+$")
+
+    @field_validator("email")
+    @classmethod
+    def validate_email(cls, v: str) -> str:
+        if "@" not in v or "." not in v.split("@")[-1]:
+            raise ValueError("Invalid email address")
+        return v.lower().strip()
+
+
+class LoginRequest(BaseModel):
+    email: str = Field(..., min_length=1)
+    password: str = Field(..., min_length=1)
+
+
+class TokenResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    expires_in: int = 86400  # 24 hours
+    user_id: int
+    email: str
+    full_name: str
+    org_id: int | None
+    org_name: str | None
+
+
+class SaasUserResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    email: str
+    full_name: str
+    organization_id: int | None
+    role: str
+    is_active: bool
+    is_verified: bool
+    created_at: datetime
+
+
+class DashboardStatsResponse(BaseModel):
+    total_connections: int
+    total_ad_views: int
+    total_revenue_usd: Decimal
+    partner_revenue_usd: Decimal
+    active_hotspots: int
+    period_days: int
+
+
+class DashboardHotspotCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    location: str = Field(..., min_length=1, max_length=500)
+    ap_mac: str = Field(..., pattern=r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$")
+    site_name: str = Field(..., min_length=1, max_length=255)
+    latitude: float | None = None
+    longitude: float | None = None
+
+
+class DashboardHotspotResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    name: str
+    location: str
+    ap_mac: str
+    site_name: str
+    is_active: bool
+    org_id: int | None
+    created_at: datetime
+    connections_count: int = 0
+    revenue_usd: Decimal = Decimal("0.0000")
+
+
+class RevenueSplitResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    hotspot_id: int | None
+    period_start: datetime
+    period_end: datetime
+    total_revenue_usd: Decimal
+    partner_pct: Decimal
+    partner_amount_usd: Decimal
+    ad_views_count: int
+    status: str
+    created_at: datetime
+
+
+class ProvisionRequest(BaseModel):
+    ap_mac: str = Field(..., pattern=r"^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$")
+    hotspot_name: str = Field(..., min_length=1, max_length=255)
+    location: str = Field(..., min_length=1, max_length=500)
+    site_name: str = Field(default="Default", min_length=1, max_length=255)
+
+
+class ProvisionResponse(BaseModel):
+    success: bool
+    hotspot_id: int
+    ap_mac: str
+    portal_url: str
+    setup_instructions: list[str]
+    omada_configured: bool
+
+
 class PortalSessionData(BaseModel):
     client_mac: str
     ap_mac: str
