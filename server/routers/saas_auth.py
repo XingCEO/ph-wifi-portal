@@ -181,10 +181,17 @@ async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)) -> Token
 
 @router.get("/me", response_model=SaasUserResponse)
 async def get_me(
-    token: str,
+    authorization: str = Header(None),
     db: AsyncSession = Depends(get_db),
 ) -> SaasUserResponse:
-    """取得當前登入用戶資訊（Bearer token via query param for simplicity）"""
+    """取得當前登入用戶資訊"""
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Missing or invalid Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    token = authorization.split(" ", 1)[1]
     user = await get_current_saas_user(token, db)
     return SaasUserResponse.model_validate(user)
 

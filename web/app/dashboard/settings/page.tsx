@@ -63,7 +63,7 @@ export default function SettingsPage() {
       const token = localStorage.getItem("saas_token");
       if (!token) return;
       try {
-        const res = await fetch(`/api/auth/me?token=${token}`);
+        const res = await fetch("/api/auth/me", { headers: { Authorization: `Bearer ${token}` } });
         if (!res.ok) throw new Error("Failed to load");
         const data: UserProfile = await res.json();
         setProfile(data);

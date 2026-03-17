@@ -126,7 +126,7 @@ async def test_get_me(client: AsyncClient) -> None:
     reg_resp = await client.post("/api/auth/register", json=reg_payload)
     token = reg_resp.json()["access_token"]
 
-    resp = await client.get(f"/api/auth/me?token={token}")
+    resp = await client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
     assert resp.status_code == 200, resp.text
     data = resp.json()
     assert data["email"] == "me@example.com"
