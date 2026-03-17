@@ -141,3 +141,82 @@ body {
 .btn-scale:active:not(:disabled) {
   transform: scale(0.98);
 }
+
+/* ─── Float animation (Hero WiFi illustration) ───────────────────────────────── */
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-12px); }
+}
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-8px) rotate(3deg); }
+}
+@keyframes wifi-pulse {
+  0%, 100% { opacity: 0.15; transform: scale(1); }
+  50%       { opacity: 0.35; transform: scale(1.05); }
+}
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.04; }
+  50%       { opacity: 0.10; }
+}
+
+.animate-float       { animation: float 4s ease-in-out infinite; }
+.animate-float-slow  { animation: float-slow 6s ease-in-out infinite; }
+.animate-wifi-pulse  { animation: wifi-pulse 3s ease-in-out infinite; }
+.animate-glow-pulse  { animation: glow-pulse 4s ease-in-out infinite; }
+
+/* ─── Underline hover animation ──────────────────────────────────────────────── */
+
+.link-underline {
+  position: relative;
+}
+.link-underline::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 1px;
+  background: var(--color-brand-green);
+  transition: width 0.3s ease;
+}
+.link-underline:hover::after {
+  width: 100%;
+}
+
+/* ─── Card hover lift (enhanced) ────────────────────────────────────────────── */
+
+.card-lift {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.card-lift:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.10);
+}
+
+/* ─── FAQ accordion ──────────────────────────────────────────────────────────── */
+
+.faq-answer {
+  overflow: hidden;
+  transition: max-height 0.35s ease, opacity 0.3s ease;
+}
+
+/* ─── Footer social icons ────────────────────────────────────────────────────── */
+
+.footer-social-icon {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.08);
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+.footer-social-icon:hover {
+  background: rgba(45,106,79,0.4);
+  border-color: rgba(45,106,79,0.5);
+  transform: scale(1.1);
+}
+
+/* ─── Pricing card highlight ─────────────────────────────────────────────────── */
+
+.pricing-popular {
+  box-shadow: 0 0 0 2px var(--color-brand-green), 0 16px 40px rgba(45,106,79,0.15);
+}

@@ -6,7 +6,9 @@ import WhyItMatters from "./components/WhyItMatters";
 import Stories from "./components/Stories";
 import Coverage from "./components/Coverage";
 import Advertising from "./components/Advertising";
+import Pricing from "./components/Pricing";
 import Vision from "./components/Vision";
+import FAQ from "./components/FAQ";
 import Contact from "./components/Contact";
 import Footer from "./components/Footer";
 import SectionDivider from "./components/SectionDivider";
@@ -35,7 +37,13 @@ export default async function LandingPage({
         <Stories dict={dict} />
         <Coverage dict={dict} lang={lang} />
         <Advertising dict={dict} />
+        <SectionDivider />
+        <Pricing dict={dict} />
+        <SectionDivider flip />
         <Vision dict={dict} />
+        <SectionDivider />
+        <FAQ dict={dict} />
+        <SectionDivider flip />
         <Contact dict={dict} />
       </main>
       <Footer dict={dict} lang={lang} />

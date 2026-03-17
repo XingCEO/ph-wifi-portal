@@ -94,6 +94,93 @@
   "footer": {
     "tagline": "Free internet within reach.",
     "copyright": "AbotKamay. All rights reserved.",
-    "quickLinks": "Quick Links"
+    "quickLinks": "Quick Links",
+    "pricing": "Pricing",
+    "legal": "Legal",
+    "privacy": "Privacy Policy",
+    "terms": "Terms of Service"
+  },
+  "pricing": {
+    "label": "Pricing",
+    "title": "Simple, transparent pricing",
+    "description": "Start for free, scale as you grow. All plans include our core WiFi platform.",
+    "popularBadge": "Most Popular",
+    "cta": "Get Started Free",
+    "free": {
+      "name": "Free",
+      "price": "$0",
+      "period": "/mo",
+      "revenue": "50/50 Revenue Share",
+      "sites": "1 site",
+      "features": [
+        "1 hotspot location",
+        "50/50 ad revenue split",
+        "Basic dashboard",
+        "Email support",
+        "Standard ad formats"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$9",
+      "period": "/mo",
+      "revenue": "70/30 Revenue Share",
+      "sites": "Up to 5 sites",
+      "features": [
+        "Up to 5 hotspot locations",
+        "70/30 ad revenue split",
+        "Advanced analytics dashboard",
+        "Priority email support",
+        "Custom ad scheduling",
+        "Branded splash page"
+      ]
+    },
+    "business": {
+      "name": "Business",
+      "price": "$29",
+      "period": "/mo",
+      "revenue": "80/20 Revenue Share",
+      "sites": "Unlimited sites",
+      "features": [
+        "Unlimited hotspot locations",
+        "80/20 ad revenue split",
+        "Full analytics & reporting",
+        "Dedicated account manager",
+        "API access",
+        "Custom integrations",
+        "White-label option"
+      ]
+    }
+  },
+  "faq": {
+    "label": "FAQ",
+    "title": "Frequently asked questions",
+    "description": "Everything you need to know about AbotKamay WiFi.",
+    "items": [
+      {
+        "q": "How does AbotKamay WiFi work?",
+        "a": "Users connect to our WiFi network, watch a short advertisement (usually 10–30 seconds), and receive 10 minutes of free internet access. After the session ends, they can watch another ad to continue browsing."
+      },
+      {
+        "q": "How do I earn revenue as a hotspot owner?",
+        "a": "When users connect to your hotspot and watch ads, you receive a share of the advertising revenue. The split depends on your plan: Free (50/50), Pro (70/30), and Business (80/20). Payments are processed monthly."
+      },
+      {
+        "q": "What equipment do I need to set up a hotspot?",
+        "a": "You need a standard WiFi router and an internet connection. We provide all the software, splash page, and ad delivery system. Our team will guide you through the setup process."
+      },
+      {
+        "q": "Is it free for users to use?",
+        "a": "Yes, 100% free for end users. They only need to watch a short advertisement. No data plan, no payment, no registration required."
+      },
+      {
+        "q": "Can I advertise on the AbotKamay network?",
+        "a": "Absolutely! We welcome local and national businesses to advertise on our platform. You can target specific communities, neighborhoods, and locations. Contact us to learn about advertising packages."
+      },
+      {
+        "q": "What areas do you currently cover?",
+        "a": "We are currently expanding across the Philippines, starting with key communities in Metro Manila and nearby regions. We are actively deploying new hotspots and welcome partnerships to expand coverage."
+      }
+    ]
   }
 }

@@ -94,6 +94,93 @@
   "footer": {
     "tagline": "Libreng internet, abot-kamay mo.",
     "copyright": "AbotKamay. Lahat ng karapatan ay nakalaan.",
-    "quickLinks": "Mga Link"
+    "quickLinks": "Mga Link",
+    "pricing": "Presyo",
+    "legal": "Legal",
+    "privacy": "Patakaran sa Privacy",
+    "terms": "Mga Tuntunin ng Serbisyo"
+  },
+  "pricing": {
+    "label": "Presyo",
+    "title": "Simple at malinaw na presyo",
+    "description": "Magsimula nang libre, lumago habang lumalaki ka. Lahat ng plano ay may kasamang core WiFi platform.",
+    "popularBadge": "Pinaka-popular",
+    "cta": "Magsimulang Libre",
+    "free": {
+      "name": "Libre",
+      "price": "$0",
+      "period": "/buwan",
+      "revenue": "50/50 Revenue Share",
+      "sites": "1 site",
+      "features": [
+        "1 hotspot na lokasyon",
+        "50/50 ad revenue split",
+        "Basic na dashboard",
+        "Email na suporta",
+        "Standard na format ng ad"
+      ]
+    },
+    "pro": {
+      "name": "Pro",
+      "price": "$9",
+      "period": "/buwan",
+      "revenue": "70/30 Revenue Share",
+      "sites": "Hanggang 5 na site",
+      "features": [
+        "Hanggang 5 na hotspot na lokasyon",
+        "70/30 ad revenue split",
+        "Advanced na analytics dashboard",
+        "Priority na email na suporta",
+        "Custom na pag-iskedyul ng ad",
+        "Branded na splash page"
+      ]
+    },
+    "business": {
+      "name": "Business",
+      "price": "$29",
+      "period": "/buwan",
+      "revenue": "80/20 Revenue Share",
+      "sites": "Walang limitasyon na mga site",
+      "features": [
+        "Walang limitasyon na mga hotspot na lokasyon",
+        "80/20 ad revenue split",
+        "Buong analytics at pag-uulat",
+        "Dedicated na account manager",
+        "API access",
+        "Custom na integrasyon",
+        "White-label na opsyon"
+      ]
+    }
+  },
+  "faq": {
+    "label": "FAQ",
+    "title": "Mga Madalas Itanong",
+    "description": "Lahat ng kailangan mong malaman tungkol sa AbotKamay WiFi.",
+    "items": [
+      {
+        "q": "Paano gumagana ang AbotKamay WiFi?",
+        "a": "Kumokonekta ang mga user sa aming WiFi network, nanunood ng maikling advertisement (karaniwang 10–30 segundo), at nakakatanggap ng 10 minutong libreng internet access. Pagkatapos ng session, maaari silang manood ng isa pang ad para magpatuloy."
+      },
+      {
+        "q": "Paano ako kumikita bilang may-ari ng hotspot?",
+        "a": "Kapag ang mga user ay kumonekta sa iyong hotspot at nanood ng mga ad, makakatanggap ka ng bahagi ng kita mula sa advertising. Ang split ay nakasalalay sa iyong plano: Libre (50/50), Pro (70/30), at Business (80/20). Ang mga bayad ay pinoproseso buwan-buwan."
+      },
+      {
+        "q": "Anong kagamitan ang kailangan ko para mag-set up ng hotspot?",
+        "a": "Kailangan mo ng standard na WiFi router at internet connection. Ibibigay namin ang lahat ng software, splash page, at ad delivery system. Gagabayan ka ng aming team sa proseso ng pag-set up."
+      },
+      {
+        "q": "Libre ba ito para sa mga user?",
+        "a": "Oo, 100% libre para sa mga end user. Kailangan lang nilang manood ng maikling advertisement. Hindi kailangan ng data plan, walang bayad, walang kailangang mag-rehistro."
+      },
+      {
+        "q": "Maaari ba akong mag-advertise sa AbotKamay network?",
+        "a": "Tiyak! Tinatanggap namin ang mga lokal at pambansang negosyo na mag-advertise sa aming platform. Maaari kang mag-target ng mga partikular na komunidad, kapitbahayan, at lokasyon. Makipag-ugnayan sa amin para malaman ang mga advertising package."
+      },
+      {
+        "q": "Anong mga lugar ang kasalukuyang saklaw ninyo?",
+        "a": "Kasalukuyan kaming nagpapalawak sa buong Pilipinas, simula sa mga pangunahing komunidad sa Metro Manila at mga kalapit na rehiyon. Aktibo kaming nagde-deploy ng mga bagong hotspot at tinatanggap ang mga partnership para mapalawak ang coverage."
+      }
+    ]
   }
 }
