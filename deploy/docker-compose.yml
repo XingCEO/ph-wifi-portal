@@ -82,6 +82,33 @@ services:
       timeout: 5s
       retries: 5
 
+  # ── Omada Software Controller (取代 OC200 硬體) ──
+  omada:
+    image: mbentley/omada-controller:5.14
+    environment:
+      TZ: Asia/Manila
+      MANAGE_HTTP_PORT: 8088
+      MANAGE_HTTPS_PORT: 8043
+      PORTAL_HTTP_PORT: 8088
+      PORTAL_HTTPS_PORT: 8843
+    ports:
+      # AP 通訊 — 必須暴露到主機（EAP 設備直連這些 port）
+      - "29810:29810/udp"          # Discovery
+      - "29811:29811"              # AP management v1
+      - "29812:29812"              # AP adoption
+      - "29813:29813"              # AP upgrade
+      - "29814:29814"              # AP manager v2
+    volumes:
+      - omada_data:/opt/tplink/EAPController/data
+      - omada_logs:/opt/tplink/EAPController/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -k https://localhost:8043 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
   certbot:
     image: certbot/certbot:latest
     volumes:
@@ -98,4 +125,8 @@ volumes:
   certbot_certs:
     driver: local
   certbot_www:
+    driver: local
+  omada_data:
+    driver: local
+  omada_logs:
     driver: local

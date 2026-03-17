@@ -107,13 +107,14 @@ cd server && alembic upgrade head
 - Tests that need Omada calls must patch `settings.omada_controller_id` to a non-empty value (otherwise test mode skips Omada)
 - Test client uses `httpx.AsyncClient` with `ASGITransport`
 - pytest runs with `asyncio_mode = "auto"` (no need for `@pytest.mark.asyncio`)
-- Test files: `test_portal.py`, `test_auth.py`, `test_auth_extended.py`, `test_admin_api.py`, `test_omada.py`, `test_saas_auth.py`, `test_dashboard.py`, `test_superadmin.py` (~100 tests total)
+- Rate limiting is disabled in tests via `limiter.enabled = False` in conftest
+- Test files: `test_portal.py`, `test_auth.py`, `test_auth_extended.py`, `test_admin_api.py`, `test_omada.py`, `test_saas_auth.py`, `test_dashboard.py`, `test_superadmin.py` (121 tests total)
 
 ## Deployment
 
-**Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 6 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis, Certbot. Nginx routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js.
+**Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04+), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 8 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis, Omada Controller, Certbot. Nginx routes by subdomain: `omada.*` → Omada Controller; main domain routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js. Omada AP communication ports (29810-29814) are exposed to host.
 
-**Zeabur:** Config in `zeabur.json`. Only deploys FastAPI backend; brand website needs separate hosting.
+**Zeabur + VPS:** `zeabur.json` deploys FastAPI only. Omada Controller must run on a separate VPS (`deploy/omada/docker-compose.yml`) since Zeabur only exposes one HTTP port. Brand website on Vercel.
 
 ## Key Patterns
 

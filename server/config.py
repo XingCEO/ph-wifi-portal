@@ -48,8 +48,8 @@ class Settings(BaseSettings):
     def resolved_redis_url(self) -> str:
         return _get_redis_url()
 
-    # Omada OC200
-    omada_host: str = "192.168.1.1"
+    # Omada Controller (Docker 同機: "omada" | 遠端 VPS: IP | 硬體 OC200: LAN IP)
+    omada_host: str = ""
     omada_port: int = 8043
     omada_controller_id: str = ""
     omada_operator: str = "admin"

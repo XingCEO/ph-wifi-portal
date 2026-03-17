@@ -1,0 +1,49 @@
+version: '3.9'
+
+# ── Omada Software Controller ──
+# 獨立 VPS 部署（需要完整 port 控制，不能跑在 Zeabur/PaaS 上）
+#
+# 用法：
+#   1. 買一台便宜 VPS（1GB RAM, Ubuntu 22.04, ~$5/月）
+#   2. 裝 Docker: curl -fsSL https://get.docker.com | sh
+#   3. scp 這個檔案到 VPS
+#   4. docker compose up -d
+#   5. 開瀏覽器 → https://VPS_IP:8043 → 初次設定
+#   6. 把 VPS IP 填進主程式的 .env → OMADA_HOST=你的VPS_IP
+
+services:
+  omada:
+    image: mbentley/omada-controller:5.14
+    environment:
+      TZ: Asia/Manila
+      MANAGE_HTTP_PORT: 8088
+      MANAGE_HTTPS_PORT: 8043
+      PORTAL_HTTP_PORT: 8088
+      PORTAL_HTTPS_PORT: 8843
+    ports:
+      # 管理介面
+      - "8043:8043"                # HTTPS 管理頁面
+      - "8088:8088"                # HTTP 管理頁面
+      - "8843:8843"                # Portal HTTPS
+      # AP 通訊（EAP 系列必須能連到這些 port）
+      - "29810:29810/udp"          # Discovery
+      - "29811:29811"              # AP management v1
+      - "29812:29812"              # AP adoption
+      - "29813:29813"              # AP upgrade
+      - "29814:29814"              # AP manager v2
+    volumes:
+      - omada_data:/opt/tplink/EAPController/data
+      - omada_logs:/opt/tplink/EAPController/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf -k https://localhost:8043 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  omada_data:
+    driver: local
+  omada_logs:
+    driver: local

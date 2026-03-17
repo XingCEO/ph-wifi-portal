@@ -1,19 +1,29 @@
-FROM node:20-alpine AS deps
-WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm ci --production=false
-
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+COPY package.json package-lock.json ./
+RUN npm ci
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+FROM nginx:1.27-alpine
+COPY --from=builder /app/out /usr/share/nginx/html
+COPY <<'EOF' /etc/nginx/conf.d/default.conf
+server {
+    listen 3000;
+    root /usr/share/nginx/html;
+    index index.html;
+
+    # SPA fallback — try file, then directory, then index.html
+    location / {
+        try_files $uri $uri/ $uri/index.html /index.html;
+    }
+
+    # Cache static assets
+    location /_next/static/ {
+        expires 365d;
+        add_header Cache-Control "public, immutable";
+    }
+}
+EOF
 EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["nginx", "-g", "daemon off;"]
