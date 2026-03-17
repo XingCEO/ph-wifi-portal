@@ -1,11 +1,13 @@
 # AbotKamay WiFi 系統 — 完整部署說明書
 
-> 2026-03-17 | Felix 🦞 整理
+> 2026-03-17 | Felix 🦞 整理（2026-03-17 更新：支援自架 VPS 全套方案）
 > 從零到「手機連 WiFi → 看廣告 → 免費上網」的完整步驟
 
 ---
 
 ## 架構總覽
+
+### 方案 A：自架 VPS 全套（推薦）
 
 ```
 用戶手機
@@ -14,12 +16,33 @@
 EAP225（現場 AP）
   │ 攔截 HTTP → redirect 到 Controller
   ▼
-Omada Controller（VPS: 107.174.155.124）
+┌─ VPS 一台 ($12/月, 2GB RAM) ──────────────────┐
+│                                                 │
+│  Omada Controller → redirect 到 Portal          │
+│  FastAPI → 顯示廣告 → 授權 MAC → 呼叫 Omada API│
+│  Next.js → 品牌官網 + SaaS Dashboard            │
+│  PostgreSQL + Redis + Nginx + Certbot           │
+│                                                 │
+│  一鍵部署：sudo bash deploy/setup.sh            │
+└─────────────────────────────────────────────────┘
+  ▼
+用戶可以上網（1 小時）
+```
+
+### 方案 B：Zeabur + 獨立 VPS
+
+```
+用戶手機
+  │ 連 WiFi
+  ▼
+EAP225（現場 AP）
+  │ 攔截 HTTP → redirect 到 Controller
+  ▼
+VPS ($5/月) → Omada Controller
   │ redirect 到 External Portal
   ▼
-Zeabur FastAPI（ph-wifi-portal.zeabur.app）
-  │ 顯示廣告頁 → 用戶看完廣告 → 按按鈕
-  │ POST /api/grant-access → 呼叫 Omada API 授權 MAC
+Zeabur → FastAPI + PostgreSQL + Redis
+  │ 顯示廣告頁 → 呼叫 VPS 的 Omada API 授權 MAC
   ▼
 用戶可以上網（1 小時）
 ```
@@ -28,20 +51,17 @@ Zeabur FastAPI（ph-wifi-portal.zeabur.app）
 
 ## Part 1：準備工作
 
-### 你需要的東西
-- 1 台 TP-Link EAP225（或其他 Omada 系列 AP）~$40
-- 1 台 VPS（任何廠商，$5-10/月，要能開 port 29810-29813 + 8043 + 8088）
-- Zeabur 帳號（跑 FastAPI + PostgreSQL + Redis）
-- GitHub 帳號（程式碼倉庫）
+### 方案 A 需要的東西
+- 1 台 TP-Link EAP225（或其他 Omada 系列 AP）~₱3,000
+- 1 台 VPS（2GB RAM，$12/月，推薦 Singapore 機房）
+- 域名 + DNS 指向 VPS（主域名 + `omada.*` 子域名）
+- GitHub 帳號
 
-### 帳號清單
-| 服務 | 帳號 | 用途 |
-|---|---|---|
-| Zeabur | XingCEO | 廣告系統 + 官網 |
-| VPS | root | Omada Controller |
-| Omada Controller | xingceo | 管理 AP |
-| Hotspot Operator | portal | API 授權用 |
-| SaaS Admin | xingceo / xingwifi2026 | Super Admin 後台 |
+### 方案 B 需要的東西
+- 1 台 TP-Link EAP225 ~₱3,000
+- 1 台便宜 VPS（1GB RAM，$5/月，只跑 Omada Controller）
+- Zeabur 帳號（跑 FastAPI + PostgreSQL + Redis）
+- GitHub 帳號
 
 ---
 
@@ -205,7 +225,7 @@ Controller → 驗證 → 門戶 → 新增：
 - 門戶：開啟
 - SSID：選 `AbotKamay Free WiFi`
 - **驗證類型：External Portal Server**
-- **網址：** `https://ph-wifi-portal.zeabur.app/portal`
+- **網址：** `https://你的域名/portal`（方案 A）或 `https://ph-wifi-portal.zeabur.app/portal`（方案 B）
 - HTTPS 重新導向：啟用
 - **導向頁面：原始網址**（⚠️ 不要選「成功頁面」！）
 
@@ -223,9 +243,41 @@ Controller → 驗證 → 門戶 → 新增：
 
 ---
 
-## Part 5：Zeabur 廣告系統部署
+## Part 5：部署主程式
 
-### 環境變數（Zeabur Service）
+### 方案 A：自架 VPS 全套（推薦）
+
+Omada Controller 已經在 Part 2 裝好了。現在在**同一台 VPS** 部署整個系統：
+
+```bash
+git clone https://github.com/XingCEO/ph-wifi-portal.git
+cd ph-wifi-portal
+sudo bash deploy/setup.sh
+```
+
+setup.sh 會自動：
+1. 裝 Docker（如果還沒裝）
+2. 問你域名 + admin 密碼
+3. 生成 `.env`（密鑰自動產生，`OMADA_HOST=omada` 指向同機 Docker 容器）
+4. 簽 SSL 憑證（主域名 + omada 子域名）
+5. 啟動 8 個 Docker 容器
+
+然後填入 Omada 設定：
+```bash
+# 編輯 server/.env
+nano server/.env
+# 填入：
+#   OMADA_CONTROLLER_ID=<Part 2 取得的 ID>
+#   OMADA_OPERATOR=portal
+#   OMADA_PASSWORD=<operator 密碼>
+
+# 重啟 FastAPI
+docker compose -f deploy/docker-compose.yml restart app
+```
+
+### 方案 B：Zeabur
+
+#### 環境變數（Zeabur Service）
 ```
 OMADA_HOST=<VPS_IP>
 OMADA_PORT=8043
@@ -317,12 +369,21 @@ curl -s -X POST "https://ph-wifi-portal.zeabur.app/api/grant-access" \
 
 ## 費用
 
-| 項目 | 月費 |
+### 方案 A：自架 VPS 全套
+| 項目 | 費用 |
 |---|---|
-| VPS（Omada Controller） | ~$0.50（$6/年） |
-| Zeabur（廣告系統 + DB + Redis） | ~$5 |
-| EAP225 硬體 | $40 一次性 |
-| **總計** | **~$5.50/月 + $40 硬體** |
+| VPS（2GB RAM，全部服務） | ~$12/月 |
+| 域名 | ~$10/年 |
+| EAP225 硬體 | ~₱3,000 一次性 |
+| **總計** | **~$12/月 + ₱3,000 硬體** |
+
+### 方案 B：Zeabur + VPS
+| 項目 | 費用 |
+|---|---|
+| VPS（只跑 Omada Controller） | ~$5/月 |
+| Zeabur（FastAPI + DB + Redis） | ~$5/月 |
+| EAP225 硬體 | ~₱3,000 一次性 |
+| **總計** | **~$10/月 + ₱3,000 硬體** |
 
 ---
 
