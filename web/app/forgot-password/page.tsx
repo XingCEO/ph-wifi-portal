@@ -21,10 +21,10 @@ export default function ForgotPasswordPage() {
         body: JSON.stringify({ email }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Request failed");
+      if (!res.ok) throw new Error(data.detail || "請求失敗");
       setResetToken(data.reset_token);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Request failed");
+      setError(err instanceof Error ? err.message : "請求失敗");
     } finally {
       setLoading(false);
     }
@@ -48,10 +48,10 @@ export default function ForgotPasswordPage() {
             </svg>
           </div>
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-plus-jakarta, sans-serif)" }}>
-            Forgot Password
+            忘記密碼
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Enter your email and we&apos;ll send a reset link
+            輸入電子信箱，我們會傳送重設連結給你
           </p>
         </div>
 
@@ -61,28 +61,28 @@ export default function ForgotPasswordPage() {
               <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl mb-4">
                 <CheckCircle size={24} className="text-green-600" />
               </div>
-              <h2 className="font-semibold text-gray-900 mb-2">Request sent!</h2>
+              <h2 className="font-semibold text-gray-900 mb-2">請求已送出！</h2>
               <p className="text-sm text-gray-500 mb-6">
-                If this email is registered, a reset link has been sent.
+                如果此電子信箱已註冊，重設連結已傳送至信箱。
               </p>
 
               {/* Dev mode: show token */}
               {resetToken !== "no-user-found" && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 mb-4 text-left">
-                  <p className="text-xs font-semibold text-amber-700 mb-1">🛠 Development Mode — Reset Token:</p>
+                  <p className="text-xs font-semibold text-amber-700 mb-1">🛠 開發模式 — 重設 Token：</p>
                   <p className="text-xs font-mono text-amber-800 break-all">{resetToken}</p>
                   <Link
                     href={`/reset-password?token=${resetToken}`}
                     className="mt-2 inline-block text-xs font-semibold text-amber-700 hover:underline"
                   >
-                    → Use this token to reset password
+                    → 使用此 Token 重設密碼
                   </Link>
                 </div>
               )}
 
               <Link href="/login" className="inline-flex items-center gap-2 text-sm font-medium text-[#2d6a4f] hover:underline">
                 <ArrowLeft size={14} />
-                Back to login
+                返回登入
               </Link>
             </div>
           ) : (
@@ -95,7 +95,7 @@ export default function ForgotPasswordPage() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Email Address</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">電子信箱</label>
                   <div className="relative">
                     <Mail size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
@@ -116,14 +116,14 @@ export default function ForgotPasswordPage() {
                   style={{ background: "var(--color-brand-green)" }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : null}
-                  {loading ? "Sending..." : "Send Reset Link"}
+                  {loading ? "傳送中..." : "傳送重設連結"}
                 </button>
               </form>
 
               <div className="mt-5 text-center">
                 <Link href="/login" className="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition-colors">
                   <ArrowLeft size={14} />
-                  Back to login
+                  返回登入
                 </Link>
               </div>
             </>

@@ -24,6 +24,7 @@ export default function DashboardLayout({
   const [userName, setUserName] = useState("");
   const [orgName, setOrgName] = useState("");
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -37,10 +38,13 @@ export default function DashboardLayout({
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("saas_token");
-    localStorage.removeItem("saas_user_name");
-    localStorage.removeItem("saas_org_name");
-    window.location.href = "/login";
+    setLoggingOut(true);
+    setTimeout(() => {
+      localStorage.removeItem("saas_token");
+      localStorage.removeItem("saas_user_name");
+      localStorage.removeItem("saas_org_name");
+      window.location.href = "/login";
+    }, 320);
   };
 
   const navItems = [
@@ -53,7 +57,10 @@ export default function DashboardLayout({
   ];
 
   return (
-    <div className="min-h-screen flex" style={{ background: "var(--color-warm-white)" }}>
+    <div
+      className={`min-h-screen flex transition-opacity duration-300 ${loggingOut ? "opacity-0" : "opacity-100"}`}
+      style={{ background: "var(--color-warm-white)" }}
+    >
       {/* Sidebar */}
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out
@@ -68,7 +75,7 @@ export default function DashboardLayout({
           </div>
           <button
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-white/70 hover:text-white"
+            className="lg:hidden text-white/70 hover:text-white transition-colors"
           >
             <X size={20} />
           </button>

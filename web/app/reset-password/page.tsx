@@ -23,11 +23,11 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      setError("Passwords don't match");
+      setError("密碼不一致");
       return;
     }
     if (newPassword.length < 8) {
-      setError("Password must be at least 8 characters");
+      setError("密碼至少需要 8 個字元");
       return;
     }
     setLoading(true);
@@ -39,10 +39,10 @@ function ResetPasswordForm() {
         body: JSON.stringify({ token, new_password: newPassword }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Reset failed");
+      if (!res.ok) throw new Error(data.detail || "重設失敗");
       setSuccess(true);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Reset failed");
+      setError(err instanceof Error ? err.message : "重設失敗");
     } finally {
       setLoading(false);
     }
@@ -58,9 +58,9 @@ function ResetPasswordForm() {
             <Lock size={24} className="text-white" />
           </div>
           <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-plus-jakarta, sans-serif)" }}>
-            Reset Password
+            重設密碼
           </h1>
-          <p className="text-gray-500 mt-1 text-sm">Enter your new password below</p>
+          <p className="text-gray-500 mt-1 text-sm">輸入你的新密碼</p>
         </div>
 
         <div className="glass-card rounded-2xl p-8">
@@ -69,14 +69,14 @@ function ResetPasswordForm() {
               <div className="inline-flex items-center justify-center w-12 h-12 bg-green-100 rounded-xl mb-4">
                 <CheckCircle size={24} className="text-green-600" />
               </div>
-              <h2 className="font-semibold text-gray-900 mb-2">Password reset!</h2>
-              <p className="text-sm text-gray-500 mb-5">Your password has been changed successfully.</p>
+              <h2 className="font-semibold text-gray-900 mb-2">密碼重設成功！</h2>
+              <p className="text-sm text-gray-500 mb-5">你的密碼已成功更新。</p>
               <Link
                 href="/login"
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:bg-[#40916c]"
                 style={{ background: "var(--color-brand-green)" }}
               >
-                Continue to Login
+                前往登入
               </Link>
             </div>
           ) : (
@@ -89,25 +89,25 @@ function ResetPasswordForm() {
 
               {!token && (
                 <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-700 rounded-xl p-3 text-sm">
-                  No reset token found. Please use the link from your email.
+                  找不到重設 Token，請使用信件中的重設連結。
                 </div>
               )}
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Reset Token</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">重設 Token</label>
                   <input
                     type="text"
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] font-mono"
-                    placeholder="Paste your reset token"
+                    placeholder="貼上你的重設 Token"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">New Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">新密碼</label>
                   <div className="relative">
                     <input
                       type={showPass ? "text" : "password"}
@@ -115,7 +115,7 @@ function ResetPasswordForm() {
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
                       className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] pr-11"
-                      placeholder="At least 8 characters"
+                      placeholder="至少 8 個字元"
                     />
                     <button
                       type="button"
@@ -128,14 +128,14 @@ function ResetPasswordForm() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1.5">Confirm Password</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1.5">確認新密碼</label>
                   <input
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
                     className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f]"
-                    placeholder="Repeat new password"
+                    placeholder="再次輸入新密碼"
                   />
                 </div>
 
@@ -146,13 +146,13 @@ function ResetPasswordForm() {
                   style={{ background: "var(--color-brand-green)" }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
-                  {loading ? "Resetting..." : "Reset Password"}
+                  {loading ? "重設中..." : "重設密碼"}
                 </button>
               </form>
 
               <div className="mt-5 text-center">
                 <Link href="/login" className="text-sm text-gray-500 hover:text-gray-700 transition-colors">
-                  Back to login
+                  返回登入
                 </Link>
               </div>
             </>

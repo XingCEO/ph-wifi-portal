@@ -43,6 +43,12 @@ function InputField({
   );
 }
 
+const ROLE_LABELS: Record<string, string> = {
+  owner: "擁有者",
+  admin: "管理員",
+  member: "成員",
+};
+
 export default function SettingsPage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -70,7 +76,7 @@ export default function SettingsPage() {
         setFullName(data.full_name);
         setEmail(data.email);
       } catch {
-        toast("error", "Failed to load profile");
+        toast("error", "無法載入個人資料");
       } finally {
         setLoading(false);
       }
@@ -92,12 +98,12 @@ export default function SettingsPage() {
         body: JSON.stringify({ full_name: fullName, email }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Update failed");
+      if (!res.ok) throw new Error(data.detail || "更新失敗");
       setProfile(data);
       localStorage.setItem("saas_user_name", data.full_name);
-      toast("success", "Profile updated successfully!");
+      toast("success", "個人資料已更新！");
     } catch (err: unknown) {
-      toast("error", err instanceof Error ? err.message : "Update failed");
+      toast("error", err instanceof Error ? err.message : "更新失敗");
     } finally {
       setSaving(false);
     }
@@ -106,11 +112,11 @@ export default function SettingsPage() {
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword !== confirmPassword) {
-      toast("error", "New passwords don't match");
+      toast("error", "新密碼不一致");
       return;
     }
     if (newPassword.length < 8) {
-      toast("error", "Password must be at least 8 characters");
+      toast("error", "密碼至少需要 8 個字元");
       return;
     }
     setSavingPass(true);
@@ -125,13 +131,13 @@ export default function SettingsPage() {
         body: JSON.stringify({ current_password: currentPassword, new_password: newPassword }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.detail || "Failed to change password");
+      if (!res.ok) throw new Error(data.detail || "更改密碼失敗");
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
-      toast("success", "Password changed successfully!");
+      toast("success", "密碼已成功更改！");
     } catch (err: unknown) {
-      toast("error", err instanceof Error ? err.message : "Failed to change password");
+      toast("error", err instanceof Error ? err.message : "更改密碼失敗");
     } finally {
       setSavingPass(false);
     }
@@ -149,9 +155,9 @@ export default function SettingsPage() {
     <div className="max-w-2xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900" style={{ fontFamily: "var(--font-plus-jakarta, sans-serif)" }}>
-          Account Settings
+          帳號設定
         </h1>
-        <p className="text-gray-500 mt-1 text-sm">Manage your profile and security settings</p>
+        <p className="text-gray-500 mt-1 text-sm">管理你的個人資料與安全設定</p>
       </div>
 
       {/* Profile */}
@@ -160,30 +166,30 @@ export default function SettingsPage() {
           <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
             <User size={18} className="text-[#2d6a4f]" />
           </div>
-          <h2 className="font-semibold text-gray-800">Profile Information</h2>
+          <h2 className="font-semibold text-gray-800">個人資料</h2>
         </div>
 
         <form onSubmit={handleSaveProfile} className="space-y-4">
           <InputField
-            label="Full Name"
+            label="姓名"
             value={fullName}
             onChange={setFullName}
-            placeholder="Your full name"
+            placeholder="你的姓名"
           />
           <InputField
-            label="Email Address"
+            label="電子信箱"
             type="email"
             value={email}
             onChange={setEmail}
             placeholder="you@company.com"
           />
           <div className="flex items-center gap-2 text-sm text-gray-500 bg-gray-50 rounded-xl p-3">
-            <span>Role:</span>
-            <span className="font-medium text-gray-700 capitalize">{profile?.role}</span>
+            <span>角色：</span>
+            <span className="font-medium text-gray-700">{ROLE_LABELS[profile?.role ?? ""] ?? profile?.role}</span>
             <span className="ml-2">·</span>
-            <span>Verified:</span>
+            <span>驗證：</span>
             <span className={`font-medium ${profile?.is_verified ? "text-green-600" : "text-amber-600"}`}>
-              {profile?.is_verified ? "Yes" : "Not yet"}
+              {profile?.is_verified ? "已驗證" : "待驗證"}
             </span>
           </div>
           <button
@@ -192,7 +198,7 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2d6a4f] text-white text-sm font-semibold rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-all"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
-            {saving ? "Saving..." : "Save Changes"}
+            {saving ? "儲存中..." : "儲存變更"}
           </button>
         </form>
       </div>
@@ -203,30 +209,30 @@ export default function SettingsPage() {
           <div className="p-2 rounded-xl bg-amber-50">
             <Lock size={18} className="text-amber-600" />
           </div>
-          <h2 className="font-semibold text-gray-800">Change Password</h2>
+          <h2 className="font-semibold text-gray-800">更改密碼</h2>
         </div>
 
         <form onSubmit={handleChangePassword} className="space-y-4">
           <InputField
-            label="Current Password"
+            label="目前密碼"
             type="password"
             value={currentPassword}
             onChange={setCurrentPassword}
-            placeholder="Your current password"
+            placeholder="你的目前密碼"
           />
           <InputField
-            label="New Password"
+            label="新密碼"
             type="password"
             value={newPassword}
             onChange={setNewPassword}
-            placeholder="At least 8 characters"
+            placeholder="至少 8 個字元"
           />
           <InputField
-            label="Confirm New Password"
+            label="確認新密碼"
             type="password"
             value={confirmPassword}
             onChange={setConfirmPassword}
-            placeholder="Repeat new password"
+            placeholder="再次輸入新密碼"
           />
           <button
             type="submit"
@@ -234,7 +240,7 @@ export default function SettingsPage() {
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-amber-600 text-white text-sm font-semibold rounded-xl hover:bg-amber-700 disabled:opacity-60 transition-all"
           >
             {savingPass ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
-            {savingPass ? "Changing..." : "Change Password"}
+            {savingPass ? "更改中..." : "更改密碼"}
           </button>
         </form>
       </div>

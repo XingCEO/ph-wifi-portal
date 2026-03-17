@@ -17,7 +17,7 @@ interface RevenueSplit {
 }
 
 function formatDate(iso: string) {
-  return new Date(iso).toLocaleDateString("en-US", {
+  return new Date(iso).toLocaleDateString("zh-TW", {
     month: "short",
     day: "numeric",
     year: "numeric",
@@ -32,7 +32,7 @@ export default function RevenuePage() {
   useEffect(() => {
     const fetchRevenue = async () => {
       const token = localStorage.getItem("saas_token");
-      if (!token) { window.location.href = "/login"; return; }
+      if (!token) return;
       try {
         const res = await fetch("/api/dashboard/revenue?limit=24", {
           headers: { Authorization: `Bearer ${token}` },
@@ -40,7 +40,7 @@ export default function RevenuePage() {
         if (!res.ok) throw new Error("Failed to load");
         setSplits(await res.json());
       } catch {
-        setError("Could not load revenue data");
+        setError("無法載入收入資料");
       } finally {
         setLoading(false);
       }
@@ -56,11 +56,16 @@ export default function RevenuePage() {
     .filter((s) => s.status === "pending")
     .reduce((sum, s) => sum + parseFloat(s.partner_amount_usd), 0);
 
+  const STATUS_LABELS: Record<string, string> = {
+    paid: "已付款",
+    pending: "待處理",
+  };
+
   return (
     <div>
       <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900">Revenue</h1>
-        <p className="text-gray-500 mt-1">Your ad revenue splits and payment history</p>
+        <h1 className="text-2xl font-bold text-gray-900">收入分析</h1>
+        <p className="text-gray-500 mt-1">廣告收益分潤與付款記錄</p>
       </div>
 
       {/* Summary cards */}
@@ -70,7 +75,7 @@ export default function RevenuePage() {
             <div className="bg-emerald-100 p-2 rounded-xl">
               <CheckCircle size={20} className="text-emerald-600" />
             </div>
-            <p className="text-gray-500 font-medium text-sm">Total Paid Out</p>
+            <p className="text-gray-500 font-medium text-sm">已付款總計</p>
           </div>
           <p className="text-3xl font-bold text-gray-900">${totalEarned.toFixed(4)}</p>
           <p className="text-sm text-gray-400 mt-1">USD</p>
@@ -81,10 +86,10 @@ export default function RevenuePage() {
             <div className="bg-amber-100 p-2 rounded-xl">
               <Clock size={20} className="text-amber-600" />
             </div>
-            <p className="text-gray-500 font-medium text-sm">Pending</p>
+            <p className="text-gray-500 font-medium text-sm">待結算</p>
           </div>
           <p className="text-3xl font-bold text-gray-900">${totalPending.toFixed(4)}</p>
-          <p className="text-sm text-gray-400 mt-1">USD (not yet paid)</p>
+          <p className="text-sm text-gray-400 mt-1">USD（尚未結算）</p>
         </div>
       </div>
 
@@ -101,9 +106,9 @@ export default function RevenuePage() {
       ) : splits.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">
           <DollarSign className="mx-auto text-gray-300" size={48} />
-          <p className="mt-3 text-gray-500">No revenue records yet.</p>
+          <p className="mt-3 text-gray-500">尚無收入記錄。</p>
           <p className="text-sm text-gray-400 mt-1">
-            Revenue splits are generated monthly once ad views start accumulating.
+            廣告觀看次數累積後，每月自動生成收益分潤記錄。
           </p>
         </div>
       ) : (
@@ -111,11 +116,11 @@ export default function RevenuePage() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-6 py-3 text-gray-500 font-medium">Period</th>
-                <th className="text-right px-6 py-3 text-gray-500 font-medium">Ad Views</th>
-                <th className="text-right px-6 py-3 text-gray-500 font-medium">Total Revenue</th>
-                <th className="text-right px-6 py-3 text-gray-500 font-medium">Your Share ({"{"}pct{"}"}%)</th>
-                <th className="text-center px-6 py-3 text-gray-500 font-medium">Status</th>
+                <th className="text-left px-6 py-3 text-gray-500 font-medium">期間</th>
+                <th className="text-right px-6 py-3 text-gray-500 font-medium">廣告觀看</th>
+                <th className="text-right px-6 py-3 text-gray-500 font-medium">總收入</th>
+                <th className="text-right px-6 py-3 text-gray-500 font-medium">我的分潤</th>
+                <th className="text-center px-6 py-3 text-gray-500 font-medium">狀態</th>
               </tr>
             </thead>
             <tbody>
@@ -154,7 +159,7 @@ export default function RevenuePage() {
                       ) : (
                         <Clock size={12} />
                       )}
-                      {s.status}
+                      {STATUS_LABELS[s.status] ?? s.status}
                     </span>
                   </td>
                 </tr>

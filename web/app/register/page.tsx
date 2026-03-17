@@ -38,9 +38,7 @@ export default function RegisterPage() {
         body: JSON.stringify(form),
       });
       const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.detail || "Registration failed");
-      }
+      if (!res.ok) throw new Error(data.detail || "註冊失敗");
       localStorage.setItem("saas_token", data.access_token);
       localStorage.setItem("saas_user_name", data.full_name);
       localStorage.setItem("saas_org_name", data.org_name || "");
@@ -49,7 +47,7 @@ export default function RegisterPage() {
         window.location.href = "/dashboard";
       }, 1500);
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Registration failed");
+      setError(err instanceof Error ? err.message : "註冊失敗");
     } finally {
       setLoading(false);
     }
@@ -58,12 +56,12 @@ export default function RegisterPage() {
   if (success) {
     return (
       <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center px-4">
-        <div className="text-center">
+        <div className="text-center animate-slide-up">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
             <CheckCircle className="text-green-600" size={32} />
           </div>
-          <h2 className="text-xl font-bold text-gray-900">Account Created!</h2>
-          <p className="text-gray-500 mt-2">Redirecting to your dashboard...</p>
+          <h2 className="text-xl font-bold text-gray-900">帳號已建立！</h2>
+          <p className="text-gray-500 mt-2">正在跳轉至 Dashboard...</p>
         </div>
       </div>
     );
@@ -71,7 +69,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-14 h-14 bg-[#2d6a4f] rounded-2xl mb-4">
@@ -82,44 +80,44 @@ export default function RegisterPage() {
               <circle cx="12" cy="19" r="1.5" fill="currentColor"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Create Your Account</h1>
-          <p className="text-gray-500 mt-1 text-sm">Start earning from your WiFi today</p>
+          <h1 className="text-2xl font-bold text-gray-900">建立帳號</h1>
+          <p className="text-gray-500 mt-1 text-sm">立即開始用 WiFi 賺收益</p>
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
           {error && (
-            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm">
+            <div className="mb-4 bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm animate-fade-in">
               {error}
             </div>
           )}
 
           <form onSubmit={handleRegister} className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">姓名 *</label>
               <input
                 type="text"
                 required
                 value={form.full_name}
                 onChange={(e) => setForm({ ...form, full_name: e.target.value })}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                className="input-brand w-full border border-gray-300 rounded-xl px-4 py-3 text-sm"
                 placeholder="Juan dela Cruz"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">電子信箱 *</label>
               <input
                 type="email"
                 required
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                className="input-brand w-full border border-gray-300 rounded-xl px-4 py-3 text-sm"
                 placeholder="you@company.com"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Password * (min 8 chars)</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">密碼 *（至少 8 碼）</label>
               <div className="relative">
                 <input
                   type={showPass ? "text" : "password"}
@@ -127,13 +125,13 @@ export default function RegisterPage() {
                   minLength={8}
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent pr-11"
-                  placeholder="Min 8 characters"
+                  className="input-brand w-full border border-gray-300 rounded-xl px-4 py-3 text-sm pr-11"
+                  placeholder="至少 8 個字元"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPass(!showPass)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
                 >
                   {showPass ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
@@ -141,25 +139,23 @@ export default function RegisterPage() {
             </div>
 
             <div className="pt-2 border-t border-gray-100">
-              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">Your Organization</p>
-
+              <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-3">你的組織</p>
               <div className="space-y-3">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Name *</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">商家名稱 *</label>
                   <input
                     type="text"
                     required
                     value={form.org_name}
                     onChange={(e) => handleOrgNameChange(e.target.value)}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
-                    placeholder="My Coffee Shop"
+                    className="input-brand w-full border border-gray-300 rounded-xl px-4 py-3 text-sm"
+                    placeholder="我的咖啡廳"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Organization Slug *
-                    <span className="ml-1 text-xs text-gray-400 font-normal">(used in URLs)</span>
+                    組織代號 *
+                    <span className="ml-1 text-xs text-gray-400 font-normal">（用於 URL）</span>
                   </label>
                   <input
                     type="text"
@@ -167,10 +163,10 @@ export default function RegisterPage() {
                     pattern="^[a-z0-9\-]+$"
                     value={form.org_slug}
                     onChange={(e) => setForm({ ...form, org_slug: e.target.value.toLowerCase() })}
-                    className="w-full border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent font-mono"
+                    className="input-brand w-full border border-gray-300 rounded-xl px-4 py-3 text-sm font-mono"
                     placeholder="my-coffee-shop"
                   />
-                  <p className="mt-1 text-xs text-gray-400">Lowercase letters, numbers, and hyphens only</p>
+                  <p className="mt-1 text-xs text-gray-400">只能使用小寫英文字母、數字和連字號</p>
                 </div>
               </div>
             </div>
@@ -178,22 +174,22 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#2d6a4f] text-white font-semibold py-3 rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
+              className="btn-scale w-full bg-[#2d6a4f] text-white font-semibold py-3 rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
             >
               {loading && <Loader2 size={18} className="animate-spin" />}
-              {loading ? "Creating account..." : "Create Free Account"}
+              {loading ? "建立中..." : "免費建立帳號"}
             </button>
 
             <p className="text-xs text-center text-gray-400">
-              Free plan: 1 hotspot, 70% revenue share. No credit card required.
+              免費方案：1 個站點，70% 收益分潤。無需信用卡。
             </p>
           </form>
         </div>
 
         <p className="text-center mt-6 text-sm text-gray-500">
-          Already have an account?{" "}
+          已有帳號？{" "}
           <Link href="/login" className="text-[#2d6a4f] font-semibold hover:underline">
-            Sign in
+            直接登入
           </Link>
         </p>
       </div>

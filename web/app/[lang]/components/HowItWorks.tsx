@@ -57,10 +57,10 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
               <div key={step.key} className="contents">
                 {i > 0 && <StepConnector />}
                 <AnimateIn delay={0.15 + i * 0.12} className="flex-1 w-full max-w-xs">
-                  <div className="relative p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:border-[var(--color-brand-green)]/25 transition-all hover:shadow-lg hover:shadow-[var(--color-brand-green)]/5 group h-full text-center md:text-left">
+                  <div className="relative p-8 rounded-2xl bg-white/60 backdrop-blur-xl border border-white/40 hover:border-[var(--color-brand-green)]/40 transition-all duration-300 hover:shadow-xl hover:shadow-[var(--color-brand-green)]/10 hover:-translate-y-2 hover:scale-[1.02] group h-full text-center md:text-left cursor-default">
                     {/* Step number */}
                     <div
-                      className="absolute top-6 right-6 text-5xl font-800 leading-none"
+                      className="absolute top-6 right-6 text-6xl font-800 leading-none transition-all duration-300 group-hover:opacity-[0.15] group-hover:scale-110"
                       style={{
                         fontFamily: "var(--font-plus-jakarta), sans-serif",
                         color: step.color,
@@ -70,7 +70,7 @@ export default function HowItWorks({ dict }: { dict: Dictionary }) {
                       {i + 1}
                     </div>
 
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-colors mx-auto md:mx-0"
+                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 transition-all duration-300 mx-auto md:mx-0 group-hover:scale-110 group-hover:shadow-lg"
                       style={{ backgroundColor: `${step.color}10` }}
                     >
                       <Icon

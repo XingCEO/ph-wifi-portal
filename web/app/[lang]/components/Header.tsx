@@ -11,6 +11,13 @@ const languages = [
   { code: "zh-hant", label: "中文" },
 ];
 
+// 依語言顯示不同的登入/註冊文字
+function getAuthLabels(lang: string) {
+  if (lang === "zh-hant") return { login: "登入", register: "免費註冊" };
+  if (lang === "fil") return { login: "Mag-login", register: "Mag-sign up" };
+  return { login: "Log In", register: "Sign Up" };
+}
+
 export default function Header({
   dict,
   lang,
@@ -19,6 +26,7 @@ export default function Header({
   lang: string;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const authLabels = getAuthLabels(lang);
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 bg-[var(--color-warm-white)]/72 backdrop-blur-xl saturate-[1.8] border-b border-white/30">
@@ -78,14 +86,14 @@ export default function Header({
               href="/login"
               className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors no-underline"
             >
-              Log In
+              {authLabels.login}
             </Link>
             <Link
               href="/register"
-              className="text-sm font-semibold text-white px-4 py-2 rounded-xl no-underline transition-all hover:opacity-90"
+              className="text-sm font-semibold text-white px-4 py-2 rounded-xl no-underline transition-all hover:opacity-90 btn-scale"
               style={{ background: "var(--color-brand-green)" }}
             >
-              Sign Up
+              {authLabels.register}
             </Link>
           </div>
         </nav>
@@ -106,7 +114,7 @@ export default function Header({
             className="fixed inset-0 top-0 bg-[var(--color-warm-white)] z-40 md:hidden"
             onClick={() => setMenuOpen(false)}
           />
-          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-[var(--color-warm-white)] px-6 py-8">
+          <div className="fixed top-16 left-0 right-0 z-50 md:hidden bg-[var(--color-warm-white)] px-6 py-8 animate-slide-up">
             <nav className="flex flex-col gap-4">
               <a
                 href="#how-it-works"
@@ -157,7 +165,7 @@ export default function Header({
                   onClick={() => setMenuOpen(false)}
                   className="flex-1 text-center text-sm font-medium text-[var(--color-text-secondary)] py-2.5 rounded-xl border border-[#e8e4de] no-underline hover:bg-[var(--color-warm-gray)] transition-colors"
                 >
-                  Log In
+                  {authLabels.login}
                 </Link>
                 <Link
                   href="/register"
@@ -165,7 +173,7 @@ export default function Header({
                   className="flex-1 text-center text-sm font-semibold text-white py-2.5 rounded-xl no-underline transition-all hover:opacity-90"
                   style={{ background: "var(--color-brand-green)" }}
                 >
-                  Sign Up
+                  {authLabels.register}
                 </Link>
               </div>
             </nav>
