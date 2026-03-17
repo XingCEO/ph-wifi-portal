@@ -72,6 +72,22 @@ export default function Header({
               </Link>
             ))}
           </div>
+
+          <div className="flex items-center gap-2 ml-4 border-l border-[#e8e4de] pl-4">
+            <Link
+              href="/login"
+              className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors no-underline"
+            >
+              Log In
+            </Link>
+            <Link
+              href="/register"
+              className="text-sm font-semibold text-white px-4 py-2 rounded-xl no-underline transition-all hover:opacity-90"
+              style={{ background: "var(--color-brand-green)" }}
+            >
+              Sign Up
+            </Link>
+          </div>
         </nav>
 
         <button
@@ -134,6 +150,23 @@ export default function Header({
                     {l.label}
                   </Link>
                 ))}
+              </div>
+              <div className="flex items-center gap-3 pt-4 border-t border-[#e8e4de]">
+                <Link
+                  href="/login"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center text-sm font-medium text-[var(--color-text-secondary)] py-2.5 rounded-xl border border-[#e8e4de] no-underline hover:bg-[var(--color-warm-gray)] transition-colors"
+                >
+                  Log In
+                </Link>
+                <Link
+                  href="/register"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex-1 text-center text-sm font-semibold text-white py-2.5 rounded-xl no-underline transition-all hover:opacity-90"
+                  style={{ background: "var(--color-brand-green)" }}
+                >
+                  Sign Up
+                </Link>
               </div>
             </nav>
           </div>
