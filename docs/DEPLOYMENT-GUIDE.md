@@ -109,25 +109,80 @@ ufw enable
 
 ## Part 3：EAP225 連接 Controller
 
-### Step 1：EAP225 接電 + 網路
-- PoE 線接到路由器/交換機
-- 等燈穩定
+### Step 1：EAP225 硬體接線
+1. 把 **PoE 注入器**（隨 EAP225 附贈的黑色小盒子）接上：
+   - **PoE 孔** → 用網路線連到 **EAP225**
+   - **LAN 孔** → 用網路線連到你的**路由器**
+   - **電源線** → 插牆壁電源
+2. EAP225 的 LED 燈會亮起，等到**燈穩定不閃**（約 1-2 分鐘）
 
-### Step 2：設定 Controller IP
-- 電腦/手機連 EAP225 的 WiFi（TP-Link_XXXX）
-- 開 `http://192.168.0.254` 或 EAP 的 IP
-- 登入 → Management → Controller Settings
-- **Inform URL/IP Address：** 填 `<VPS公網IP>`
-- **Cloud-Based Controller Management：** 關掉
-- Save
+> 如果沒有 PoE 注入器，直接用 PoE 交換機供電也行。
 
-### Step 3：Adopt
-- 回 Controller 管理頁 → Devices
-- EAP225 會出現（閒置中 → 點 Adopt）
-- 等 1-2 分鐘變「已連線」
+### Step 2：找到 EAP225 的 IP
+方法 A（推薦）：到路由器管理頁看 DHCP 客戶端列表，找 TP-Link 的裝置
+方法 B：用 Omada Discovery Utility（需要 Java）
+方法 C：試 `http://192.168.0.254` 或 `http://192.168.1.254`
 
-> ⚠️ 帳密要一致！EAP225 的帳密要跟 Controller 站點設備帳號一樣，不然 Adopt 會失敗（「納管失敗」）。
-> 如果失敗：長按 Reset 10 秒重設 EAP → 重新設定帳密 → 重新 Adopt。
+### Step 3：EAP225 初始設定
+1. 電腦/手機連上 EAP225 的 WiFi（`TP-Link_2.4GHz_XXXXXX` 或 `TP-Link_5GHz_XXXXXX`）
+2. 瀏覽器開 EAP225 的 IP（例如 `http://192.168.1.16`）
+3. 第一次進去會要你設帳密：
+   - **Username：** `admin`
+   - **Password：** 跟 Controller 站點設備帳號**一模一樣**（例如 `Ak@WiFi2026!ph`）
+   - ⚠️ **這很重要！** 密碼要跟 Controller 站點設備帳號一致，不然 Adopt 會失敗
+   - 密碼要求：10-64 字元，大小寫 + 數字 + 特殊符號，不能連續相同字元
+4. 按 Next → 跳過 WiFi 設定（Skip）→ 進入管理頁面
+
+### Step 4：設定 Controller IP
+1. 進入管理頁面後，點上方 **Management** 分頁
+2. 找到 **Controller Settings** 區塊
+3. 設定：
+   - **Inform URL/IP Address：** 填 `<VPS公網IP>`（例如 `107.174.155.124`）
+   - **Cloud-Based Controller Management：** ❌ **關掉**（不要勾）
+4. 按 **Save**
+
+> 如果頁面顯示「This AP is being managed by Omada Controller」且無法操作：
+> 代表 EAP 被 Cloud Controller 管著。去 Cloud → 裝置 → 移除此設備 → 等 1 分鐘 → 重新整理本地 GUI。
+
+### Step 5：Controller Adopt
+1. 開瀏覽器 → `https://<VPS_IP>:8043` → 登入
+2. 進入你的站點（例如 AbotKamay）
+3. 左邊 **Devices** → EAP225 應該出現（狀態：閒置中）
+4. 勾選 → 按 **套用**（Adopt）
+5. 等 1-2 分鐘，狀態會變：閒置中 → 預先配置 → **已連線** ✅
+
+### Adopt 失敗怎麼辦
+
+**情況 1：顯示「納管失敗」**
+- 原因：EAP 帳密跟 Controller 站點設備帳號不一致
+- 解法：
+  1. Controller → 站點設定 → 設備帳號 → 改成跟 EAP 一樣的帳密
+  2. 或：長按 EAP225 Reset 鍵 10 秒 → 重設 → 重新設定帳密（跟 Controller 一致）→ 重新 Adopt
+
+**情況 2：EAP225 沒有出現在 Devices 列表**
+- 原因：EAP 不知道 Controller IP
+- 解法：回到 Step 4 確認 Inform URL 有填對
+
+**情況 3：一直卡在「預先配置」**
+- 解法：拔插 EAP 電源重啟
+
+### Step 6：確認設定同步
+1. Adopt 成功後，點 EAP225 看詳情
+2. 確認 `configSyncStatus` 不是 3（3 = 未同步）
+3. 如果是 3：拔插 EAP 電源，重啟後會重新拉設定
+
+### SSH 連接 EAP225（偵錯用）
+```bash
+# Windows CMD（EAP225 的 SSH 用舊版演算法）
+ssh -oHostKeyAlgorithms=+ssh-rsa -oPubkeyAcceptedAlgorithms=+ssh-rsa admin@<EAP_IP>
+
+# 如果出現 HOST KEY CHANGED 錯誤
+ssh-keygen -R <EAP_IP>
+# 然後重新連
+```
+
+> EAP225 的 SSH 是 BusyBox，沒有 `uci`、`set-inform` 等指令。
+> 設定 Controller IP 只能透過本地 GUI（Management → Controller Settings）。
 
 ---
 
