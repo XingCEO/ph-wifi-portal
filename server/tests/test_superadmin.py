@@ -203,3 +203,70 @@ async def test_search_users(client: AsyncClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert any("searchme" in u["email"] for u in data)
+
+
+# ─── New endpoints: ads stats, ads daily, sites, activity ─────────────────────
+
+async def test_ads_stats(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/ads/stats", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "adcash_connected" in data
+    assert "total_ad_views" in data
+    assert "avg_cpm_usd" in data
+    assert "monthly_revenue_usd" in data
+    assert "top_sites" in data
+    assert isinstance(data["top_sites"], list)
+
+
+async def test_ads_stats_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/ads/stats")
+    assert resp.status_code == 401
+
+
+async def test_ads_daily(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/ads/daily?days=7", headers=HEADERS)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 7
+    for entry in data:
+        assert "date" in entry
+        assert "revenue_usd" in entry
+        assert "ad_views" in entry
+
+
+async def test_ads_daily_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/ads/daily")
+    assert resp.status_code == 401
+
+
+async def test_list_sites(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/sites", headers=HEADERS)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
+async def test_list_sites_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/sites")
+    assert resp.status_code == 401
+
+
+async def test_toggle_site_not_found(client: AsyncClient) -> None:
+    resp = await client.patch(
+        "/api/superadmin/sites/999999",
+        json={"is_active": False},
+        headers=HEADERS,
+    )
+    assert resp.status_code == 404
+
+
+async def test_activity_log(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/activity", headers=HEADERS)
+    assert resp.status_code == 200
+    assert isinstance(resp.json(), list)
+
+
+async def test_activity_log_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/superadmin/activity")
+    assert resp.status_code == 401

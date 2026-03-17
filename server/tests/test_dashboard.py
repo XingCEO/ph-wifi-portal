@@ -144,3 +144,49 @@ async def test_provision_hotspot(client: AsyncClient) -> None:
     assert data["ap_mac"] == "CC:DD:EE:11:22:33"
     assert len(data["setup_instructions"]) > 0
     assert "hotspot_id" in data
+
+
+# ─── New endpoints: analytics & daily-trend ───────────────────────────────────
+
+@pytest.mark.anyio
+async def test_analytics_no_hotspots(client: AsyncClient) -> None:
+    token = await _register_and_token(client, "-analytics")
+    resp = await client.get(
+        "/api/dashboard/analytics",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "hourly_distribution" in data
+    assert "device_types" in data
+    assert "weekly_trend" in data
+    assert len(data["hourly_distribution"]) == 24
+    assert len(data["weekly_trend"]) == 7
+
+
+@pytest.mark.anyio
+async def test_analytics_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/dashboard/analytics")
+    assert resp.status_code == 401
+
+
+@pytest.mark.anyio
+async def test_daily_trend(client: AsyncClient) -> None:
+    token = await _register_and_token(client, "-trend")
+    resp = await client.get(
+        "/api/dashboard/daily-trend?days=7",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert isinstance(data, list)
+    assert len(data) == 7
+    for entry in data:
+        assert "date" in entry
+        assert "connections" in entry
+
+
+@pytest.mark.anyio
+async def test_daily_trend_no_auth(client: AsyncClient) -> None:
+    resp = await client.get("/api/dashboard/daily-trend")
+    assert resp.status_code == 401

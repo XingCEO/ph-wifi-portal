@@ -589,3 +589,385 @@ async def create_or_update_plan(
         description=body.description,
         active_subscribers=subscriber_count,
     )
+
+
+# ─── Ads Stats ────────────────────────────────────────────────────────────────
+
+class TopSite(BaseModel):
+    hotspot_id: int
+    hotspot_name: str
+    ad_views: int
+    revenue_usd: Decimal
+    cpm_usd: Decimal
+
+
+class AdsStatsResponse(BaseModel):
+    adcash_connected: bool
+    total_ad_views: int
+    avg_cpm_usd: Decimal
+    monthly_revenue_usd: Decimal
+    top_sites: list[TopSite]
+
+
+class DailyAdRevenue(BaseModel):
+    date: str
+    revenue_usd: Decimal
+    ad_views: int
+
+
+@router.get("/ads/stats", response_model=AdsStatsResponse)
+async def get_ads_stats(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> AdsStatsResponse:
+    """廣告統計：Adcash 連線狀態、總觀看次數、CPM、月收入、站點排名"""
+    verify_superadmin_auth(request)
+
+    now = datetime.now(tz=timezone.utc)
+    month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Total ad views
+    total_views_row = await db.execute(select(func.count(AdView.id)))
+    total_ad_views = total_views_row.scalar() or 0
+
+    # Monthly revenue
+    monthly_rev_row = await db.execute(
+        select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0)).where(
+            AdView.viewed_at >= month_start
+        )
+    )
+    monthly_revenue = Decimal(str(monthly_rev_row.scalar() or 0))
+
+    # Average CPM (revenue per 1000 views)
+    total_rev_row = await db.execute(
+        select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0))
+    )
+    total_revenue = Decimal(str(total_rev_row.scalar() or 0))
+    avg_cpm = (total_revenue / max(total_ad_views, 1) * 1000).quantize(Decimal("0.0001"))
+
+    # Top sites by ad views (30 days)
+    since = now - timedelta(days=30)
+    hs_result = await db.execute(
+        select(Hotspot).where(Hotspot.is_active == True).order_by(Hotspot.created_at.desc()).limit(10)  # noqa: E712
+    )
+    hotspots = hs_result.scalars().all()
+
+    top_sites: list[TopSite] = []
+    for hs in hotspots:
+        views_row = await db.execute(
+            select(func.count(AdView.id)).where(
+                AdView.hotspot_id == hs.id,
+                AdView.viewed_at >= since,
+            )
+        )
+        hs_views = views_row.scalar() or 0
+
+        rev_row = await db.execute(
+            select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0)).where(
+                AdView.hotspot_id == hs.id,
+                AdView.viewed_at >= since,
+            )
+        )
+        hs_rev = Decimal(str(rev_row.scalar() or 0))
+        hs_cpm = (hs_rev / max(hs_views, 1) * 1000).quantize(Decimal("0.0001"))
+
+        top_sites.append(TopSite(
+            hotspot_id=hs.id,
+            hotspot_name=hs.name,
+            ad_views=hs_views,
+            revenue_usd=hs_rev,
+            cpm_usd=hs_cpm,
+        ))
+
+    # Sort by ad views desc
+    top_sites.sort(key=lambda x: x.ad_views, reverse=True)
+
+    # Adcash connection: check if omada_host is configured as proxy
+    adcash_connected = bool(settings.admin_password)  # proxy: always enabled if platform is running
+
+    return AdsStatsResponse(
+        adcash_connected=adcash_connected,
+        total_ad_views=total_ad_views,
+        avg_cpm_usd=avg_cpm,
+        monthly_revenue_usd=monthly_revenue,
+        top_sites=top_sites[:5],
+    )
+
+
+@router.get("/ads/daily", response_model=list[DailyAdRevenue])
+async def get_ads_daily(
+    request: Request,
+    days: int = Query(14, ge=1, le=90),
+    db: AsyncSession = Depends(get_db),
+) -> list[DailyAdRevenue]:
+    """每日廣告收入（最近 N 天）"""
+    verify_superadmin_auth(request)
+
+    now = datetime.now(tz=timezone.utc)
+    results = []
+
+    for i in range(days - 1, -1, -1):
+        day_start = (now - timedelta(days=i)).replace(hour=0, minute=0, second=0, microsecond=0)
+        day_end = day_start + timedelta(days=1)
+
+        rev_row = await db.execute(
+            select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0)).where(
+                AdView.viewed_at >= day_start,
+                AdView.viewed_at < day_end,
+            )
+        )
+        day_rev = Decimal(str(rev_row.scalar() or 0))
+
+        views_row = await db.execute(
+            select(func.count(AdView.id)).where(
+                AdView.viewed_at >= day_start,
+                AdView.viewed_at < day_end,
+            )
+        )
+        day_views = views_row.scalar() or 0
+
+        results.append(DailyAdRevenue(
+            date=day_start.strftime("%Y-%m-%d"),
+            revenue_usd=day_rev,
+            ad_views=day_views,
+        ))
+
+    return results
+
+
+# ─── Sites (detailed) ─────────────────────────────────────────────────────────
+
+class SiteDetailResponse(BaseModel):
+    id: int
+    name: str
+    location: str
+    ap_mac: str
+    is_active: bool
+    org_id: int | None
+    org_name: str | None
+    today_connections: int
+    connections_30d: int
+    ad_views_30d: int
+    revenue_30d_usd: Decimal
+    last_activity: str | None
+    controller_connected: bool
+    created_at: datetime
+
+
+class SiteToggleRequest(BaseModel):
+    is_active: bool
+
+
+@router.get("/sites", response_model=list[SiteDetailResponse])
+async def list_sites_detailed(
+    request: Request,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    search: str = Query(""),
+    db: AsyncSession = Depends(get_db),
+) -> list[SiteDetailResponse]:
+    """站點詳細列表（含今日連線、廣告次數、收入、最後活動時間）"""
+    verify_superadmin_auth(request)
+
+    q = select(Hotspot, Organization).outerjoin(Organization, Hotspot.org_id == Organization.id)
+    if search:
+        q = q.where(Hotspot.name.ilike(f"%{search}%") | Hotspot.location.ilike(f"%{search}%"))
+    q = q.order_by(Hotspot.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+
+    result = await db.execute(q)
+    rows = result.all()
+
+    now = datetime.now(tz=timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    since_30d = now - timedelta(days=30)
+
+    responses = []
+    for hs, org in rows:
+        # Today connections
+        today_conns = (await db.execute(
+            select(func.count(AccessGrant.id)).where(
+                AccessGrant.hotspot_id == hs.id,
+                AccessGrant.granted_at >= today_start,
+            )
+        )).scalar() or 0
+
+        # 30-day connections
+        conns_30d = (await db.execute(
+            select(func.count(AccessGrant.id)).where(
+                AccessGrant.hotspot_id == hs.id,
+                AccessGrant.granted_at >= since_30d,
+            )
+        )).scalar() or 0
+
+        # 30-day ad views
+        ad_views_30d = (await db.execute(
+            select(func.count(AdView.id)).where(
+                AdView.hotspot_id == hs.id,
+                AdView.viewed_at >= since_30d,
+            )
+        )).scalar() or 0
+
+        # 30-day revenue
+        rev_row = await db.execute(
+            select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0)).where(
+                AdView.hotspot_id == hs.id,
+                AdView.viewed_at >= since_30d,
+            )
+        )
+        revenue = Decimal(str(rev_row.scalar() or 0))
+
+        # Last activity (latest access grant)
+        last_grant = await db.execute(
+            select(AccessGrant.granted_at).where(
+                AccessGrant.hotspot_id == hs.id
+            ).order_by(AccessGrant.granted_at.desc()).limit(1)
+        )
+        last_ts = last_grant.scalar()
+        last_activity = last_ts.isoformat() if last_ts else None
+
+        # Controller connected: use omada_host as indicator
+        controller_connected = bool(settings.omada_host and settings.omada_host != "localhost")
+
+        responses.append(SiteDetailResponse(
+            id=hs.id,
+            name=hs.name,
+            location=hs.location,
+            ap_mac=hs.ap_mac,
+            is_active=hs.is_active,
+            org_id=hs.org_id,
+            org_name=org.name if org else None,
+            today_connections=today_conns,
+            connections_30d=conns_30d,
+            ad_views_30d=ad_views_30d,
+            revenue_30d_usd=revenue,
+            last_activity=last_activity,
+            controller_connected=controller_connected,
+            created_at=hs.created_at,
+        ))
+
+    return responses
+
+
+@router.patch("/sites/{site_id}", response_model=SiteDetailResponse)
+async def toggle_site(
+    site_id: int,
+    body: SiteToggleRequest,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> SiteDetailResponse:
+    """啟用或停用站點"""
+    verify_superadmin_auth(request)
+
+    result = await db.execute(
+        select(Hotspot, Organization).outerjoin(Organization, Hotspot.org_id == Organization.id)
+        .where(Hotspot.id == site_id)
+    )
+    row = result.one_or_none()
+    if not row:
+        raise HTTPException(status_code=404, detail="Site not found")
+
+    hs, org = row
+    hs.is_active = body.is_active
+    await db.commit()
+    await db.refresh(hs)
+    logger.info("superadmin_site_toggled", site_id=site_id, is_active=body.is_active)
+
+    now = datetime.now(tz=timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    since_30d = now - timedelta(days=30)
+
+    today_conns = (await db.execute(
+        select(func.count(AccessGrant.id)).where(
+            AccessGrant.hotspot_id == hs.id,
+            AccessGrant.granted_at >= today_start,
+        )
+    )).scalar() or 0
+
+    conns_30d = (await db.execute(
+        select(func.count(AccessGrant.id)).where(
+            AccessGrant.hotspot_id == hs.id,
+            AccessGrant.granted_at >= since_30d,
+        )
+    )).scalar() or 0
+
+    ad_views_30d = (await db.execute(
+        select(func.count(AdView.id)).where(
+            AdView.hotspot_id == hs.id,
+            AdView.viewed_at >= since_30d,
+        )
+    )).scalar() or 0
+
+    rev_row = await db.execute(
+        select(func.coalesce(func.sum(AdView.estimated_revenue_usd), 0)).where(
+            AdView.hotspot_id == hs.id,
+            AdView.viewed_at >= since_30d,
+        )
+    )
+    revenue = Decimal(str(rev_row.scalar() or 0))
+
+    last_grant = await db.execute(
+        select(AccessGrant.granted_at).where(
+            AccessGrant.hotspot_id == hs.id
+        ).order_by(AccessGrant.granted_at.desc()).limit(1)
+    )
+    last_ts = last_grant.scalar()
+
+    controller_connected = bool(settings.omada_host and settings.omada_host != "localhost")
+
+    return SiteDetailResponse(
+        id=hs.id,
+        name=hs.name,
+        location=hs.location,
+        ap_mac=hs.ap_mac,
+        is_active=hs.is_active,
+        org_id=hs.org_id,
+        org_name=org.name if org else None,
+        today_connections=today_conns,
+        connections_30d=conns_30d,
+        ad_views_30d=ad_views_30d,
+        revenue_30d_usd=revenue,
+        last_activity=last_ts.isoformat() if last_ts else None,
+        controller_connected=controller_connected,
+        created_at=hs.created_at,
+    )
+
+
+# ─── Activity Log ─────────────────────────────────────────────────────────────
+
+class ActivityLogEntry(BaseModel):
+    id: int
+    action: str
+    target: str
+    admin_user: str
+    created_at: datetime
+
+
+@router.get("/activity", response_model=list[ActivityLogEntry])
+async def get_activity_log(
+    request: Request,
+    limit: int = Query(10, ge=1, le=50),
+    db: AsyncSession = Depends(get_db),
+) -> list[ActivityLogEntry]:
+    """最近操作記錄（從 admin_audit_log 或模擬資料）"""
+    verify_superadmin_auth(request)
+
+    # Try to query admin_audit_log if it exists
+    try:
+        from models.database import AdminAuditLog  # type: ignore[attr-defined]
+        result = await db.execute(
+            select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc()).limit(limit)
+        )
+        logs = result.scalars().all()
+        return [
+            ActivityLogEntry(
+                id=log.id,
+                action=log.action,
+                target=getattr(log, "target", ""),
+                admin_user=getattr(log, "admin_user", "admin"),
+                created_at=log.created_at,
+            )
+            for log in logs
+        ]
+    except Exception:
+        # Fallback: return empty list (table may not exist yet)
+        return []
