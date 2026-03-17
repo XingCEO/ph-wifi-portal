@@ -119,7 +119,7 @@ export default function AnalyticsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-[#2d6a4f]" size={32} />
+        <Loader2 className="animate-spin text-[#1B4F8A]" size={32} />
       </div>
     );
   }
@@ -139,7 +139,7 @@ export default function AnalyticsPage() {
     <div>
       <div className="mb-8">
         <div className="flex items-center gap-2">
-          <BarChart2 size={24} className="text-[#2d6a4f]" />
+          <BarChart2 size={24} className="text-[#1B4F8A]" />
           <h1 className="text-2xl font-bold text-gray-900">數據分析</h1>
         </div>
         <p className="text-gray-500 mt-1">連線時段、裝置分佈與流量趨勢</p>
@@ -149,7 +149,7 @@ export default function AnalyticsPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
         <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm">
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp size={16} className="text-[#2d6a4f]" />
+            <TrendingUp size={16} className="text-[#1B4F8A]" />
             <p className="text-sm text-gray-500">本週連線總計</p>
           </div>
           <p className="text-2xl font-bold text-gray-900">{totalConnections.toLocaleString()}</p>
@@ -226,7 +226,7 @@ export default function AnalyticsPage() {
       {/* Weekly trend */}
       <div className="mt-6 bg-white rounded-2xl p-6 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-2 mb-1">
-          <TrendingUp size={16} className="text-[#2d6a4f]" />
+          <TrendingUp size={16} className="text-[#1B4F8A]" />
           <h2 className="text-lg font-semibold text-gray-800">流量趨勢（近 7 天）</h2>
         </div>
         <p className="text-sm text-gray-400">每日連線次數</p>

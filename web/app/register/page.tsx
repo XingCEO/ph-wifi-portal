@@ -57,8 +57,8 @@ export default function RegisterPage() {
     return (
       <div className="min-h-screen bg-[#faf8f5] flex items-center justify-center px-4">
         <div className="text-center animate-slide-up">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-green-100 rounded-full mb-4">
-            <CheckCircle className="text-green-600" size={32} />
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
+            <CheckCircle className="text-blue-600" size={32} />
           </div>
           <h2 className="text-xl font-bold text-gray-900">帳號已建立！</h2>
           <p className="text-gray-500 mt-2">正在跳轉至 Dashboard...</p>
@@ -72,7 +72,7 @@ export default function RegisterPage() {
       <div className="w-full max-w-md animate-slide-up">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#2d6a4f] rounded-2xl mb-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 bg-[#1B4F8A] rounded-2xl mb-4">
             <svg viewBox="0 0 24 24" fill="none" className="w-7 h-7 text-white" stroke="currentColor" strokeWidth="2">
               <path d="M1.5 8.5C5.5 4.5 18.5 4.5 22.5 8.5" strokeLinecap="round"/>
               <path d="M5 12C7.5 9.5 16.5 9.5 19 12" strokeLinecap="round"/>
@@ -174,7 +174,7 @@ export default function RegisterPage() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-scale w-full bg-[#2d6a4f] text-white font-semibold py-3 rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
+              className="btn-scale w-full bg-[#1B4F8A] text-white font-semibold py-3 rounded-xl hover:bg-[#2563EB] disabled:opacity-60 transition-colors flex items-center justify-center gap-2 mt-2"
             >
               {loading && <Loader2 size={18} className="animate-spin" />}
               {loading ? "建立中..." : "免費建立帳號"}
@@ -188,7 +188,7 @@ export default function RegisterPage() {
 
         <p className="text-center mt-6 text-sm text-gray-500">
           已有帳號？{" "}
-          <Link href="/login" className="text-[#2d6a4f] font-semibold hover:underline">
+          <Link href="/login" className="text-[#1B4F8A] font-semibold hover:underline">
             直接登入
           </Link>
         </p>

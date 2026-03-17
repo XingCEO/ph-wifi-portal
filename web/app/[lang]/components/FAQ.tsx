@@ -48,10 +48,10 @@ export default function FAQ({ dict }: { dict: Dictionary }) {
                   style={{
                     background: "white",
                     border: isOpen
-                      ? "1px solid rgba(45,106,79,0.2)"
+                      ? "1px solid rgba(27,79,138,0.2)"
                       : "1px solid rgba(0,0,0,0.06)",
                     boxShadow: isOpen
-                      ? "0 4px 16px rgba(45,106,79,0.08)"
+                      ? "0 4px 16px rgba(27,79,138,0.08)"
                       : "0 1px 4px rgba(0,0,0,0.04)",
                   }}
                 >

@@ -31,12 +31,12 @@ export default function Footer({
             >
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-                style={{ background: "var(--color-brand-green)" }}
+                style={{ background: "#0099DB" }}
               >
                 <Wifi size={15} color="white" strokeWidth={2.5} />
               </div>
               <span className="text-xl font-extrabold text-white tracking-tight">
-                Abot<span style={{ color: "var(--color-brand-green-light)" }}>Kamay</span>
+                Abot<span style={{ color: "#F58220" }}>Kamay</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed mb-6">

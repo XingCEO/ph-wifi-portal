@@ -1,10 +1,11 @@
 @import "tailwindcss";
 
 :root {
-  --color-brand-green: #2d6a4f;
-  --color-brand-green-light: #40916c;
-  --color-brand-gold: #e9a319;
-  --color-brand-gold-light: #f2c14e;
+  --color-brand-green: #1B4F8A;
+  --color-brand-green-light: #2563EB;
+  --color-brand-gold: #F58220;
+  --color-brand-gold-light: #FFAA4C;
+  --color-brand-light: #0099DB;
   --color-warm-white: #faf8f5;
   --color-warm-gray: #f0ece6;
   --color-text-primary: #1a1a1a;
@@ -17,6 +18,7 @@
   --color-brand-green-light: var(--color-brand-green-light);
   --color-brand-gold: var(--color-brand-gold);
   --color-brand-gold-light: var(--color-brand-gold-light);
+  --color-brand-light: var(--color-brand-light);
   --color-warm-white: var(--color-warm-white);
   --color-warm-gray: var(--color-warm-gray);
   --color-text-primary: var(--color-text-primary);
@@ -126,7 +128,7 @@ body {
 }
 .input-brand:focus {
   border-color: var(--color-brand-green);
-  box-shadow: 0 0 0 3px rgba(45, 106, 79, 0.15);
+  box-shadow: 0 0 0 3px rgba(27, 79, 138, 0.15);
   outline: none;
 }
 
@@ -210,13 +212,13 @@ body {
   transition: background 0.2s ease, transform 0.2s ease;
 }
 .footer-social-icon:hover {
-  background: rgba(45,106,79,0.4);
-  border-color: rgba(45,106,79,0.5);
+  background: rgba(27,79,138,0.4);
+  border-color: rgba(27,79,138,0.5);
   transform: scale(1.1);
 }
 
 /* ─── Pricing card highlight ─────────────────────────────────────────────────── */
 
 .pricing-popular {
-  box-shadow: 0 0 0 2px var(--color-brand-green), 0 16px 40px rgba(45,106,79,0.15);
+  box-shadow: 0 0 0 2px var(--color-brand-gold), 0 16px 40px rgba(245,130,32,0.15);
 }

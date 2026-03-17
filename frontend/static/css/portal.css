@@ -10,9 +10,9 @@
   --text: #1a1a1a;
   --text-secondary: #4a4a4a;
   --text-muted: #7a7a7a;
-  --green: #2d6a4f;
-  --green-light: #40916c;
-  --gold: #e9a319;
+  --green: #1B4F8A;
+  --green-light: #2563EB;
+  --gold: #F58220;
 }
 
 body {
@@ -54,10 +54,10 @@ body {
   letter-spacing: 0.12em;
   text-transform: uppercase;
   margin-bottom: 10px;
-  background: rgba(45,106,79,0.08);
+  background: rgba(27,79,138,0.08);
   padding: 4px 12px;
   border-radius: 20px;
-  border: 1px solid rgba(45,106,79,0.18);
+  border: 1px solid rgba(27,79,138,0.18);
 }
 
 .ssid-label::before { content: "\25CF"; font-size: 8px; }
@@ -71,7 +71,7 @@ body {
   line-height: 1.2;
 }
 
-.portal-title span { color: var(--green); }
+.portal-title span { /* colors set inline for dual-tone logo */ }
 
 .hotspot-name {
   font-size: 13px;
@@ -177,7 +177,7 @@ body {
 .progress-fill {
   height: 100%;
   width: 0%;
-  background: linear-gradient(90deg, var(--green), var(--green-light));
+  background: linear-gradient(90deg, var(--gold), #FFAA4C);
   border-radius: 4px;
   transition: width 1s linear;
 }
@@ -214,11 +214,11 @@ body {
   align-items: center;
   justify-content: center;
   gap: 8px;
-  box-shadow: 0 2px 8px rgba(45,106,79,0.25);
+  box-shadow: 0 2px 8px rgba(27,79,138,0.25);
 }
 
 .btn-connect.visible { display: flex; }
-.btn-connect:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(45,106,79,0.3); }
+.btn-connect:hover:not(:disabled) { background: var(--green-light); transform: translateY(-1px); box-shadow: 0 4px 16px rgba(27,79,138,0.3); }
 .btn-connect:active:not(:disabled) { transform: scale(0.98) translateY(0); }
 .btn-connect:disabled { background: var(--elevated); color: var(--text-muted); cursor: not-allowed; box-shadow: none; }
 

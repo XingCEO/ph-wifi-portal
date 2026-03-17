@@ -110,8 +110,8 @@ export default function LoginPage() {
       {/* ─── 右側登入表單 ─── */}
       <div className="flex-1 flex items-center justify-center px-6 py-12 relative">
         {/* 背景裝飾（手機版也有） */}
-        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-[#2d6a4f]/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-gradient-to-tr from-[#e9a319]/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-gradient-to-bl from-[#1B4F8A]/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-[200px] h-[200px] bg-gradient-to-tr from-[#F58220]/[0.05] to-transparent rounded-full blur-3xl pointer-events-none" />
 
         <div
           ref={cardRef}

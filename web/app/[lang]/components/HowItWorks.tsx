@@ -5,9 +5,9 @@ import AnimateIn from "./AnimateIn";
 import type { Dictionary } from "../dictionaries";
 
 const steps = [
-  { icon: Wifi, key: "step1" as const, color: "#2d6a4f" },
-  { icon: Play, key: "step2" as const, color: "#e9a319" },
-  { icon: Globe, key: "step3" as const, color: "#2d6a4f" },
+  { icon: Wifi, key: "step1" as const, color: "#0099DB" },
+  { icon: Play, key: "step2" as const, color: "#F58220" },
+  { icon: Globe, key: "step3" as const, color: "#1B4F8A" },
 ];
 
 function StepConnector() {

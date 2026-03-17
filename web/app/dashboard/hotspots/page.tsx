@@ -94,7 +94,7 @@ export default function HotspotsPage() {
         </div>
         <button
           onClick={() => { setShowForm(true); setProvisionResult(null); setError(""); }}
-          className="flex items-center gap-2 bg-[#2d6a4f] text-white font-semibold px-4 py-2 rounded-xl hover:bg-[#40916c] transition-colors"
+          className="flex items-center gap-2 bg-[#1B4F8A] text-white font-semibold px-4 py-2 rounded-xl hover:bg-[#2563EB] transition-colors"
         >
           <Plus size={18} />
           新增站點
@@ -147,7 +147,7 @@ export default function HotspotsPage() {
                   onChange={(e) => setForm({ ...form, ap_mac: e.target.value })}
                   required
                   pattern="^([0-9A-Fa-f]{2}[:\-]){5}[0-9A-Fa-f]{2}$"
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A] focus:border-transparent"
                 />
               </div>
               <div>
@@ -160,7 +160,7 @@ export default function HotspotsPage() {
                   value={form.hotspot_name}
                   onChange={(e) => setForm({ ...form, hotspot_name: e.target.value })}
                   required
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A] focus:border-transparent"
                 />
               </div>
               <div>
@@ -173,7 +173,7 @@ export default function HotspotsPage() {
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
                   required
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A] focus:border-transparent"
                 />
               </div>
               <div>
@@ -185,7 +185,7 @@ export default function HotspotsPage() {
                   placeholder="Default"
                   value={form.site_name}
                   onChange={(e) => setForm({ ...form, site_name: e.target.value })}
-                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f] focus:border-transparent"
+                  className="w-full border border-gray-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A] focus:border-transparent"
                 />
               </div>
             </div>
@@ -193,7 +193,7 @@ export default function HotspotsPage() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex items-center gap-2 bg-[#2d6a4f] text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-colors"
+                className="flex items-center gap-2 bg-[#1B4F8A] text-white font-semibold px-5 py-2.5 rounded-xl hover:bg-[#2563EB] disabled:opacity-60 transition-colors"
               >
                 {submitting ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />}
                 登錄並取得設定教學
@@ -213,7 +213,7 @@ export default function HotspotsPage() {
       {/* Hotspots List */}
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <Loader2 className="animate-spin text-[#2d6a4f]" size={28} />
+          <Loader2 className="animate-spin text-[#1B4F8A]" size={28} />
         </div>
       ) : hotspots.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">

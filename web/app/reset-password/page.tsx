@@ -50,7 +50,7 @@ function ResetPasswordForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--color-warm-white)" }}>
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-gradient-to-br from-[#2d6a4f]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-gradient-to-br from-[#1B4F8A]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative">
         <div className="text-center mb-8">
@@ -73,7 +73,7 @@ function ResetPasswordForm() {
               <p className="text-sm text-gray-500 mb-5">你的密碼已成功更新。</p>
               <Link
                 href="/login"
-                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:bg-[#40916c]"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-white text-sm font-semibold transition-all hover:bg-[#2563EB]"
                 style={{ background: "var(--color-brand-green)" }}
               >
                 前往登入
@@ -101,7 +101,7 @@ function ResetPasswordForm() {
                     value={token}
                     onChange={(e) => setToken(e.target.value)}
                     required
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] font-mono"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/30 focus:border-[#1B4F8A] font-mono"
                     placeholder="貼上你的重設 Token"
                   />
                 </div>
@@ -114,7 +114,7 @@ function ResetPasswordForm() {
                       value={newPassword}
                       onChange={(e) => setNewPassword(e.target.value)}
                       required
-                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] pr-11"
+                      className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/30 focus:border-[#1B4F8A] pr-11"
                       placeholder="至少 8 個字元"
                     />
                     <button
@@ -134,7 +134,7 @@ function ResetPasswordForm() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f]"
+                    className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/30 focus:border-[#1B4F8A]"
                     placeholder="再次輸入新密碼"
                   />
                 </div>
@@ -142,7 +142,7 @@ function ResetPasswordForm() {
                 <button
                   type="submit"
                   disabled={loading || !token}
-                  className="w-full py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-60 transition-all flex items-center justify-center gap-2 hover:bg-[#40916c]"
+                  className="w-full py-3 rounded-xl text-white font-semibold text-sm disabled:opacity-60 transition-all flex items-center justify-center gap-2 hover:bg-[#2563EB]"
                   style={{ background: "var(--color-brand-green)" }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}

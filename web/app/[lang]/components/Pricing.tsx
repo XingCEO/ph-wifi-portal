@@ -89,7 +89,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                     ? "none"
                     : "1px solid rgba(0,0,0,0.07)",
                   boxShadow: plan.popular
-                    ? "0 0 0 2px var(--color-brand-green), 0 16px 40px rgba(45,106,79,0.15)"
+                    ? "0 0 0 2px var(--color-brand-gold), 0 16px 40px rgba(245,130,32,0.15)"
                     : "0 2px 12px rgba(0,0,0,0.05)",
                 }}
               >
@@ -101,7 +101,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                       style={{
                         background: "var(--color-brand-gold)",
                         color: "white",
-                        boxShadow: "0 4px 12px rgba(233,163,25,0.35)",
+                        boxShadow: "0 4px 12px rgba(245,130,32,0.35)",
                       }}
                     >
                       {p.popularBadge}
@@ -184,7 +184,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                         style={{
                           background: plan.popular
                             ? "rgba(255,255,255,0.2)"
-                            : "rgba(45,106,79,0.1)",
+                            : "rgba(27,79,138,0.1)",
                         }}
                       >
                         <Check
@@ -223,7 +223,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                       : {
                           background: "var(--color-brand-green)",
                           color: "white",
-                          boxShadow: "0 2px 8px rgba(45,106,79,0.2)",
+                          boxShadow: "0 2px 8px rgba(27,79,138,0.2)",
                         }
                   }
                   onMouseEnter={(e) => {

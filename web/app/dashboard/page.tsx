@@ -94,7 +94,7 @@ function EmptyState() {
       <h3 className="text-xl font-bold text-gray-900 mb-2">還沒有站點？</h3>
       <p className="text-gray-500 text-sm mb-8 max-w-sm mx-auto leading-relaxed">
         新增你的第一個 WiFi 站點，讓用戶連接並觀看廣告。<br />
-        你可以獲得 <strong className="text-[#2d6a4f]">70%</strong> 的廣告收益，每月自動結算。
+        你可以獲得 <strong className="text-[#1B4F8A]">70%</strong> 的廣告收益，每月自動結算。
       </p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
         <a
@@ -120,7 +120,7 @@ function EmptyState() {
           { label: "你的分潤", value: "70%" },
         ].map(({ label, value }) => (
           <div key={label} className="bg-gray-50 rounded-xl p-3">
-            <p className="text-lg font-bold text-[#2d6a4f]">{value}</p>
+            <p className="text-lg font-bold text-[#1B4F8A]">{value}</p>
             <p className="text-xs text-gray-500 mt-0.5">{label}</p>
           </div>
         ))}
@@ -166,7 +166,7 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-[#2d6a4f]" size={32} />
+        <Loader2 className="animate-spin text-[#1B4F8A]" size={32} />
       </div>
     );
   }
@@ -209,7 +209,7 @@ export default function DashboardPage() {
               value={(stats?.total_ad_views ?? 0).toLocaleString()}
               sub="完整廣告觀看次數"
               icon={Eye}
-              color="bg-[#2d6a4f]"
+              color="bg-[#1B4F8A]"
             />
             <StatCard
               title="總收入"
@@ -233,7 +233,7 @@ export default function DashboardPage() {
             {/* 7-day trend */}
             <div className="card-hover bg-white rounded-2xl p-6 shadow-sm border border-gray-100 cursor-default">
               <div className="flex items-center gap-2 mb-1">
-                <Activity size={16} className="text-[#2d6a4f]" />
+                <Activity size={16} className="text-[#1B4F8A]" />
                 <h2 className="text-lg font-semibold text-gray-800">近 7 天連線趨勢</h2>
               </div>
               <p className="text-sm text-gray-400">每日連線次數</p>
@@ -246,7 +246,7 @@ export default function DashboardPage() {
             {/* Quick Summary */}
             <div className="card-hover bg-white rounded-2xl p-6 shadow-sm border border-gray-100 cursor-default">
               <div className="flex items-center gap-2 mb-4">
-                <BarChart2 size={16} className="text-[#2d6a4f]" />
+                <BarChart2 size={16} className="text-[#1B4F8A]" />
                 <h2 className="text-lg font-semibold text-gray-800">快速摘要</h2>
               </div>
               <dl className="space-y-4">

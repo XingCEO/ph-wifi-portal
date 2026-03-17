@@ -33,8 +33,8 @@ export default function ForgotPasswordPage() {
   return (
     <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "var(--color-warm-white)" }}>
       {/* Background accents */}
-      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-gradient-to-br from-[#2d6a4f]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-gradient-to-tl from-[#e9a319]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-0 w-[400px] h-[400px] bg-gradient-to-br from-[#1B4F8A]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-gradient-to-tl from-[#F58220]/[0.04] to-transparent rounded-full blur-3xl pointer-events-none" />
 
       <div className="w-full max-w-md relative">
         {/* Logo */}
@@ -80,7 +80,7 @@ export default function ForgotPasswordPage() {
                 </div>
               )}
 
-              <Link href="/login" className="inline-flex items-center gap-2 text-sm font-medium text-[#2d6a4f] hover:underline">
+              <Link href="/login" className="inline-flex items-center gap-2 text-sm font-medium text-[#1B4F8A] hover:underline">
                 <ArrowLeft size={14} />
                 返回登入
               </Link>
@@ -103,7 +103,7 @@ export default function ForgotPasswordPage() {
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] transition-all"
+                      className="w-full border border-gray-200 rounded-xl pl-10 pr-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/30 focus:border-[#1B4F8A] transition-all"
                       placeholder="you@company.com"
                     />
                   </div>
@@ -112,7 +112,7 @@ export default function ForgotPasswordPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 rounded-xl text-white font-semibold text-sm hover:bg-[#40916c] disabled:opacity-60 transition-all flex items-center justify-center gap-2"
+                  className="w-full py-3 rounded-xl text-white font-semibold text-sm hover:bg-[#2563EB] disabled:opacity-60 transition-all flex items-center justify-center gap-2"
                   style={{ background: "var(--color-brand-green)" }}
                 >
                   {loading ? <Loader2 size={16} className="animate-spin" /> : null}

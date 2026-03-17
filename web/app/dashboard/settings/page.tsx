@@ -37,7 +37,7 @@ function InputField({
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
-        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#2d6a4f]/30 focus:border-[#2d6a4f] transition-all disabled:bg-gray-50 disabled:text-gray-400"
+        className="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[#1B4F8A]/30 focus:border-[#1B4F8A] transition-all disabled:bg-gray-50 disabled:text-gray-400"
       />
     </div>
   );
@@ -146,7 +146,7 @@ export default function SettingsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-[#2d6a4f]" size={32} />
+        <Loader2 className="animate-spin text-[#1B4F8A]" size={32} />
       </div>
     );
   }
@@ -163,8 +163,8 @@ export default function SettingsPage() {
       {/* Profile */}
       <div className="glass-card rounded-2xl p-6 mb-6">
         <div className="flex items-center gap-3 mb-5">
-          <div className="p-2 rounded-xl bg-[#2d6a4f]/10">
-            <User size={18} className="text-[#2d6a4f]" />
+          <div className="p-2 rounded-xl bg-[#1B4F8A]/10">
+            <User size={18} className="text-[#1B4F8A]" />
           </div>
           <h2 className="font-semibold text-gray-800">個人資料</h2>
         </div>
@@ -195,7 +195,7 @@ export default function SettingsPage() {
           <button
             type="submit"
             disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#2d6a4f] text-white text-sm font-semibold rounded-xl hover:bg-[#40916c] disabled:opacity-60 transition-all"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-[#1B4F8A] text-white text-sm font-semibold rounded-xl hover:bg-[#2563EB] disabled:opacity-60 transition-all"
           >
             {saving ? <Loader2 size={16} className="animate-spin" /> : <Save size={16} />}
             {saving ? "儲存中..." : "儲存變更"}

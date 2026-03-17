@@ -101,7 +101,7 @@ export default function RevenuePage() {
 
       {loading ? (
         <div className="flex items-center justify-center h-40">
-          <Loader2 className="animate-spin text-[#2d6a4f]" size={28} />
+          <Loader2 className="animate-spin text-[#1B4F8A]" size={28} />
         </div>
       ) : splits.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl border border-gray-100">

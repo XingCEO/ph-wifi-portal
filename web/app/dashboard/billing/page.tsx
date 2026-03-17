@@ -53,25 +53,25 @@ function PlanCard({
   const colorMap: Record<string, string> = {
     gray:   "border-gray-200 bg-white",
     blue:   "border-blue-200 bg-blue-50/30",
-    green:  "border-[#2d6a4f]/30 bg-[#2d6a4f]/5",
+    green:  "border-[#1B4F8A]/30 bg-[#1B4F8A]/5",
     purple: "border-purple-200 bg-purple-50/30",
   };
   const btnColorMap: Record<string, string> = {
     gray:   "bg-gray-700 hover:bg-gray-800",
     blue:   "bg-blue-600 hover:bg-blue-700",
-    green:  "bg-[#2d6a4f] hover:bg-[#40916c]",
+    green:  "bg-[#1B4F8A] hover:bg-[#2563EB]",
     purple: "bg-purple-700 hover:bg-purple-800",
   };
 
   return (
-    <div className={`card-hover relative rounded-2xl border p-5 transition-all ${colorMap[plan.color]} ${isActive ? "ring-2 ring-[#2d6a4f]" : ""}`}>
+    <div className={`card-hover relative rounded-2xl border p-5 transition-all ${colorMap[plan.color]} ${isActive ? "ring-2 ring-[#1B4F8A]" : ""}`}>
       {plan.popular && (
-        <span className="absolute -top-2.5 left-4 bg-[#2d6a4f] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
+        <span className="absolute -top-2.5 left-4 bg-[#1B4F8A] text-white text-[11px] font-bold px-2.5 py-0.5 rounded-full">
           推薦
         </span>
       )}
       {isActive && (
-        <div className="absolute top-3 right-3 flex items-center gap-1 text-[#2d6a4f] text-xs font-semibold">
+        <div className="absolute top-3 right-3 flex items-center gap-1 text-[#1B4F8A] text-xs font-semibold">
           <CheckCircle size={14} />
           目前方案
         </div>
@@ -145,7 +145,7 @@ export default function BillingPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Loader2 className="animate-spin text-[#2d6a4f]" size={32} />
+        <Loader2 className="animate-spin text-[#1B4F8A]" size={32} />
       </div>
     );
   }
@@ -164,8 +164,8 @@ export default function BillingPage() {
       {/* Current Plan Banner */}
       {subscription && (
         <div className="glass-card rounded-2xl p-5 mb-6 flex items-center gap-4">
-          <div className="p-3 rounded-xl bg-[#2d6a4f]/10">
-            <Zap size={20} className="text-[#2d6a4f]" />
+          <div className="p-3 rounded-xl bg-[#1B4F8A]/10">
+            <Zap size={20} className="text-[#1B4F8A]" />
           </div>
           <div className="flex-1">
             <p className="font-semibold text-gray-900">{PLAN_LABELS[currentPlan] ?? currentPlan}方案</p>

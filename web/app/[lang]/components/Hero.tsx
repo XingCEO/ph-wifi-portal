@@ -13,7 +13,7 @@ function AnimatedWifiIllustration() {
         className="absolute inset-0 rounded-full animate-glow-pulse"
         style={{
           background:
-            "radial-gradient(circle, rgba(45,106,79,0.12) 0%, transparent 70%)",
+            "radial-gradient(circle, rgba(27,79,138,0.12) 0%, transparent 70%)",
           transform: "scale(1.3)",
         }}
       />
@@ -24,12 +24,12 @@ function AnimatedWifiIllustration() {
         <div className="flex flex-col items-center gap-2 mb-4">
           <div
             className="w-3 h-3 rounded-full"
-            style={{ background: "var(--color-brand-green)", opacity: 0.9 }}
+            style={{ background: "#0099DB", opacity: 0.9 }}
           />
           <svg width="80" height="48" viewBox="0 0 80 48" fill="none">
             <path
               d="M10 40 Q40 8 70 40"
-              stroke="var(--color-brand-green)"
+              stroke="#0099DB"
               strokeWidth="3"
               strokeOpacity="0.7"
               fill="none"
@@ -37,7 +37,7 @@ function AnimatedWifiIllustration() {
             />
             <path
               d="M22 40 Q40 20 58 40"
-              stroke="var(--color-brand-green)"
+              stroke="#0099DB"
               strokeWidth="3"
               strokeOpacity="0.5"
               fill="none"
@@ -45,7 +45,7 @@ function AnimatedWifiIllustration() {
             />
             <path
               d="M31 40 Q40 30 49 40"
-              stroke="var(--color-brand-green)"
+              stroke="#0099DB"
               strokeWidth="3"
               strokeOpacity="0.35"
               fill="none"
@@ -69,7 +69,7 @@ function AnimatedWifiIllustration() {
           {/* Status bar */}
           <div
             className="flex items-center justify-between px-5 pt-3 pb-1"
-            style={{ background: "rgba(45,106,79,0.04)" }}
+            style={{ background: "rgba(27,79,138,0.04)" }}
           >
             <span className="text-[10px] font-bold text-[var(--color-text-primary)]">
               9:41
@@ -86,8 +86,8 @@ function AnimatedWifiIllustration() {
             <div
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
               style={{
-                background: "rgba(45,106,79,0.08)",
-                border: "1px solid rgba(45,106,79,0.15)",
+                background: "rgba(27,79,138,0.08)",
+                border: "1px solid rgba(27,79,138,0.15)",
               }}
             >
               <Wifi size={10} style={{ color: "var(--color-brand-green)" }} />
@@ -105,8 +105,8 @@ function AnimatedWifiIllustration() {
               style={{
                 height: 80,
                 background:
-                  "linear-gradient(135deg, rgba(45,106,79,0.06) 0%, rgba(233,163,25,0.06) 100%)",
-                border: "1px solid rgba(45,106,79,0.08)",
+                  "linear-gradient(135deg, rgba(27,79,138,0.06) 0%, rgba(245,130,32,0.06) 100%)",
+                border: "1px solid rgba(27,79,138,0.08)",
               }}
             >
               <div className="flex items-center justify-center h-full">
@@ -180,13 +180,13 @@ function AnimatedWifiIllustration() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl shadow-lg"
           style={{
             background: "white",
-            border: "1px solid rgba(45,106,79,0.12)",
+            border: "1px solid rgba(27,79,138,0.12)",
             boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
           }}
         >
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(45,106,79,0.1)" }}
+            style={{ background: "rgba(27,79,138,0.1)" }}
           >
             <Wifi size={12} style={{ color: "var(--color-brand-green)" }} />
           </div>
@@ -212,13 +212,13 @@ function AnimatedWifiIllustration() {
           className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
           style={{
             background: "white",
-            border: "1px solid rgba(233,163,25,0.2)",
+            border: "1px solid rgba(245,130,32,0.2)",
             boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
           }}
         >
           <div
             className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(233,163,25,0.1)" }}
+            style={{ background: "rgba(245,130,32,0.1)" }}
           >
             <span className="text-xs">📶</span>
           </div>
@@ -247,7 +247,7 @@ export default function Hero({ dict }: { dict: Dictionary }) {
         className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(45,106,79,0.05) 0%, transparent 70%)",
+            "radial-gradient(ellipse 80% 60% at 50% 0%, rgba(27,79,138,0.05) 0%, transparent 70%)",
         }}
       />
 
@@ -322,7 +322,7 @@ export default function Hero({ dict }: { dict: Dictionary }) {
                   className="inline-flex items-center gap-2.5 px-8 py-4 text-white font-bold rounded-2xl hover:shadow-xl transition-all text-base no-underline group btn-scale"
                   style={{
                     background: "var(--color-brand-green)",
-                    boxShadow: "0 4px 16px rgba(45,106,79,0.3)",
+                    boxShadow: "0 4px 16px rgba(27,79,138,0.3)",
                     fontFamily: "var(--font-plus-jakarta), sans-serif",
                   }}
                   onMouseEnter={(e) => {

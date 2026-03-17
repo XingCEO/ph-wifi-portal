@@ -65,7 +65,7 @@ export default function DashboardLayout({
       <aside
         className={`fixed inset-y-0 left-0 z-50 w-64 transform transition-transform duration-200 ease-in-out
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:inset-0`}
-        style={{ background: "var(--color-brand-green)" }}
+        style={{ background: "#1B4F8A" }}
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-6 border-b border-white/20">

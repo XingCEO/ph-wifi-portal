@@ -66,7 +66,7 @@ export default function Header({
           className="absolute bottom-0 left-0 right-0 h-px"
           style={{
             background:
-              "linear-gradient(90deg, transparent, rgba(45,106,79,0.15) 30%, rgba(45,106,79,0.25) 50%, rgba(45,106,79,0.15) 70%, transparent)",
+              "linear-gradient(90deg, transparent, rgba(27,79,138,0.15) 30%, rgba(27,79,138,0.25) 50%, rgba(27,79,138,0.15) 70%, transparent)",
           }}
         />
 
@@ -79,12 +79,12 @@ export default function Header({
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"
-              style={{ background: "var(--color-brand-green)" }}
+              style={{ background: "#0099DB" }}
             >
               <Wifi size={16} color="white" strokeWidth={2.5} />
             </div>
-            <span className="text-[1.15rem] font-extrabold tracking-tight text-[var(--color-text-primary)]">
-              Abot<span style={{ color: "var(--color-brand-green)" }}>Kamay</span>
+            <span className="text-[1.15rem] font-extrabold tracking-tight">
+              <span style={{ color: "#1B4F8A" }}>Abot</span><span style={{ color: "#F58220" }}>Kamay</span>
             </span>
           </Link>
 
@@ -146,7 +146,7 @@ export default function Header({
               className="text-sm font-semibold text-white px-4 py-2 rounded-xl no-underline btn-scale transition-all hover:shadow-md"
               style={{
                 background: "var(--color-brand-green)",
-                boxShadow: "0 1px 4px rgba(45,106,79,0.2)",
+                boxShadow: "0 1px 4px rgba(27,79,138,0.2)",
               }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLAnchorElement).style.background =
@@ -192,12 +192,12 @@ export default function Header({
               >
                 <div
                   className="w-8 h-8 rounded-lg flex items-center justify-center"
-                  style={{ background: "var(--color-brand-green)" }}
+                  style={{ background: "#0099DB" }}
                 >
                   <Wifi size={16} color="white" strokeWidth={2.5} />
                 </div>
-                <span className="text-[1.15rem] font-extrabold tracking-tight text-[var(--color-text-primary)]">
-                  Abot<span style={{ color: "var(--color-brand-green)" }}>Kamay</span>
+                <span className="text-[1.15rem] font-extrabold tracking-tight">
+                  <span style={{ color: "#1B4F8A" }}>Abot</span><span style={{ color: "#F58220" }}>Kamay</span>
                 </span>
               </Link>
               <button

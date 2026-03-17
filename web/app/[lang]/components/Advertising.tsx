@@ -35,12 +35,12 @@ function PhoneMockup() {
         <rect x="30" y="194" width="100" height="6" rx="3" fill="white" fillOpacity="0.05" />
 
         {/* Timer */}
-        <rect x="60" y="220" width="80" height="28" rx="14" fill="#e9a319" fillOpacity="0.2" stroke="#e9a319" strokeWidth="1" strokeOpacity="0.3" />
-        <rect x="80" y="231" width="40" height="6" rx="3" fill="#e9a319" fillOpacity="0.4" />
+        <rect x="60" y="220" width="80" height="28" rx="14" fill="#F58220" fillOpacity="0.2" stroke="#F58220" strokeWidth="1" strokeOpacity="0.3" />
+        <rect x="80" y="231" width="40" height="6" rx="3" fill="#F58220" fillOpacity="0.4" />
 
         {/* Progress bar */}
         <rect x="30" y="264" width="140" height="6" rx="3" fill="white" fillOpacity="0.06" />
-        <rect x="30" y="264" width="90" height="6" rx="3" fill="#e9a319" fillOpacity="0.3" />
+        <rect x="30" y="264" width="90" height="6" rx="3" fill="#F58220" fillOpacity="0.3" />
 
         {/* CTA button */}
         <rect x="40" y="290" width="120" height="36" rx="12" fill="white" fillOpacity="0.1" stroke="white" strokeWidth="1" strokeOpacity="0.12" />
@@ -55,7 +55,7 @@ function PhoneMockup() {
 
 export default function Advertising({ dict }: { dict: Dictionary }) {
   return (
-    <section id="advertising" className="py-24 sm:py-32 bg-[var(--color-text-primary)] relative overflow-hidden">
+    <section id="advertising" className="py-24 sm:py-32 relative overflow-hidden" style={{ background: "#0f2d4a" }}>
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-[var(--color-brand-green)]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-[var(--color-brand-gold)]/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2" />
