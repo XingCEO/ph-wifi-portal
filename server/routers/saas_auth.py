@@ -1,10 +1,8 @@
 """SaaS 客戶認證 — 註冊、登入、JWT"""
-from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
 
 import structlog
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
 from jose import JWTError, jwt
 from passlib.context import CryptContext
 from sqlalchemy import select
@@ -20,6 +18,8 @@ from models.schemas import (
     SaasUserResponse,
     TokenResponse,
 )
+
+from rate_limit import limiter
 
 router = APIRouter(prefix="/api/auth", tags=["saas-auth"])
 logger = structlog.get_logger(__name__)
@@ -71,7 +71,8 @@ async def get_current_saas_user(
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+@limiter.limit("5/minute")
+async def register(request: Request, body: RegisterRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     log = logger.bind(action="saas_register", email=body.email)
 
     # 重複 email 檢查
@@ -138,7 +139,8 @@ async def register(body: RegisterRequest, db: AsyncSession = Depends(get_db)) ->
 
 
 @router.post("/login", response_model=TokenResponse)
-async def login(body: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
+@limiter.limit("10/minute")
+async def login(request: Request, body: LoginRequest, db: AsyncSession = Depends(get_db)) -> TokenResponse:
     log = logger.bind(action="saas_login", email=body.email)
 
     result = await db.execute(
@@ -213,7 +215,9 @@ class ResetPasswordRequest(BaseModel):
 
 
 @router.post("/forgot-password", response_model=ForgotPasswordResponse)
+@limiter.limit("3/minute")
 async def forgot_password(
+    request: Request,
     body: ForgotPasswordRequest,
     db: AsyncSession = Depends(get_db),
 ) -> ForgotPasswordResponse:

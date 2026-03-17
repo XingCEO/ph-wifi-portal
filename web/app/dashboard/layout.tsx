@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -33,8 +33,12 @@ export default function DashboardLayout({
       window.location.href = "/login";
       return;
     }
-    setUserName(localStorage.getItem("saas_user_name") || "用戶");
-    setOrgName(localStorage.getItem("saas_org_name") || "");
+    const name = localStorage.getItem("saas_user_name") || "用戶";
+    const org = localStorage.getItem("saas_org_name") || "";
+    startTransition(() => {
+      setUserName(name);
+      setOrgName(org);
+    });
   }, []);
 
   const handleLogout = () => {

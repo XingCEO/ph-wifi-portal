@@ -14,9 +14,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from redis.asyncio import Redis
-from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
-from slowapi.util import get_remote_address
 
 from config import settings, validate_settings
 from models.database import init_db
@@ -40,7 +39,8 @@ structlog.configure(
 )
 
 logger = structlog.get_logger(__name__)
-limiter = Limiter(key_func=get_remote_address, default_limits=["200/minute"])
+
+from rate_limit import limiter
 _metrics: dict[str, int] = defaultdict(int)
 
 

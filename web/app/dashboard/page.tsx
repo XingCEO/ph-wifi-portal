@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Wifi, Eye, DollarSign, TrendingUp, Loader2, Activity, BarChart2, Plus, ArrowRight } from "lucide-react";
 
 interface Stats {
@@ -97,21 +98,21 @@ function EmptyState() {
         你可以獲得 <strong className="text-[#1B4F8A]">70%</strong> 的廣告收益，每月自動結算。
       </p>
       <div className="flex flex-col sm:flex-row gap-3 justify-center">
-        <a
+        <Link
           href="/dashboard/hotspots"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-white font-semibold text-sm transition-all hover:opacity-90 btn-scale"
           style={{ background: "var(--color-brand-green)" }}
         >
           <Plus size={18} />
           立即新增站點
-        </a>
-        <a
+        </Link>
+        <Link
           href="/dashboard/billing"
           className="inline-flex items-center gap-2 px-6 py-3 rounded-xl text-gray-700 font-medium text-sm border border-gray-200 hover:bg-gray-50 transition-colors"
         >
           查看方案
           <ArrowRight size={16} />
-        </a>
+        </Link>
       </div>
       <div className="mt-8 grid grid-cols-3 gap-4 max-w-sm mx-auto text-center">
         {[
@@ -270,9 +271,9 @@ export default function DashboardPage() {
             <div>
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-lg font-semibold text-gray-800">我的站點狀態</h2>
-                <a href="/dashboard/hotspots" className="text-sm hover:underline font-medium flex items-center gap-1" style={{ color: "var(--color-brand-green)" }}>
+                <Link href="/dashboard/hotspots" className="text-sm hover:underline font-medium flex items-center gap-1" style={{ color: "var(--color-brand-green)" }}>
                   查看全部 <ArrowRight size={14} />
-                </a>
+                </Link>
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
                 {hotspots.map((hs) => (

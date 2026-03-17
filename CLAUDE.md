@@ -4,16 +4,17 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**AbotKamay WiFi** — Free public WiFi platform for the Philippines. Users connect to WiFi, watch a short ad, and get 10 minutes of free internet via TP-Link OC200 hardware controller. The project has two frontends: a Next.js brand website and a FastAPI-served captive portal.
+**AbotKamay WiFi** — Free public WiFi platform for the Philippines. Users connect to WiFi, watch a short ad, and get 10 minutes of free internet via TP-Link OC200 hardware controller. The project has two frontends: a Next.js brand website and a FastAPI-served captive portal. Evolving into a SaaS platform with multi-tenant organization support.
 
 ## Tech Stack
 
 - **Brand website:** Next.js 16 (App Router, static export), Tailwind CSS 4, Framer Motion, Lucide icons, i18n (EN/Filipino/繁體中文)
-- **Backend:** Python 3.12, FastAPI 0.115.0, Uvicorn (async)
+- **Backend:** Python 3.11+, FastAPI 0.115.0, Uvicorn (async)
 - **Database:** PostgreSQL 16 (SQLAlchemy 2.0 async + asyncpg)
 - **Cache:** Redis 7 (redis-asyncio) for sessions and anti-spam
 - **Portal frontend:** Vanilla HTML/CSS/JS, Alpine.js + Chart.js for admin dashboard
 - **Infrastructure:** Docker Compose (Nginx + Next.js + FastAPI + Postgres + Redis + Certbot)
+- **Auth:** JWT (python-jose) for SaaS users, HTTP Basic Auth for admin, bcrypt for passwords
 - **Logging:** structlog (JSON-formatted structured logging)
 
 ## Commands
@@ -28,14 +29,16 @@ uvicorn main:app --reload --host 0.0.0.0 --port 8000
 cd web && npm install
 npm run dev                    # dev server (port 3000)
 npm run build                  # static export to out/
+npm run lint                   # ESLint (flat config)
 
 # Docker (production)
 cd deploy && docker-compose up -d
 
 # Tests
-cd server && pytest tests/                    # all tests (54 total)
+cd server && pytest tests/                    # all tests (~100 total)
 cd server && pytest tests/test_portal.py      # single file
 cd server && pytest tests/ -v --cov           # with coverage
+cd server && pytest tests/ -k "test_name"     # single test by name
 
 # Type checking
 mypy server/
@@ -50,21 +53,27 @@ cd server && alembic upgrade head
 
 **Two frontends, one repo:**
 - `web/` — Next.js brand website (abotkamay.net). Static export (`output: "export"`), client-side locale detection redirects `/` to `/en/`, `/fil/`, or `/zh-hant/` based on `navigator.language`. Translations in `web/dictionaries/*.json`.
-- `frontend/` — FastAPI-served portal pages (captive portal, thanks, admin dashboard). Vanilla HTML with brand-consistent styling (warm white theme, brand green `#2d6a4f`).
+- `frontend/` — FastAPI-served portal pages (captive portal, thanks, admin dashboard). Vanilla HTML with brand-consistent styling.
 
 **Key backend modules:**
 - `server/main.py` — App factory (`create_app()`) with lifespan handler (init DB, Redis, Omada). Rate limiting via slowapi. CORS credentials disabled when origins contain `"*"`.
 - `server/routers/portal.py` — Captive portal page, validates MAC params, loads `frontend/templates/portal.html`. Also serves `GET /` (legacy landing) and `GET /thanks`.
 - `server/routers/auth.py` — `/api/grant-access` endpoint. Uses atomic `check_and_record_anti_spam` (Redis SET NX) to prevent TOCTOU race. Skips Omada call when `omada_controller_id` is empty (test mode).
 - `server/routers/admin.py` — Admin dashboard + all `/admin/api/*` JSON endpoints. `verify_basic_auth()` rejects requests when `admin_password` is empty.
+- `server/routers/saas_auth.py` — SaaS customer auth: registration, login, JWT token management. Uses passlib/bcrypt for password hashing.
+- `server/routers/dashboard.py` — SaaS customer dashboard API (per-organization stats, hotspot management).
+- `server/routers/superadmin.py` — Platform-wide super admin API (all organizations, subscriptions, platform metrics).
 - `server/services/omada.py` — OmadaClient: authenticates with OC200, authorizes/deauthorizes MACs via httpx with session/CSRF token management.
 - `server/services/redis_service.py` — Session management (atomic pipeline consume), `check_and_record_anti_spam` (SET NX), active user tracking. Module-level singleton via `set_redis_instance()`/`get_redis()`.
-- `server/models/database.py` — SQLAlchemy 2.0 ORM (mapped_column), `get_db()` async generator (auto-commit/rollback), `is_valid_mac()`.
+- `server/models/database.py` — SQLAlchemy 2.0 ORM (mapped_column), `get_db()` async generator (auto-commit/rollback), `is_valid_mac()`. Includes SaaS models: `Organization`, `SaasUser`, `Subscription`.
 - `server/config.py` — Pydantic Settings with bounds validation on startup. Production requires non-empty `admin_password` and non-default `secret_key` (RuntimeError if missing). Auto-detects Zeabur-injected env var names.
 
-**Auth:** Admin endpoints use HTTP Basic Auth (`secrets.compare_digest`). Empty password is rejected with 401. Portal/grant endpoints are public but session-validated via Redis.
+**Auth layers:**
+- **Admin endpoints:** HTTP Basic Auth (`secrets.compare_digest`). Empty password is rejected with 401.
+- **SaaS endpoints:** JWT bearer tokens via `Authorization` header. Issued by `saas_auth.py` on login.
+- **Portal/grant endpoints:** Public but session-validated via Redis.
 
-**Database tables:** `hotspots`, `visits`, `ad_views`, `access_grants`, `direct_advertisers`, `blocked_devices`, `admin_audit_log`. Migrations in `server/alembic/versions/`.
+**Database tables:** `hotspots`, `visits`, `ad_views`, `access_grants`, `direct_advertisers`, `blocked_devices`, `admin_audit_log`, `organizations`, `saas_users`, `subscriptions`. Migrations in `server/alembic/versions/`.
 
 ## API Endpoints
 
@@ -84,6 +93,10 @@ cd server && alembic upgrade head
 | `GET /admin/api/visits` | Basic | Visit history (paginated) |
 | `GET /admin/api/security` | Basic | Security overview |
 | `PATCH /admin/api/settings` | Basic | Update runtime settings (bounded: ad 1-300s, session 60-86400s, anti-spam 1-86400s) |
+| `POST /api/saas/register` | None | SaaS user registration |
+| `POST /api/saas/login` | None | SaaS user login (returns JWT) |
+| `GET /api/dashboard/*` | JWT | SaaS customer dashboard endpoints |
+| `GET /api/superadmin/*` | Basic | Platform-wide super admin endpoints |
 
 ## Testing Notes
 
@@ -93,11 +106,12 @@ cd server && alembic upgrade head
 - `conftest.py` patches `admin_password` to `"testpass123"` — admin tests use matching Basic Auth header
 - Tests that need Omada calls must patch `settings.omada_controller_id` to a non-empty value (otherwise test mode skips Omada)
 - Test client uses `httpx.AsyncClient` with `ASGITransport`
-- Test files: `test_portal.py`, `test_auth.py`, `test_admin_api.py`, `test_omada.py` (54 tests total)
+- pytest runs with `asyncio_mode = "auto"` (no need for `@pytest.mark.asyncio`)
+- Test files: `test_portal.py`, `test_auth.py`, `test_auth_extended.py`, `test_admin_api.py`, `test_omada.py`, `test_saas_auth.py`, `test_dashboard.py`, `test_superadmin.py` (~100 tests total)
 
 ## Deployment
 
-**Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 5 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis. Nginx routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js.
+**Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 6 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis, Certbot. Nginx routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js.
 
 **Zeabur:** Config in `zeabur.json`. Only deploys FastAPI backend; brand website needs separate hosting.
 
@@ -109,4 +123,4 @@ cd server && alembic upgrade head
 - Next.js uses static export (`output: "export"`) with client-side locale redirect, no server runtime needed
 - Config supports multiple env var names for the same service (Zeabur compatibility)
 - Comments in codebase mix English and Traditional Chinese (繁體中文)
-- Portal and thanks pages use AbotKamay brand design (warm white `#faf8f5`, brand green `#2d6a4f`, Nunito + Plus Jakarta Sans fonts)
+- Brand colors: deep blue `#1B4F8A` (primary), orange `#F58220` (accent), light blue `#0099DB` (WiFi/functional), warm white `#faf8f5` (background)

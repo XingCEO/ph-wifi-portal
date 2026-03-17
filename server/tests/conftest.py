@@ -115,6 +115,10 @@ async def app(
 
         test_app = create_app()
 
+        # Disable rate limiting in tests
+        from rate_limit import limiter as _limiter
+        _limiter.enabled = False
+
         # Override lifespan so it doesn't try to connect to real services
         async def override_lifespan(app: Any) -> AsyncGenerator[None, None]:
             import services.redis_service as redis_svc_module

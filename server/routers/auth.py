@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from datetime import datetime, timedelta, timezone
 
 import structlog
@@ -19,6 +17,8 @@ from sqlalchemy import select
 from services.omada import OmadaClient, OmadaError, get_omada_client
 from services.redis_service import RedisService, get_redis
 
+from rate_limit import limiter
+
 router = APIRouter()
 logger = structlog.get_logger(__name__)
 
@@ -32,6 +32,7 @@ logger = structlog.get_logger(__name__)
         503: {"model": ErrorResponse},
     },
 )
+@limiter.limit("10/minute")
 async def grant_access(
     request: Request,
     body: GrantAccessRequest,

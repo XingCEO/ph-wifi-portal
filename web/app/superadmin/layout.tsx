@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { startTransition, useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -56,7 +56,7 @@ export default function SuperAdminLayout({ children }: { children: React.ReactNo
 
   useEffect(() => {
     const auth = getSuperAdminAuth();
-    if (auth) setIsLoggedIn(true);
+    if (auth) startTransition(() => setIsLoggedIn(true));
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
