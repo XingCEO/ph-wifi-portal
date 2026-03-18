@@ -8,7 +8,7 @@ services:
       - "443:443"
     volumes:
       - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - certbot_certs:/etc/letsencrypt:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
       - certbot_www:/var/www/certbot:ro
       - ../frontend/static:/var/www/static:ro
     depends_on:
@@ -84,7 +84,7 @@ services:
 
   # ── Omada Software Controller (取代 OC200 硬體) ──
   omada:
-    image: mbentley/omada-controller:5.14
+    image: mbentley/omada-controller:6.1
     environment:
       TZ: Asia/Manila
       MANAGE_HTTP_PORT: 8088
@@ -98,16 +98,17 @@ services:
       - "29812:29812"              # AP adoption
       - "29813:29813"              # AP upgrade
       - "29814:29814"              # AP manager v2
+      - "29817:29817"              # AP manager v3 (v6+)
     volumes:
       - omada_data:/opt/tplink/EAPController/data
       - omada_logs:/opt/tplink/EAPController/logs
     restart: unless-stopped
     healthcheck:
-      test: ["CMD-SHELL", "curl -sf -k https://localhost:8043 || exit 1"]
+      test: ["CMD-SHELL", "wget --no-check-certificate -qO /dev/null https://localhost:8043 || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 60s
+      start_period: 300s
 
   certbot:
     image: certbot/certbot:latest

@@ -20,9 +20,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Backend (from server/)
+# Backend (from server/) — uses Poetry for dependency management
 cd server
 cp .env.example .env          # configure env vars first
+poetry install                 # install dependencies
 uvicorn main:app --reload --host 0.0.0.0 --port 8000
 
 # Brand website (from web/)
@@ -34,16 +35,16 @@ npm run lint                   # ESLint (flat config)
 # Docker (production)
 cd deploy && docker-compose up -d
 
-# Tests
-cd server && pytest tests/                    # all tests (~100 total)
+# Tests (MUST run from server/ directory)
+cd server && pytest tests/                    # all tests (121 total)
 cd server && pytest tests/test_portal.py      # single file
 cd server && pytest tests/ -v --cov           # with coverage
 cd server && pytest tests/ -k "test_name"     # single test by name
 
-# Type checking
-mypy server/
+# Type checking (from server/)
+cd server && mypy .
 
-# Database migrations
+# Database migrations (from server/)
 cd server && alembic upgrade head
 ```
 
