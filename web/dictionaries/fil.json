@@ -103,9 +103,9 @@
   "pricing": {
     "label": "Presyo",
     "title": "Simple at malinaw na presyo",
-    "description": "Magsimula nang libre, lumago habang lumalaki ka. Lahat ng plano ay may kasamang core WiFi platform.",
+    "description": "Simpleng plano, lumago habang lumalaki ka. Lahat ng plano ay may kasamang core WiFi platform.",
     "popularBadge": "Pinaka-popular",
-    "cta": "Magsimulang Libre",
+    "cta": "Magsimula Na",
     "free": {
       "name": "Libre",
       "price": "$0",

@@ -9,18 +9,6 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
 
   const plans = [
     {
-      key: "free",
-      name: p.free.name,
-      price: p.free.price,
-      period: p.free.period,
-      revenue: p.free.revenue,
-      sites: p.free.sites,
-      features: p.free.features as string[],
-      popular: false,
-      cta: p.cta,
-      ctaHref: "#contact",
-    },
-    {
       key: "pro",
       name: p.pro.name,
       price: p.pro.price,
@@ -74,7 +62,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
         </AnimateIn>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-6 items-start">
+        <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl mx-auto">
           {plans.map((plan, i) => (
             <AnimateIn key={plan.key} delay={0.1 * i}>
               <div

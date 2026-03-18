@@ -103,9 +103,9 @@
   "pricing": {
     "label": "Pricing",
     "title": "Simple, transparent pricing",
-    "description": "Start for free, scale as you grow. All plans include our core WiFi platform.",
+    "description": "Simple plans, scale as you grow. All plans include our core WiFi platform.",
     "popularBadge": "Most Popular",
-    "cta": "Get Started Free",
+    "cta": "Get Started",
     "free": {
       "name": "Free",
       "price": "$0",

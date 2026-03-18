@@ -103,9 +103,9 @@
   "pricing": {
     "label": "定價方案",
     "title": "簡單透明的定價",
-    "description": "免費開始，按需擴展。所有方案都包含核心 WiFi 平台功能。",
+    "description": "簡單方案，按需擴展。所有方案都包含核心 WiFi 平台功能。",
     "popularBadge": "最受歡迎",
-    "cta": "免費開始使用",
+    "cta": "立即開始",
     "free": {
       "name": "免費版",
       "price": "$0",
