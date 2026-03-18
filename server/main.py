@@ -59,8 +59,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     except Exception as e:
         log.error("database_init_failed", error=str(e))
         # 繼續啟動，允許服務在無 DB 時仍能回應 health check
+    redis: Redis | None = None
     try:
-        redis: Redis = Redis.from_url(settings.resolved_redis_url, encoding="utf-8", decode_responses=True)
+        redis = Redis.from_url(settings.resolved_redis_url, encoding="utf-8", decode_responses=True)
         await redis.ping()
         set_redis_instance(redis)
         log.info("redis_connected")
@@ -71,7 +72,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     log.info("app_started")
     yield
     log.info("app_shutting_down")
-    await redis.aclose()
+    if redis:
+        await redis.aclose()
     if omada_module.omada_client:
         await omada_module.omada_client.close()
     log.info("app_shutdown_complete")
