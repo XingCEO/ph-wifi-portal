@@ -7,14 +7,25 @@
     "howItWorks": "Paano Gumagana",
     "about": "Tungkol",
     "advertise": "Mag-advertise",
-    "contact": "Kontak"
+    "contact": "Kontak",
+    "login": "Log In",
+    "register": "Sign Up"
   },
   "hero": {
     "title": "Libreng Internet,",
     "titleHighlight": "Abot-Kamay Mo",
     "description": "Nagbibigay ang AbotKamay WiFi ng libreng internet sa mga komunidad sa buong Pilipinas. Manood lang ng maikling advertisement para makakuha ng 10 minutong internet access.",
     "mission": "Ang misyon namin ay gawing accessible ang connectivity para sa lahat.",
-    "cta": "Makipagtulungan"
+    "cta": "Makipagtulungan",
+    "phoneTitle": "Libreng WiFi",
+    "phoneSubtitle": "Manood ng maikling ad para makaconnect",
+    "phoneAd": "Advertisement",
+    "phoneAdPlaying": "Nagpe-play ang ad...",
+    "phoneTimeLeft": "5s na lang",
+    "phoneCta": "Kumuha ng Libreng Internet →",
+    "phoneStatus": "LIBRE • 10 minutong access",
+    "phoneConnected": "Nakaconnect na!",
+    "phoneConnectedSub": "Mag-enjoy ng 10 min libreng internet"
   },
   "howItWorks": {
     "label": "Paano Ito Gumagana",
@@ -108,13 +119,13 @@
     "cta": "Magsimula Na",
     "starter": {
       "name": "Starter",
-      "price": "$9",
-      "period": "/buwan",
-      "revenue": "60/40 Revenue Share",
+      "price": "Libre",
+      "period": "",
+      "revenue": "50/50 Revenue Share",
       "sites": "Hanggang 3 site",
       "features": [
         "Hanggang 3 hotspot",
-        "60/40 ad revenue split",
+        "50/50 ad revenue split",
         "Basic analytics dashboard",
         "Email support",
         "Standard ad formats"
@@ -122,13 +133,13 @@
     },
     "pro": {
       "name": "Pro",
-      "price": "$29",
+      "price": "₱1,500",
       "period": "/buwan",
-      "revenue": "75/25 Revenue Share",
+      "revenue": "50/50 Revenue Share",
       "sites": "Hanggang 10 site",
       "features": [
         "Hanggang 10 hotspot",
-        "75/25 ad revenue split",
+        "50/50 ad revenue split",
         "Advanced analytics & reports",
         "Priority support",
         "Custom ad scheduling"
@@ -136,13 +147,13 @@
     },
     "business": {
       "name": "Business",
-      "price": "$99",
+      "price": "₱4,999",
       "period": "/buwan",
-      "revenue": "85/15 Revenue Share",
-      "sites": "Walang limit na site",
+      "revenue": "50/50 Revenue Share",
+      "sites": "Hanggang 50 site",
       "features": [
-        "Walang limit na hotspot",
-        "85/15 ad revenue split",
+        "Hanggang 50 hotspot",
+        "50/50 ad revenue split",
         "Dedicated account manager",
         "API access & integrations",
         "White-label branding"
@@ -160,7 +171,7 @@
       },
       {
         "q": "Paano ako kumikita bilang may-ari ng hotspot?",
-        "a": "Kapag ang mga user ay kumonekta sa iyong hotspot at nanood ng mga ad, makakatanggap ka ng bahagi ng kita mula sa advertising. Ang split ay nakasalalay sa iyong plano: Libre (50/50), Pro (70/30), at Business (80/20). Ang mga bayad ay pinoproseso buwan-buwan."
+        "a": "Kapag ang mga user ay kumonekta sa iyong hotspot at nanood ng mga ad, makakatanggap ka ng 50% ng kita mula sa advertising. Ang video ads ay kumikita ng ₱3.00 bawat view at image ads ay ₱2.00. Ang mga bayad ay pinoproseso buwan-buwan sa pamamagitan ng GCash o bank transfer."
       },
       {
         "q": "Anong kagamitan ang kailangan ko para mag-set up ng hotspot?",

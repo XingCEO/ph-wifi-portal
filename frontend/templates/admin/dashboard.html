@@ -4,7 +4,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
   <meta name="theme-color" content="#09090b">
-  <title>PH WiFi Admin Dashboard</title>
+  <title>AbotKamay Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js"></script>
   <link rel="stylesheet" href="/static/css/admin.css">
@@ -17,8 +18,8 @@
     <div class="sidebar-logo">
       <span class="logo-icon">&#x1F4F6;</span>
       <div>
-        <div class="logo-title">PH WiFi</div>
-        <div class="logo-subtitle">Admin Console v3.0</div>
+        <div class="logo-title"><span style="color:#1B4F8A;font-weight:800">Abot</span><span style="color:#F58220;font-weight:800">Kamay</span></div>
+        <div class="logo-subtitle">Admin Console</div>
       </div>
     </div>
 
@@ -58,10 +59,24 @@
       <button class="nav-item" :class="{ active: currentTab === 'settings' }" @click="switchTab('settings')">
         <span class="nav-icon">&#x2699;</span> &#x7CFB;&#x7D71;&#x8A2D;&#x5B9A;
       </button>
+
+      <div class="nav-section-label">&#x2500;&#x2500;&#x2500; &#x904B;&#x71DF; &#x2500;&#x2500;&#x2500;</div>
+      <button class="nav-item" :class="{ active: currentTab === 'campaigns' }" @click="switchTab('campaigns')">
+        <span class="nav-icon">&#x1F4E2;</span> &#x5EE3;&#x544A;&#x6D3B;&#x52D5;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'equipment' }" @click="switchTab('equipment')">
+        <span class="nav-icon">&#x1F5A5;&#xFE0F;</span> &#x8A2D;&#x5099;&#x7BA1;&#x7406;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'invoices' }" @click="switchTab('invoices')">
+        <span class="nav-icon">&#x1F4B0;</span> &#x5E33;&#x52D9;&#x7BA1;&#x7406;
+      </button>
+      <button class="nav-item" :class="{ active: currentTab === 'compliance' }" @click="switchTab('compliance')">
+        <span class="nav-icon">&#x1F6E1;&#xFE0F;</span> &#x5408;&#x898F;&#x7BA1;&#x7406;
+      </button>
     </nav>
 
     <div class="sidebar-footer">
-      <div class="footer-brand">PH WiFi System</div>
+      <div class="footer-brand"><span style="color:#1B4F8A;font-weight:800">Abot</span><span style="color:#F58220;font-weight:800">Kamay</span> WiFi</div>
       <div class="footer-clock" x-text="clockTime"></div>
     </div>
   </aside>
@@ -80,7 +95,7 @@
       <h2 class="topbar-title" x-text="tabTitles[currentTab] || currentTab"></h2>
       <div class="topbar-right">
         <span class="badge-live">LIVE</span>
-        <span class="topbar-update" x-text="lastUpdateLabel"></span>
+        <span class="topbar-update" x-text="lastUpdate"></span>
       </div>
     </header>
 
@@ -94,19 +109,19 @@
       <div class="kpi-grid">
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x5BA2;</div>
-          <div class="kpi-value" x-text="stats ? stats.today_visits : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? dashStats.today_visits : '...'"></div>
         </div>
         <div class="kpi-card kpi-green">
           <div class="kpi-label">&#x7E3D;&#x9023;&#x7DDA;</div>
-          <div class="kpi-value" x-text="stats ? stats.total_grants : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? dashStats.total_grants : '...'"></div>
         </div>
         <div class="kpi-card kpi-purple">
           <div class="kpi-label">&#x6D3B;&#x8E8D;&#x71B1;&#x9EDE;</div>
-          <div class="kpi-value" x-text="stats ? stats.active_hotspots : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? dashStats.active_hotspots : '...'"></div>
         </div>
         <div class="kpi-card kpi-amber">
           <div class="kpi-label">&#x672C;&#x6708;&#x6536;&#x5165;</div>
-          <div class="kpi-value" x-text="stats ? ('&#x20B1;' + Number(stats.monthly_revenue || 0).toLocaleString()) : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? ('&#x20B1;' + Number(dashStats.monthly_revenue || 0).toLocaleString()) : '...'"></div>
         </div>
       </div>
 
@@ -126,15 +141,15 @@
           <div class="card-body">
             <div class="health-grid">
               <div class="health-item">
-                <span class="health-dot" :class="health?.database ? 'dot-green' : 'dot-red'"></span>
+                <span class="health-dot" :class="healthData?.database ? 'dot-green' : 'dot-red'"></span>
                 <span>Database</span>
               </div>
               <div class="health-item">
-                <span class="health-dot" :class="health?.redis ? 'dot-green' : 'dot-red'"></span>
+                <span class="health-dot" :class="healthData?.redis ? 'dot-green' : 'dot-red'"></span>
                 <span>Redis</span>
               </div>
               <div class="health-item">
-                <span class="health-dot" :class="health?.omada ? 'dot-green' : 'dot-red'"></span>
+                <span class="health-dot" :class="healthData?.omada ? 'dot-green' : 'dot-red'"></span>
                 <span>Omada</span>
               </div>
               <div class="health-item">
@@ -232,12 +247,12 @@
                       <span class="status-badge" :class="h.is_active ? 'status-active' : 'status-inactive'" x-text="h.is_active ? '&#x555F;&#x7528;' : '&#x505C;&#x7528;'"></span>
                     </td>
                     <td class="actions-cell">
-                      <button class="btn-icon" title="&#x8A73;&#x7D30;" @click="viewHotspotDetail(h)">&#x1F50D;</button>
-                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openHotspotModal(h)">&#x270F;&#xFE0F;</button>
-                      <button class="btn-icon" :title="h.is_active ? '&#x505C;&#x7528;' : '&#x555F;&#x7528;'" @click="toggleHotspot(h)">
+                      <button class="btn-icon" title="&#x8A73;&#x7D30;" @click="openHsDetail(h.id)">&#x1F50D;</button>
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openHotspotModal(h.id)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon" :title="h.is_active ? '&#x505C;&#x7528;' : '&#x555F;&#x7528;'" @click="toggleHotspot(h.id, h.is_active)">
                         <span x-text="h.is_active ? '&#x23F8;' : '&#x25B6;&#xFE0F;'"></span>
                       </button>
-                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="confirmDeleteHotspot(h)">&#x1F5D1;&#xFE0F;</button>
+                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="deleteHotspot(h.id)">&#x1F5D1;&#xFE0F;</button>
                     </td>
                   </tr>
                 </template>
@@ -258,14 +273,14 @@
         <div class="card-body filter-row">
           <div class="filter-group">
             <input type="month" class="input" x-model="revenueMonth">
-            <button class="btn btn-primary" @click="fetchRevenue()">&#x67E5;&#x8A62;</button>
+            <button class="btn btn-primary" @click="loadRevenue()">&#x67E5;&#x8A62;</button>
           </div>
           <div class="filter-divider"></div>
           <div class="filter-group">
             <input type="date" class="input" x-model="revenueDateStart">
             <span class="filter-sep">~</span>
             <input type="date" class="input" x-model="revenueDateEnd">
-            <button class="btn btn-primary" @click="fetchDailyRevenue()">&#x65E5;&#x5831;&#x67E5;&#x8A62;</button>
+            <button class="btn btn-primary" @click="loadRevenueDaily()">&#x65E5;&#x5831;&#x67E5;&#x8A62;</button>
             <a :href="'/admin/api/export/revenue?start=' + revenueDateStart + '&end=' + revenueDateEnd" class="btn btn-outline">&#x532F;&#x51FA; CSV</a>
           </div>
         </div>
@@ -274,19 +289,19 @@
       <div class="kpi-grid">
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x6708;&#x4EFD;</div>
-          <div class="kpi-value" x-text="revenueData ? revenueData.month : '-'"></div>
+          <div class="kpi-value" x-text="revData ? revData.month : '-'"></div>
         </div>
         <div class="kpi-card kpi-green">
           <div class="kpi-label">&#x7E3D;&#x6536;&#x5165;</div>
-          <div class="kpi-value" x-text="revenueData ? ('&#x20B1;' + Number(revenueData.total_revenue || 0).toLocaleString()) : '-'"></div>
+          <div class="kpi-value" x-text="revData ? ('&#x20B1;' + Number(revData.total_revenue || 0).toLocaleString()) : '-'"></div>
         </div>
         <div class="kpi-card kpi-purple">
           <div class="kpi-label">&#x5EE3;&#x544A;&#x5C55;&#x793A;</div>
-          <div class="kpi-value" x-text="revenueData ? (revenueData.total_ad_views || 0).toLocaleString() : '-'"></div>
+          <div class="kpi-value" x-text="revData ? (revData.total_ad_views || 0).toLocaleString() : '-'"></div>
         </div>
         <div class="kpi-card kpi-amber">
           <div class="kpi-label">&#x7E3D;&#x8A2A;&#x5BA2;</div>
-          <div class="kpi-value" x-text="revenueData ? (revenueData.total_visits || 0).toLocaleString() : '-'"></div>
+          <div class="kpi-value" x-text="revData ? (revData.total_visits || 0).toLocaleString() : '-'"></div>
         </div>
       </div>
 
@@ -307,10 +322,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <template x-if="!revenueData || !revenueData.by_hotspot">
+                  <template x-if="!revData || !revData.by_hotspot">
                     <tr><td colspan="4" class="table-empty">&#x8ACB;&#x5148;&#x67E5;&#x8A62;</td></tr>
                   </template>
-                  <template x-for="r in (revenueData?.by_hotspot || [])" :key="r.hotspot">
+                  <template x-for="r in (revData?.by_hotspot || [])" :key="r.hotspot">
                     <tr>
                       <td x-text="r.hotspot"></td>
                       <td x-text="r.visits"></td>
@@ -328,26 +343,26 @@
             <h3>&#x6536;&#x5165;&#x5206;&#x4F48;</h3>
           </div>
           <div class="card-body chart-container">
-            <canvas id="chart-revenue-doughnut"></canvas>
+            <canvas id="chart-revenue"></canvas>
           </div>
         </div>
       </div>
 
       <!-- Daily revenue section (shown after daily query) -->
-      <template x-if="dailyRevenueData">
+      <template x-if="revDailyData">
         <div>
           <div class="kpi-grid kpi-grid-3">
             <div class="kpi-card kpi-green">
               <div class="kpi-label">&#x65E5;&#x5747;&#x6536;&#x5165;</div>
-              <div class="kpi-value" x-text="'&#x20B1;' + Number(dailyRevenueData.avg_revenue || 0).toFixed(2)"></div>
+              <div class="kpi-value" x-text="'&#x20B1;' + Number(revDailyData.avg_revenue || 0).toFixed(2)"></div>
             </div>
             <div class="kpi-card kpi-purple">
               <div class="kpi-label">&#x65E5;&#x5747;&#x5EE3;&#x544A;</div>
-              <div class="kpi-value" x-text="Number(dailyRevenueData.avg_views || 0).toFixed(0)"></div>
+              <div class="kpi-value" x-text="Number(revDailyData.avg_views || 0).toFixed(0)"></div>
             </div>
             <div class="kpi-card kpi-amber">
               <div class="kpi-label">CPM</div>
-              <div class="kpi-value" x-text="'&#x20B1;' + Number(dailyRevenueData.cpm || 0).toFixed(2)"></div>
+              <div class="kpi-value" x-text="'&#x20B1;' + Number(revDailyData.cpm || 0).toFixed(2)"></div>
             </div>
           </div>
           <div class="card">
@@ -355,7 +370,7 @@
               <h3>&#x6BCF;&#x65E5;&#x6536;&#x5165;&#x8DA8;&#x52E2;</h3>
             </div>
             <div class="card-body chart-container">
-              <canvas id="chart-daily-revenue"></canvas>
+              <canvas id="chart-revenue-daily"></canvas>
             </div>
           </div>
         </div>
@@ -374,9 +389,9 @@
         </div>
         <p class="live-label">
           &#x76EE;&#x524D;&#x5728;&#x7DDA;&#x4EBA;&#x6578; |
-          <span x-text="liveRefreshCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
+          <span x-text="liveCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
         </p>
-        <button class="btn btn-outline" @click="fetchLive()">&#x7ACB;&#x5373;&#x5237;&#x65B0;</button>
+        <button class="btn btn-outline" @click="loadLive()">&#x7ACB;&#x5373;&#x5237;&#x65B0;</button>
       </div>
 
       <div class="card">
@@ -422,14 +437,14 @@
         <h1>&#x7528;&#x6236;&#x8A18;&#x9304;</h1>
         <div class="page-actions">
           <input type="text" class="input" placeholder="&#x641C;&#x5C0B; MAC / IP..." x-model="userSearch">
-          <select class="input select" x-model="userHotspotFilter" @change="fetchVisits()">
+          <select class="input select" x-model="userHotspotFilter" @change="loadUsers()">
             <option value="">&#x5168;&#x90E8;&#x71B1;&#x9EDE;</option>
             <template x-for="h in (hotspots || [])" :key="h.id">
               <option :value="h.id" x-text="h.name"></option>
             </template>
           </select>
           <a :href="'/admin/api/export/visits'" class="btn btn-outline">&#x532F;&#x51FA; CSV</a>
-          <button class="btn btn-outline" @click="fetchVisits()">&#x91CD;&#x65B0;&#x8F09;&#x5165;</button>
+          <button class="btn btn-outline" @click="loadUsers()">&#x91CD;&#x65B0;&#x8F09;&#x5165;</button>
         </div>
       </div>
 
@@ -449,13 +464,13 @@
                 </tr>
               </thead>
               <tbody>
-                <template x-if="!visits">
+                <template x-if="!users">
                   <tr><td colspan="7" class="table-empty"><div class="spinner"></div></td></tr>
                 </template>
-                <template x-if="visits && visits.items && visits.items.length === 0">
+                <template x-if="users && users.length === 0">
                   <tr><td colspan="7" class="table-empty">&#x7121;&#x8A2A;&#x554F;&#x8A18;&#x9304;</td></tr>
                 </template>
-                <template x-for="v in (visits?.items || [])" :key="v.id">
+                <template x-for="v in (users || [])" :key="v.id">
                   <tr>
                     <td x-text="v.id"></td>
                     <td><code x-text="v.mac"></code></td>
@@ -475,10 +490,10 @@
           </div>
 
           <!-- Pagination -->
-          <div class="pagination" x-show="visits && visits.total_pages > 1">
-            <button class="btn btn-outline btn-sm" :disabled="visits?.page <= 1" @click="fetchVisits(visits.page - 1)">&laquo; &#x4E0A;&#x4E00;&#x9801;</button>
-            <span class="pagination-info" x-text="'&#x7B2C; ' + (visits?.page || 1) + ' / ' + (visits?.total_pages || 1) + ' &#x9801;'"></span>
-            <button class="btn btn-outline btn-sm" :disabled="visits?.page >= visits?.total_pages" @click="fetchVisits(visits.page + 1)">&#x4E0B;&#x4E00;&#x9801; &raquo;</button>
+          <div class="pagination" x-show="usersTotalPages > 1">
+            <button class="btn btn-outline btn-sm" :disabled="usersPage <= 0" @click="setPage(usersPage - 1)">&laquo; &#x4E0A;&#x4E00;&#x9801;</button>
+            <span class="pagination-info" x-text="'&#x7B2C; ' + (usersPage + 1) + ' / ' + usersTotalPages + ' &#x9801;'"></span>
+            <button class="btn btn-outline btn-sm" :disabled="usersPage + 1 >= usersTotalPages" @click="setPage(usersPage + 1)">&#x4E0B;&#x4E00;&#x9801; &raquo;</button>
           </div>
         </div>
       </div>
@@ -495,100 +510,41 @@
           <div class="card">
             <div class="card-header"><h3>&#x4ECA;&#x65E5;&#x8ACB;&#x6C42;&#x7D71;&#x8A08;</h3></div>
             <div class="card-body">
-              <template x-if="!securityData">
+              <template x-if="!secStats">
                 <div class="table-empty"><div class="spinner"></div></div>
               </template>
-              <template x-if="securityData">
+              <template x-if="secStats">
                 <div class="stat-list">
                   <div class="stat-row">
                     <span>&#x7E3D;&#x8A2A;&#x554F;</span>
-                    <strong x-text="securityData.today_visits || 0"></strong>
+                    <strong x-text="secStats.today_visits || 0"></strong>
                   </div>
                   <div class="stat-row">
                     <span>&#x5EE3;&#x544A;&#x8A08;&#x6578;</span>
-                    <strong x-text="securityData.today_ad_views || 0"></strong>
+                    <strong x-text="secStats.today_ad_views || 0"></strong>
                   </div>
                   <div class="stat-row">
                     <span>&#x6388;&#x6B0A;&#x6B21;&#x6578;</span>
-                    <strong x-text="securityData.today_grants || 0"></strong>
+                    <strong x-text="secStats.today_grants || 0"></strong>
                   </div>
                   <div class="stat-row">
-                    <span>&#x653E;&#x68C4;&#x7387;</span>
-                    <strong x-text="(securityData.abandon_rate || 0) + '%'"></strong>
+                    <span>&#x6D3B;&#x8E8D;&#x7528;&#x6236;</span>
+                    <strong x-text="secStats.active_users || 0"></strong>
                   </div>
                 </div>
               </template>
-            </div>
-          </div>
-
-          <div class="card">
-            <div class="card-header"><h3>&#x7570;&#x5E38; MAC</h3></div>
-            <div class="card-body">
-              <template x-if="!securityData || !securityData.suspicious_macs">
-                <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
-              </template>
-              <template x-if="securityData && securityData.suspicious_macs && securityData.suspicious_macs.length === 0">
-                <div class="table-empty">&#x7121;&#x7570;&#x5E38;&#x8A18;&#x9304;</div>
-              </template>
-              <div class="table-responsive" x-show="securityData?.suspicious_macs?.length > 0">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>MAC</th>
-                      <th>&#x6B21;&#x6578;</th>
-                      <th>&#x6700;&#x5F8C;&#x8A2A;&#x554F;</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <template x-for="m in (securityData?.suspicious_macs || [])" :key="m.mac">
-                      <tr>
-                        <td><code x-text="m.mac"></code></td>
-                        <td x-text="m.count"></td>
-                        <td x-text="m.last_seen"></td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
             </div>
           </div>
         </div>
 
         <div>
           <div class="card">
-            <div class="card-header"><h3>IP &#x7D71;&#x8A08;</h3></div>
-            <div class="card-body">
-              <template x-if="!securityData || !securityData.top_ips">
-                <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
-              </template>
-              <div class="table-responsive" x-show="securityData?.top_ips?.length > 0">
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th>IP</th>
-                      <th>&#x8A2A;&#x554F;&#x6B21;&#x6578;</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    <template x-for="ip in (securityData?.top_ips || [])" :key="ip.ip">
-                      <tr>
-                        <td><code x-text="ip.ip"></code></td>
-                        <td x-text="ip.count"></td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          <div class="card">
             <div class="card-header"><h3>&#x7BA1;&#x7406;&#x64CD;&#x4F5C;&#x8A18;&#x9304;</h3></div>
             <div class="card-body">
-              <template x-if="!securityData || !securityData.admin_logs">
+              <template x-if="!auditLog || auditLog.length === 0">
                 <div class="table-empty">&#x7121;&#x64CD;&#x4F5C;&#x8A18;&#x9304;</div>
               </template>
-              <div class="table-responsive" x-show="securityData?.admin_logs?.length > 0">
+              <div class="table-responsive" x-show="auditLog?.length > 0">
                 <table class="data-table">
                   <thead>
                     <tr>
@@ -598,7 +554,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <template x-for="log in (securityData?.admin_logs || [])" :key="log.id">
+                    <template x-for="log in (auditLog || [])" :key="log.id">
                       <tr>
                         <td x-text="log.created_at"></td>
                         <td x-text="log.action"></td>
@@ -612,20 +568,16 @@
           </div>
 
           <div class="card">
-            <div class="card-header"><h3>&#x7CFB;&#x7D71;&#x8CC7;&#x8A0A;</h3></div>
+            <div class="card-header"><h3>&#x7CFB;&#x7D71;&#x5065;&#x5EB7;</h3></div>
             <div class="card-body">
-              <div class="stat-list">
-                <div class="stat-row">
-                  <span>Python</span>
-                  <strong x-text="securityData?.system_info?.python || '-'"></strong>
+              <div class="health-grid">
+                <div class="health-item">
+                  <span class="health-dot" :class="healthData?.database ? 'dot-green' : 'dot-red'"></span>
+                  <span>Database</span>
                 </div>
-                <div class="stat-row">
-                  <span>FastAPI</span>
-                  <strong x-text="securityData?.system_info?.fastapi || '-'"></strong>
-                </div>
-                <div class="stat-row">
-                  <span>Uptime</span>
-                  <strong x-text="securityData?.system_info?.uptime || '-'"></strong>
+                <div class="health-item">
+                  <span class="health-dot" :class="healthData?.redis ? 'dot-green' : 'dot-red'"></span>
+                  <span>Redis</span>
                 </div>
               </div>
             </div>
@@ -634,7 +586,7 @@
           <div class="card card-link" @click="switchTab('devices')">
             <div class="card-body">
               <span>&#x1F512; &#x5C01;&#x9396;&#x88DD;&#x7F6E;&#x6578;: </span>
-              <strong x-text="securityData?.blocked_count || 0"></strong>
+              <strong x-text="blockedCount || 0"></strong>
               <span class="card-arrow">&rarr;</span>
             </div>
           </div>
@@ -687,8 +639,8 @@
                     <td x-text="a.start_date || '-'"></td>
                     <td x-text="a.end_date || '-'"></td>
                     <td class="actions-cell">
-                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openAdvModal(a)">&#x270F;&#xFE0F;</button>
-                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="confirmDeleteAdv(a)">&#x1F5D1;&#xFE0F;</button>
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openAdvModal(a.id)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="deleteAdvertiser(a.id)">&#x1F5D1;&#xFE0F;</button>
                     </td>
                   </tr>
                 </template>
@@ -757,24 +709,24 @@
             <button class="btn btn-primary" @click="lookupDevice()">&#x67E5;&#x8A62;</button>
           </div>
 
-          <template x-if="deviceLookupResult">
+          <template x-if="deviceHistory">
             <div class="device-lookup-results">
               <div class="kpi-grid kpi-grid-3">
                 <div class="kpi-card kpi-blue">
                   <div class="kpi-label">&#x7E3D;&#x8A2A;&#x554F;</div>
-                  <div class="kpi-value" x-text="deviceLookupResult.total_visits || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.total_visits || 0"></div>
                 </div>
                 <div class="kpi-card kpi-green">
                   <div class="kpi-label">&#x6388;&#x6B0A;&#x6B21;&#x6578;</div>
-                  <div class="kpi-value" x-text="deviceLookupResult.total_grants || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.total_grants || 0"></div>
                 </div>
                 <div class="kpi-card kpi-purple">
                   <div class="kpi-label">&#x5EE3;&#x544A;&#x6B21;&#x6578;</div>
-                  <div class="kpi-value" x-text="deviceLookupResult.total_ad_views || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.total_ad_views || 0"></div>
                 </div>
               </div>
 
-              <div class="table-responsive" x-show="deviceLookupResult.recent_visits?.length > 0">
+              <div class="table-responsive" x-show="deviceHistory.recent_visits?.length > 0">
                 <table class="data-table">
                   <thead>
                     <tr>
@@ -786,7 +738,7 @@
                     </tr>
                   </thead>
                   <tbody>
-                    <template x-for="v in (deviceLookupResult.recent_visits || [])" :key="v.id">
+                    <template x-for="v in (deviceHistory.recent_visits || [])" :key="v.id">
                       <tr>
                         <td x-text="v.created_at"></td>
                         <td x-text="v.hotspot_name || '-'"></td>
@@ -813,16 +765,16 @@
       <div class="kpi-grid kpi-grid-2">
         <div class="kpi-card kpi-green">
           <div class="kpi-label">&#x6D3B;&#x8E8D;&#x9023;&#x7DDA;</div>
-          <div class="kpi-value" x-text="activeSessions ? activeSessions.length : '...'"></div>
+          <div class="kpi-value" x-text="sessions ? sessions.length : '...'"></div>
         </div>
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x5E73;&#x5747;&#x5269;&#x9918;&#x6642;&#x9593;</div>
-          <div class="kpi-value" x-text="avgRemainingTime || '-'"></div>
+          <div class="kpi-value" x-text="'-'"></div>
         </div>
       </div>
 
       <p class="auto-refresh-label">
-        <span x-text="sessionRefreshCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
+        <span x-text="sessCountdown + 's'"></span> &#x5F8C;&#x81EA;&#x52D5;&#x5237;&#x65B0;
       </p>
 
       <div class="card">
@@ -840,13 +792,13 @@
                 </tr>
               </thead>
               <tbody>
-                <template x-if="!activeSessions">
+                <template x-if="!sessions">
                   <tr><td colspan="6" class="table-empty"><div class="spinner"></div></td></tr>
                 </template>
-                <template x-if="activeSessions && activeSessions.length === 0">
+                <template x-if="sessions && sessions.length === 0">
                   <tr><td colspan="6" class="table-empty">&#x7121;&#x6D3B;&#x8E8D;&#x9023;&#x7DDA;</td></tr>
                 </template>
-                <template x-for="s in (activeSessions || [])" :key="s.mac">
+                <template x-for="s in (sessions || [])" :key="s.mac">
                   <tr>
                     <td><code x-text="s.mac"></code></td>
                     <td x-text="s.hotspot_name || '-'"></td>
@@ -905,15 +857,15 @@
             <div class="stat-list">
               <div class="stat-row">
                 <span>&#x61C9;&#x7528;&#x540D;&#x7A31;</span>
-                <strong x-text="systemInfo?.app_name || 'PH WiFi System'"></strong>
+                <strong x-text="settingsData?.app_name || 'AbotKamay WiFi'"></strong>
               </div>
               <div class="stat-row">
                 <span>&#x74B0;&#x5883;</span>
-                <strong x-text="systemInfo?.environment || '-'"></strong>
+                <strong x-text="settingsData?.environment || '-'"></strong>
               </div>
               <div class="stat-row">
                 <span>Omada Host</span>
-                <strong x-text="systemInfo?.omada_host || '-'"></strong>
+                <strong x-text="settingsData?.omada_host || '-'"></strong>
               </div>
             </div>
             <div class="form-group" style="margin-top: 1.5rem;">
@@ -925,13 +877,417 @@
       </div>
     </div>
 
+    <!-- ==================== TAB: CAMPAIGNS ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'campaigns'" x-transition>
+      <div class="page-header">
+        <h1>&#x5EE3;&#x544A;&#x6D3B;&#x52D5;</h1>
+        <div class="page-actions">
+          <input type="text" class="input" placeholder="&#x641C;&#x5C0B;&#x6D3B;&#x52D5;&#x540D;&#x7A31;..." x-model="campaignSearch">
+          <button class="btn btn-primary" @click="openCampaignModal()">&#x65B0;&#x589E;&#x6D3B;&#x52D5;</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x7E3D;&#x6D3B;&#x52D5;&#x6578;</div>
+          <div class="kpi-value" x-text="campaigns ? campaigns.length : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x9032;&#x884C;&#x4E2D;</div>
+          <div class="kpi-value" x-text="campaigns ? campaigns.filter(c => c.status === 'active').length : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">&#x7E3D;&#x9810;&#x7B97;</div>
+          <div class="kpi-value" x-text="campaigns ? ('&#x20B1;' + campaigns.reduce((s, c) => s + (parseFloat(c.promotion_budget_php) || 0), 0).toLocaleString()) : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">&#x5DF2;&#x6D88;&#x8017;&#x9810;&#x7B97;</div>
+          <div class="kpi-value" x-text="campaigns ? ('&#x20B1;' + campaigns.reduce((s, c) => s + (parseFloat(c.budget_consumed_php) || 0), 0).toLocaleString()) : '...'"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>&#x540D;&#x7A31;</th>
+                  <th>&#x5EE3;&#x544A;&#x4E3B;</th>
+                  <th>&#x683C;&#x5F0F;</th>
+                  <th>CPV</th>
+                  <th>&#x9810;&#x7B97;</th>
+                  <th>&#x5DF2;&#x6D88;&#x8017;</th>
+                  <th>&#x72C0;&#x614B;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!campaigns">
+                  <tr><td colspan="9" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="campaigns && filteredCampaigns.length === 0">
+                  <tr><td colspan="9" class="table-empty">&#x7121;&#x5EE3;&#x544A;&#x6D3B;&#x52D5;</td></tr>
+                </template>
+                <template x-for="c in filteredCampaigns" :key="c.id">
+                  <tr>
+                    <td x-text="c.id"></td>
+                    <td x-text="c.name"></td>
+                    <td x-text="c.advertiser_name || '-'"></td>
+                    <td x-text="c.ad_format || '-'"></td>
+                    <td x-text="'&#x20B1;' + Number(c.cpv_php || 0).toFixed(2)"></td>
+                    <td x-text="'&#x20B1;' + Number(c.promotion_budget_php || 0).toLocaleString()"></td>
+                    <td x-text="'&#x20B1;' + Number(c.budget_consumed_php || 0).toLocaleString()"></td>
+                    <td>
+                      <span class="badge" :class="campaignStatusClass(c.status)">
+                        <span class="badge-dot"></span>
+                        <span x-text="campaignStatusLabel(c.status)"></span>
+                      </span>
+                    </td>
+                    <td class="actions-cell">
+                      <button class="btn btn-outline btn-sm" @click="viewCampaignReport(c.id)">&#x5831;&#x8868;</button>
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openCampaignModal(c.id)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="deleteCampaign(c.id)">&#x1F5D1;&#xFE0F;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: EQUIPMENT ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'equipment'" x-transition>
+      <div class="page-header">
+        <h1>&#x8A2D;&#x5099;&#x7BA1;&#x7406;</h1>
+        <div class="page-actions">
+          <select class="input select" x-model="equipmentHotspotFilter" @change="loadEquipment()">
+            <option value="">&#x5168;&#x90E8;&#x71B1;&#x9EDE;</option>
+            <template x-for="h in (hotspots || [])" :key="h.id">
+              <option :value="h.id" x-text="h.name"></option>
+            </template>
+          </select>
+          <button class="btn btn-primary" @click="openEquipmentModal()">&#x65B0;&#x589E;&#x8A2D;&#x5099;</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x7E3D;&#x8A2D;&#x5099;&#x6578;</div>
+          <div class="kpi-value" x-text="equipmentStats.total"></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x5DF2;&#x90E8;&#x7F72;</div>
+          <div class="kpi-value" x-text="equipmentStats.deployed"></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">&#x826F;&#x597D;&#x72C0;&#x614B;</div>
+          <div class="kpi-value" x-text="equipmentStats.good"></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">&#x7E3D;&#x50F9;&#x503C;</div>
+          <div class="kpi-value" x-text="'&#x20B1;' + equipmentStats.totalValue.toLocaleString()"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>&#x985E;&#x578B;</th>
+                  <th>&#x578B;&#x865F;</th>
+                  <th>&#x5E8F;&#x865F;</th>
+                  <th>&#x71B1;&#x9EDE;</th>
+                  <th>&#x72C0;&#x6CC1;</th>
+                  <th>&#x539F;&#x59CB;&#x6210;&#x672C;</th>
+                  <th>&#x73FE;&#x503C;</th>
+                  <th>&#x5B89;&#x88DD;&#x65E5;&#x671F;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!equipmentList">
+                  <tr><td colspan="10" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="equipmentList && equipmentList.length === 0">
+                  <tr><td colspan="10" class="table-empty">&#x7121;&#x8A2D;&#x5099;&#x8CC7;&#x6599;</td></tr>
+                </template>
+                <template x-for="e in (equipmentList || [])" :key="e.id">
+                  <tr>
+                    <td x-text="e.id"></td>
+                    <td x-text="equipmentTypeLabel(e.item_type)"></td>
+                    <td x-text="e.model || '-'"></td>
+                    <td><code x-text="e.serial_number || '-'"></code></td>
+                    <td x-text="e.hotspot_name || '-'"></td>
+                    <td>
+                      <span class="badge" :class="equipmentConditionClass(e.condition)">
+                        <span class="badge-dot"></span>
+                        <span x-text="equipmentConditionLabel(e.condition)"></span>
+                      </span>
+                    </td>
+                    <td x-text="'&#x20B1;' + Number(e.original_cost_php || 0).toLocaleString()"></td>
+                    <td x-text="'&#x20B1;' + Number(e.current_value_php || e.original_cost_php || 0).toLocaleString()"></td>
+                    <td x-text="e.installed_at ? fmtDate(e.installed_at) : '-'"></td>
+                    <td class="actions-cell">
+                      <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openEquipmentModal(e.id)">&#x270F;&#xFE0F;</button>
+                      <button class="btn-icon btn-danger-icon" title="&#x79FB;&#x9664;" @click="removeEquipment(e.id)">&#x1F5D1;&#xFE0F;</button>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: INVOICES ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'invoices'" x-transition>
+      <div class="page-header">
+        <h1>&#x5E33;&#x52D9;&#x7BA1;&#x7406;</h1>
+        <div class="page-actions">
+          <select class="input select" x-model="invoiceStatusFilter" @change="loadInvoices()">
+            <option value="">&#x5168;&#x90E8;&#x72C0;&#x614B;</option>
+            <option value="pending">&#x5F85;&#x4ED8;&#x6B3E;</option>
+            <option value="paid">&#x5DF2;&#x4ED8;&#x6B3E;</option>
+            <option value="overdue">&#x903E;&#x671F;</option>
+            <option value="cancelled">&#x5DF2;&#x53D6;&#x6D88;</option>
+          </select>
+          <select class="input select" x-model="invoiceTypeFilter" @change="loadInvoices()">
+            <option value="">&#x5168;&#x90E8;&#x985E;&#x578B;</option>
+            <option value="monthly_fee">&#x6708;&#x8CBB;</option>
+            <option value="listing_fee">&#x4E0A;&#x67B6;&#x8CBB;</option>
+            <option value="promotion_budget">&#x63A8;&#x5EE3;&#x9810;&#x7B97;</option>
+            <option value="revenue_share">&#x5206;&#x6F64;</option>
+          </select>
+          <button class="btn btn-primary" @click="openInvoiceModal()">&#x65B0;&#x589E;&#x5E33;&#x55AE;</button>
+        </div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-blue">
+          <div class="kpi-label">&#x7E3D;&#x8A08;&#x8CBB;</div>
+          <div class="kpi-value" x-text="invoiceSummary ? ('&#x20B1;' + Number(invoiceSummary.total_billed || 0).toLocaleString()) : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">&#x5DF2;&#x6536;&#x6B3E;</div>
+          <div class="kpi-value" x-text="invoiceSummary ? ('&#x20B1;' + Number(invoiceSummary.total_paid || 0).toLocaleString()) : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">&#x672A;&#x6536;&#x6B3E;</div>
+          <div class="kpi-value" x-text="invoiceSummary ? ('&#x20B1;' + Number(invoiceSummary.outstanding || 0).toLocaleString()) : '...'"></div>
+        </div>
+        <div class="kpi-card kpi-amber">
+          <div class="kpi-label">&#x5206;&#x985E;&#x660E;&#x7D30;</div>
+          <div class="kpi-value" x-text="invoiceSummary?.by_type ? Object.keys(invoiceSummary.by_type).length + ' &#x985E;' : '...'"></div>
+        </div>
+      </div>
+
+      <!-- By-type breakdown -->
+      <template x-if="invoiceSummary && invoiceSummary.by_type">
+        <div class="card mb-24">
+          <div class="card-header"><h3>&#x5206;&#x985E;&#x7D71;&#x8A08;</h3></div>
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>&#x985E;&#x578B;</th>
+                    <th>&#x91D1;&#x984D;</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="(amount, type) in (invoiceSummary.by_type || {})" :key="type">
+                    <tr>
+                      <td x-text="invoiceTypeLabel(type)"></td>
+                      <td x-text="'&#x20B1;' + Number(amount || 0).toLocaleString()"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </template>
+
+      <div class="card">
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>&#x985E;&#x578B;</th>
+                  <th>&#x7D44;&#x7E54;/&#x5EE3;&#x544A;&#x4E3B;</th>
+                  <th>&#x91D1;&#x984D; (PHP)</th>
+                  <th>&#x72C0;&#x614B;</th>
+                  <th>&#x5230;&#x671F;&#x65E5;</th>
+                  <th>&#x4ED8;&#x6B3E;&#x65E5;</th>
+                  <th>&#x5099;&#x8A3B;</th>
+                  <th>&#x64CD;&#x4F5C;</th>
+                </tr>
+              </thead>
+              <tbody>
+                <template x-if="!invoicesList">
+                  <tr><td colspan="9" class="table-empty"><div class="spinner"></div></td></tr>
+                </template>
+                <template x-if="invoicesList && invoicesList.length === 0">
+                  <tr><td colspan="9" class="table-empty">&#x7121;&#x5E33;&#x55AE;&#x8CC7;&#x6599;</td></tr>
+                </template>
+                <template x-for="inv in (invoicesList || [])" :key="inv.id">
+                  <tr>
+                    <td x-text="inv.id"></td>
+                    <td x-text="invoiceTypeLabel(inv.invoice_type)"></td>
+                    <td x-text="inv.organization_name || inv.advertiser_name || '-'"></td>
+                    <td x-text="'&#x20B1;' + Number(inv.amount_php || 0).toLocaleString()"></td>
+                    <td>
+                      <span class="badge" :class="invoiceStatusClass(inv.status)">
+                        <span class="badge-dot"></span>
+                        <span x-text="invoiceStatusLabel(inv.status)"></span>
+                      </span>
+                    </td>
+                    <td x-text="inv.due_date ? fmtDate(inv.due_date) : '-'"></td>
+                    <td x-text="inv.paid_date ? fmtDate(inv.paid_date) : '-'"></td>
+                    <td x-text="truncate(inv.notes, 20) || '-'"></td>
+                    <td class="actions-cell">
+                      <template x-if="inv.status === 'pending'">
+                        <button class="btn btn-outline btn-sm" @click="updateInvoiceStatus(inv.id, 'paid')">&#x6A19;&#x8A18;&#x5DF2;&#x4ED8;</button>
+                      </template>
+                      <template x-if="inv.status === 'pending'">
+                        <button class="btn btn-outline btn-sm text-red" @click="updateInvoiceStatus(inv.id, 'overdue')">&#x6A19;&#x8A18;&#x903E;&#x671F;</button>
+                      </template>
+                      <template x-if="inv.status !== 'cancelled' && inv.status !== 'paid'">
+                        <button class="btn btn-outline btn-sm" @click="updateInvoiceStatus(inv.id, 'cancelled')">&#x53D6;&#x6D88;</button>
+                      </template>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== TAB: COMPLIANCE ==================== -->
+    <div class="tab-pane" x-show="currentTab === 'compliance'" x-transition>
+      <div class="page-header">
+        <h1>&#x5408;&#x898F;&#x7BA1;&#x7406;</h1>
+        <p class="page-desc">&#x8CC7;&#x6599;&#x4FDD;&#x8B77;&#x8207;&#x5408;&#x898F;&#x5BE9;&#x67E5;</p>
+      </div>
+
+      <div class="section-grid-1-1">
+        <!-- DPO Contact -->
+        <div class="card">
+          <div class="card-header"><h3>&#x8CC7;&#x6599;&#x4FDD;&#x8B77;&#x5B98; (DPO)</h3></div>
+          <div class="card-body">
+            <template x-if="!dpoInfo">
+              <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
+            </template>
+            <template x-if="dpoInfo">
+              <div class="stat-list">
+                <div class="stat-row">
+                  <span>Email</span>
+                  <strong x-text="dpoInfo.dpo_email || '-'"></strong>
+                </div>
+                <div class="stat-row">
+                  <span>&#x653F;&#x7B56;&#x53C3;&#x8003;</span>
+                  <strong x-text="dpoInfo.policy_reference || '-'"></strong>
+                </div>
+              </div>
+            </template>
+          </div>
+        </div>
+
+        <!-- Legal Documents -->
+        <div class="card">
+          <div class="card-header"><h3>&#x6CD5;&#x5F8B;&#x6587;&#x4EF6;</h3></div>
+          <div class="card-body">
+            <div class="stat-list">
+              <div class="stat-row">
+                <span>&#x96B1;&#x79C1;&#x653F;&#x7B56;</span>
+                <a href="/en/privacy" target="_blank" class="text-green">/en/privacy &rarr;</a>
+              </div>
+              <div class="stat-row">
+                <span>&#x670D;&#x52D9;&#x689D;&#x6B3E;</span>
+                <a href="/en/terms" target="_blank" class="text-green">/en/terms &rarr;</a>
+              </div>
+              <div class="stat-row">
+                <span>&#x5167;&#x90E8;&#x6587;&#x4EF6;</span>
+                <span class="text-muted">docs/legal/</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Data Retention -->
+      <div class="card mt-24">
+        <div class="card-header">
+          <h3>&#x8CC7;&#x6599;&#x4FDD;&#x7559;&#x653F;&#x7B56;</h3>
+          <button class="btn btn-danger btn-sm" @click="runRetentionCleanup()" :disabled="cleanupRunning">
+            <template x-if="cleanupRunning"><span class="spinner spinner-sm"></span></template>
+            <template x-if="!cleanupRunning"><span>&#x57F7;&#x884C;&#x6E05;&#x7406;</span></template>
+          </button>
+        </div>
+        <div class="card-body">
+          <template x-if="!retentionData">
+            <div class="table-empty">&#x8F09;&#x5165;&#x4E2D;...</div>
+          </template>
+          <template x-if="retentionData">
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>&#x8CC7;&#x6599;&#x8868;</th>
+                    <th>&#x4FDD;&#x7559;&#x671F; (&#x5929;)</th>
+                    <th>&#x76EE;&#x524D;&#x8A18;&#x9304;&#x6578;</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <template x-for="t in (retentionData.tables || [])" :key="t.table">
+                    <tr>
+                      <td x-text="t.table"></td>
+                      <td x-text="t.retention_days || '&#x7121;&#x9650;&#x5236;'"></td>
+                      <td x-text="fmt(t.row_count)"></td>
+                    </tr>
+                  </template>
+                </tbody>
+              </table>
+            </div>
+          </template>
+
+          <!-- Cleanup results -->
+          <template x-if="cleanupResult">
+            <div class="mt-16">
+              <h4 class="detail-section-title">&#x6E05;&#x7406;&#x7D50;&#x679C;</h4>
+              <div class="stat-list">
+                <template x-for="(count, table) in (cleanupResult.deleted || cleanupResult || {})" :key="table">
+                  <div class="stat-row">
+                    <span x-text="table"></span>
+                    <strong x-text="count + ' &#x7B46;&#x5DF2;&#x522A;&#x9664;'"></strong>
+                  </div>
+                </template>
+              </div>
+            </div>
+          </template>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <!-- ==================== MODAL: HOTSPOT ==================== -->
   <div class="modal-overlay" x-show="showHotspotModal" x-transition.opacity @click.self="showHotspotModal = false">
     <div class="modal" @click.stop>
       <div class="modal-header">
-        <h3 x-text="editingHotspot ? '&#x7DE8;&#x8F2F;&#x71B1;&#x9EDE;' : '&#x65B0;&#x589E;&#x71B1;&#x9EDE;'"></h3>
+        <h3 x-text="hotspotEditId ? '&#x7DE8;&#x8F2F;&#x71B1;&#x9EDE;' : '&#x65B0;&#x589E;&#x71B1;&#x9EDE;'"></h3>
         <button class="modal-close" @click="showHotspotModal = false">&times;</button>
       </div>
       <div class="modal-body">
@@ -966,7 +1322,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" @click="showHotspotModal = false">&#x53D6;&#x6D88;</button>
-        <button class="btn btn-primary" @click="saveHotspot()">&#x5132;&#x5B58;</button>
+        <button class="btn btn-primary" @click="submitHotspot()">&#x5132;&#x5B58;</button>
       </div>
     </div>
   </div>
@@ -975,7 +1331,7 @@
   <div class="modal-overlay" x-show="showAdvModal" x-transition.opacity @click.self="showAdvModal = false">
     <div class="modal" @click.stop>
       <div class="modal-header">
-        <h3 x-text="editingAdv ? '&#x7DE8;&#x8F2F;&#x5EE3;&#x544A;&#x4E3B;' : '&#x65B0;&#x589E;&#x5EE3;&#x544A;&#x4E3B;'"></h3>
+        <h3 x-text="advEditId ? '&#x7DE8;&#x8F2F;&#x5EE3;&#x544A;&#x4E3B;' : '&#x65B0;&#x589E;&#x5EE3;&#x544A;&#x4E3B;'"></h3>
         <button class="modal-close" @click="showAdvModal = false">&times;</button>
       </div>
       <div class="modal-body">
@@ -998,7 +1354,7 @@
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">&#x6708;&#x8CBB; (PHP) *</label>
-            <input type="number" class="input" x-model.number="advForm.monthly_fee" min="0" required>
+            <input type="number" class="input" x-model.number="advForm.monthly_fee_php" min="0" required>
           </div>
           <div class="form-group">
             <label class="form-label">&#x72C0;&#x614B;</label>
@@ -1022,7 +1378,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" @click="showAdvModal = false">&#x53D6;&#x6D88;</button>
-        <button class="btn btn-primary" @click="saveAdv()">&#x5132;&#x5B58;</button>
+        <button class="btn btn-primary" @click="submitAdvertiser()">&#x5132;&#x5B58;</button>
       </div>
     </div>
   </div>
@@ -1050,7 +1406,7 @@
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" @click="showBlockModal = false">&#x53D6;&#x6D88;</button>
-        <button class="btn btn-danger" @click="blockDevice()">&#x5C01;&#x9396;</button>
+        <button class="btn btn-danger" @click="submitBlock()">&#x5C01;&#x9396;</button>
       </div>
     </div>
   </div>
@@ -1059,27 +1415,27 @@
   <div class="modal-overlay" x-show="showHsDetail" x-transition.opacity @click.self="showHsDetail = false">
     <div class="modal modal-wide" @click.stop>
       <div class="modal-header">
-        <h3>&#x71B1;&#x9EDE;&#x8A73;&#x60C5;: <span x-text="hsDetailData?.name || ''"></span></h3>
+        <h3>&#x71B1;&#x9EDE;&#x8A73;&#x60C5;: <span x-text="hsDetail?.name || ''"></span></h3>
         <button class="modal-close" @click="showHsDetail = false">&times;</button>
       </div>
       <div class="modal-body">
-        <template x-if="!hsDetailData">
+        <template x-if="!hsDetail">
           <div class="table-empty"><div class="spinner"></div></div>
         </template>
-        <template x-if="hsDetailData">
+        <template x-if="hsDetail">
           <div>
             <div class="kpi-grid kpi-grid-3">
               <div class="kpi-card kpi-blue">
                 <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x554F;</div>
-                <div class="kpi-value" x-text="hsDetailData.today_visits || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.today_visits || 0"></div>
               </div>
               <div class="kpi-card kpi-green">
                 <div class="kpi-label">&#x672C;&#x9031;&#x8A2A;&#x554F;</div>
-                <div class="kpi-value" x-text="hsDetailData.week_visits || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.week_visits || 0"></div>
               </div>
               <div class="kpi-card kpi-purple">
                 <div class="kpi-label">&#x4ECA;&#x65E5;&#x5EE3;&#x544A;</div>
-                <div class="kpi-value" x-text="hsDetailData.today_ads || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.today_ads || 0"></div>
               </div>
             </div>
 
@@ -1094,10 +1450,10 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <template x-if="!hsDetailData.top_devices || hsDetailData.top_devices.length === 0">
+                  <template x-if="!hsDetail.top_devices || hsDetail.top_devices.length === 0">
                     <tr><td colspan="3" class="table-empty">&#x7121;&#x8CC7;&#x6599;</td></tr>
                   </template>
-                  <template x-for="d in (hsDetailData.top_devices || [])" :key="d.mac">
+                  <template x-for="d in (hsDetail.top_devices || [])" :key="d.mac">
                     <tr>
                       <td><code x-text="d.mac"></code></td>
                       <td x-text="d.visit_count"></td>
@@ -1116,11 +1472,242 @@
     </div>
   </div>
 
+  <!-- ==================== MODAL: CAMPAIGN ==================== -->
+  <div class="modal-overlay" x-show="showCampaignModal" x-transition.opacity @click.self="showCampaignModal = false">
+    <div class="modal modal-lg" @click.stop>
+      <div class="modal-header">
+        <h3 x-text="campaignEditId ? '&#x7DE8;&#x8F2F;&#x6D3B;&#x52D5;' : '&#x65B0;&#x589E;&#x6D3B;&#x52D5;'"></h3>
+        <button class="modal-close" @click="showCampaignModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">&#x5EE3;&#x544A;&#x4E3B; *</label>
+          <select class="input select" x-model="campaignForm.advertiser_id">
+            <option value="">&#x8ACB;&#x9078;&#x64C7;</option>
+            <template x-for="a in (advertisers || [])" :key="a.id">
+              <option :value="a.id" x-text="a.name"></option>
+            </template>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x6D3B;&#x52D5;&#x540D;&#x7A31; *</label>
+          <input type="text" class="input" x-model="campaignForm.name" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x76EE;&#x6A19;</label>
+          <input type="text" class="input" x-model="campaignForm.objective" placeholder="&#x54C1;&#x724C;&#x66DD;&#x5149;&#x3001;&#x4E0B;&#x8F09;&#x3001;&#x8A3B;&#x518A;...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x5EE3;&#x544A;&#x683C;&#x5F0F; *</label>
+            <select class="input select" x-model="campaignForm.ad_format">
+              <option value="video">&#x5F71;&#x7247;</option>
+              <option value="image">&#x5716;&#x7247;</option>
+              <option value="interactive">&#x4E92;&#x52D5;</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">CPV (PHP) *</label>
+            <input type="number" step="0.01" class="input" x-model.number="campaignForm.cpv_php" min="0">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x4E0A;&#x67B6;&#x8CBB; (PHP)</label>
+            <input type="number" step="0.01" class="input" x-model.number="campaignForm.listing_fee_php" min="0">
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x63A8;&#x5EE3;&#x9810;&#x7B97; (PHP) *</label>
+            <input type="number" step="0.01" class="input" x-model.number="campaignForm.promotion_budget_php" min="0">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x7D20;&#x6750; URL</label>
+          <input type="url" class="input" x-model="campaignForm.creative_url" placeholder="https://...">
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x843D;&#x5730;&#x9801; URL</label>
+          <input type="url" class="input" x-model="campaignForm.landing_page_url" placeholder="https://...">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x958B;&#x59CB;&#x65E5;&#x671F;</label>
+            <input type="date" class="input" x-model="campaignForm.starts_at">
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x7D50;&#x675F;&#x65E5;&#x671F;</label>
+            <input type="date" class="input" x-model="campaignForm.ends_at">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showCampaignModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-primary" @click="submitCampaign()">&#x5132;&#x5B58;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CAMPAIGN REPORT ==================== -->
+  <div class="modal-overlay" x-show="showCampaignReport" x-transition.opacity @click.self="showCampaignReport = false">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h3>&#x6D3B;&#x52D5;&#x5831;&#x8868;</h3>
+        <button class="modal-close" @click="showCampaignReport = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <template x-if="!campaignReport">
+          <div class="table-empty"><div class="spinner"></div></div>
+        </template>
+        <template x-if="campaignReport">
+          <div>
+            <div class="kpi-grid kpi-grid-2">
+              <div class="kpi-card kpi-blue">
+                <div class="kpi-label">&#x7E3D;&#x89C0;&#x770B;</div>
+                <div class="kpi-value" x-text="fmt(campaignReport.total_views)"></div>
+              </div>
+              <div class="kpi-card kpi-green">
+                <div class="kpi-label">&#x6709;&#x6548;&#x89C0;&#x770B;</div>
+                <div class="kpi-value" x-text="fmt(campaignReport.verified_views)"></div>
+              </div>
+            </div>
+            <div class="stat-list mt-16">
+              <div class="stat-row">
+                <span>&#x5DF2;&#x6D88;&#x8017;&#x9810;&#x7B97;</span>
+                <strong x-text="'&#x20B1;' + Number(campaignReport.budget_consumed || 0).toLocaleString()"></strong>
+              </div>
+              <div class="stat-row">
+                <span>&#x5269;&#x9918;&#x9810;&#x7B97;</span>
+                <strong x-text="'&#x20B1;' + Number(campaignReport.budget_remaining || 0).toLocaleString()"></strong>
+              </div>
+              <div class="stat-row">
+                <span>&#x9810;&#x4F30;&#x5B8C;&#x6210;&#x65E5;</span>
+                <strong x-text="campaignReport.estimated_completion_date ? fmtDate(campaignReport.estimated_completion_date) : '-'"></strong>
+              </div>
+            </div>
+          </div>
+        </template>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showCampaignReport = false">&#x95DC;&#x9589;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: EQUIPMENT ==================== -->
+  <div class="modal-overlay" x-show="showEquipmentModal" x-transition.opacity @click.self="showEquipmentModal = false">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h3 x-text="equipmentEditId ? '&#x7DE8;&#x8F2F;&#x8A2D;&#x5099;' : '&#x65B0;&#x589E;&#x8A2D;&#x5099;'"></h3>
+        <button class="modal-close" @click="showEquipmentModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x985E;&#x578B; *</label>
+            <select class="input select" x-model="equipmentForm.item_type">
+              <option value="mini-pc">Mini PC</option>
+              <option value="wifi-ap">WiFi AP</option>
+              <option value="ups">UPS</option>
+              <option value="poe">PoE</option>
+              <option value="cable">&#x7DDA;&#x6750;</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x72C0;&#x6CC1; *</label>
+            <select class="input select" x-model="equipmentForm.condition">
+              <option value="good">&#x826F;&#x597D;</option>
+              <option value="noted">&#x6CE8;&#x610F;</option>
+              <option value="damaged">&#x640D;&#x58DE;</option>
+              <option value="lost">&#x907A;&#x5931;</option>
+              <option value="removed">&#x5DF2;&#x79FB;&#x9664;</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x578B;&#x865F; *</label>
+          <input type="text" class="input" x-model="equipmentForm.model" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x5E8F;&#x865F;</label>
+          <input type="text" class="input" x-model="equipmentForm.serial_number">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x71B1;&#x9EDE;</label>
+            <select class="input select" x-model="equipmentForm.hotspot_id">
+              <option value="">&#x672A;&#x6307;&#x5B9A;</option>
+              <template x-for="h in (hotspots || [])" :key="h.id">
+                <option :value="h.id" x-text="h.name"></option>
+              </template>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x539F;&#x59CB;&#x6210;&#x672C; (PHP) *</label>
+            <input type="number" step="0.01" class="input" x-model.number="equipmentForm.original_cost_php" min="0">
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showEquipmentModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-primary" @click="submitEquipment()">&#x5132;&#x5B58;</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: INVOICE ==================== -->
+  <div class="modal-overlay" x-show="showInvoiceModal" x-transition.opacity @click.self="showInvoiceModal = false">
+    <div class="modal" @click.stop>
+      <div class="modal-header">
+        <h3>&#x65B0;&#x589E;&#x5E33;&#x55AE;</h3>
+        <button class="modal-close" @click="showInvoiceModal = false">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x7D44;&#x7E54; ID</label>
+            <input type="number" class="input" x-model.number="invoiceForm.organization_id" min="1">
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x5EE3;&#x544A;&#x4E3B; ID</label>
+            <input type="number" class="input" x-model.number="invoiceForm.advertiser_id" min="1">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">&#x5E33;&#x55AE;&#x985E;&#x578B; *</label>
+            <select class="input select" x-model="invoiceForm.invoice_type">
+              <option value="monthly_fee">&#x6708;&#x8CBB;</option>
+              <option value="listing_fee">&#x4E0A;&#x67B6;&#x8CBB;</option>
+              <option value="promotion_budget">&#x63A8;&#x5EE3;&#x9810;&#x7B97;</option>
+              <option value="revenue_share">&#x5206;&#x6F64;</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">&#x91D1;&#x984D; (PHP) *</label>
+            <input type="number" step="0.01" class="input" x-model.number="invoiceForm.amount_php" min="0" required>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x5230;&#x671F;&#x65E5;</label>
+          <input type="date" class="input" x-model="invoiceForm.due_date">
+        </div>
+        <div class="form-group">
+          <label class="form-label">&#x5099;&#x8A3B;</label>
+          <input type="text" class="input" x-model="invoiceForm.notes" placeholder="&#x5099;&#x8A3B;...">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-outline" @click="showInvoiceModal = false">&#x53D6;&#x6D88;</button>
+        <button class="btn btn-primary" @click="submitInvoice()">&#x5EFA;&#x7ACB;</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ==================== CONFIRM DIALOG ==================== -->
   <div class="modal-overlay" x-show="showConfirm" x-transition.opacity @click.self="showConfirm = false">
     <div class="modal modal-confirm" @click.stop>
       <div class="modal-body">
-        <p class="confirm-message" x-text="confirmMessage"></p>
+        <p class="confirm-message" x-text="confirmMsg"></p>
       </div>
       <div class="modal-footer">
         <button class="btn btn-outline" @click="showConfirm = false">&#x53D6;&#x6D88;</button>
@@ -1130,14 +1717,7 @@
   </div>
 
   <!-- ==================== TOAST CONTAINER ==================== -->
-  <div class="toast-container">
-    <template x-for="(t, idx) in toasts" :key="t.id">
-      <div class="toast" :class="'toast-' + t.type" x-show="t.visible" x-transition>
-        <span class="toast-message" x-text="t.message"></span>
-        <button class="toast-close" @click="removeToast(idx)">&times;</button>
-      </div>
-    </template>
-  </div>
+  <div id="toast-container" class="toast-container"></div>
 
 </div>
 

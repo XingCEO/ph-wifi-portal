@@ -7,14 +7,25 @@
     "howItWorks": "How It Works",
     "about": "About",
     "advertise": "Advertise",
-    "contact": "Contact"
+    "contact": "Contact",
+    "login": "Log In",
+    "register": "Sign Up Free"
   },
   "hero": {
     "title": "Free Internet",
     "titleHighlight": "Within Reach",
     "description": "AbotKamay WiFi provides free internet access to communities across the Philippines. Watch a short advertisement to unlock 10 minutes of internet access.",
     "mission": "Our mission is to make connectivity accessible to everyone.",
-    "cta": "Partner With Us"
+    "cta": "Partner With Us",
+    "phoneTitle": "Free WiFi Access",
+    "phoneSubtitle": "Watch a short ad to connect",
+    "phoneAd": "Advertisement",
+    "phoneAdPlaying": "Ad playing...",
+    "phoneTimeLeft": "5s left",
+    "phoneCta": "Get Free Internet →",
+    "phoneStatus": "FREE • 10 minutes access",
+    "phoneConnected": "Connected!",
+    "phoneConnectedSub": "Enjoy 10 min free internet"
   },
   "howItWorks": {
     "label": "How It Works",
@@ -108,13 +119,13 @@
     "cta": "Get Started",
     "starter": {
       "name": "Starter",
-      "price": "$9",
-      "period": "/mo",
-      "revenue": "60/40 Revenue Share",
+      "price": "Free",
+      "period": "",
+      "revenue": "50/50 Revenue Share",
       "sites": "Up to 3 sites",
       "features": [
         "Up to 3 hotspot locations",
-        "60/40 ad revenue split",
+        "50/50 ad revenue split",
         "Basic analytics dashboard",
         "Email support",
         "Standard ad formats"
@@ -122,13 +133,13 @@
     },
     "pro": {
       "name": "Pro",
-      "price": "$29",
+      "price": "₱1,500",
       "period": "/mo",
-      "revenue": "75/25 Revenue Share",
+      "revenue": "50/50 Revenue Share",
       "sites": "Up to 10 sites",
       "features": [
         "Up to 10 hotspot locations",
-        "75/25 ad revenue split",
+        "50/50 ad revenue split",
         "Advanced analytics & reports",
         "Priority support",
         "Custom ad scheduling"
@@ -136,13 +147,13 @@
     },
     "business": {
       "name": "Business",
-      "price": "$99",
+      "price": "₱4,999",
       "period": "/mo",
-      "revenue": "85/15 Revenue Share",
-      "sites": "Unlimited sites",
+      "revenue": "50/50 Revenue Share",
+      "sites": "Up to 50 sites",
       "features": [
-        "Unlimited hotspot locations",
-        "85/15 ad revenue split",
+        "Up to 50 hotspot locations",
+        "50/50 ad revenue split",
         "Dedicated account manager",
         "API access & integrations",
         "White-label branding"
@@ -160,7 +171,7 @@
       },
       {
         "q": "How do I earn revenue as a hotspot owner?",
-        "a": "When users connect to your hotspot and watch ads, you receive a share of the advertising revenue. The split depends on your plan: Free (50/50), Pro (70/30), and Business (80/20). Payments are processed monthly."
+        "a": "When users connect to your hotspot and watch ads, you receive 50% of the advertising revenue. Video ads earn ₱3.00 per view and image ads earn ₱2.00 per view. Payments are processed monthly via GCash or bank transfer."
       },
       {
         "q": "What equipment do I need to set up a hotspot?",

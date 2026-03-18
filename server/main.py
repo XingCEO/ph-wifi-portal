@@ -20,7 +20,7 @@ from slowapi.errors import RateLimitExceeded
 from config import settings, validate_settings
 from models.database import init_db
 from models.schemas import ErrorResponse, HealthResponse
-from routers import admin, auth, dashboard, portal, saas_auth, superadmin
+from routers import admin, auth, campaigns, compliance, dashboard, equipment, invoices, portal, saas_auth, superadmin
 from services import omada as omada_module
 from services.redis_service import set_redis_instance
 
@@ -69,6 +69,15 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         log.error("redis_connect_failed", error=str(e))
     omada_module.omada_client = omada_module.OmadaClient()
     log.info("omada_client_initialized")
+    # Run data retention cleanup on startup (AKD-POL-004)
+    try:
+        from models.database import async_session_factory
+        from services.data_retention import run_data_retention_cleanup
+        async with async_session_factory() as db:
+            await run_data_retention_cleanup(db)
+        log.info("data_retention_cleanup_completed")
+    except Exception as e:
+        log.error("data_retention_cleanup_failed", error=str(e))
     log.info("app_started")
     yield
     log.info("app_shutting_down")
@@ -139,6 +148,10 @@ def create_app() -> FastAPI:
     application.include_router(saas_auth.router)
     application.include_router(dashboard.router)
     application.include_router(superadmin.router)
+    application.include_router(compliance.router)
+    application.include_router(campaigns.router)
+    application.include_router(equipment.router)
+    application.include_router(invoices.router)
 
     # Static files (frontend assets)
     static_path = Path(__file__).parent.parent / "frontend" / "static"

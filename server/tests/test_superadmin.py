@@ -166,9 +166,9 @@ async def test_list_plans(client: AsyncClient) -> None:
     assert resp.status_code == 200
     data = resp.json()
     assert isinstance(data, list)
-    assert len(data) >= 4  # free, starter, pro, enterprise
+    assert len(data) >= 3  # starter, pro, business
     plan_names = {p["name"] for p in data}
-    assert "free" in plan_names
+    assert "starter" in plan_names
     assert "pro" in plan_names
 
 

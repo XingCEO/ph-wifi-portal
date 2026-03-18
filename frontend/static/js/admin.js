@@ -8,6 +8,7 @@ document.addEventListener('alpine:init', () => {
       dashboard: 'Dashboard', hotspots: '熱點管理', revenue: '收入分析', live: '即時監控',
       users: '用戶記錄', security: '資安中心', advertisers: '廣告主管理',
       devices: '設備管理', sessions: '連線管理', settings: '系統設定',
+      campaigns: '廣告活動', equipment: '設備管理', invoices: '帳務管理', compliance: '合規管理',
     },
     clockTime: '',
 
@@ -81,6 +82,47 @@ document.addEventListener('alpine:init', () => {
     },
     omadaTestResult: '',
 
+    // ── Campaigns ─────────────────────────────────────────────────────────
+    campaigns: [],
+    campaignSearch: '',
+    campaignEditId: null,
+    campaignForm: {
+      advertiser_id: '', name: '', objective: '', ad_format: 'video',
+      cpv_php: '', listing_fee_php: '', promotion_budget_php: '',
+      creative_url: '', landing_page_url: '', starts_at: '', ends_at: '',
+    },
+    showCampaignModal: false,
+    campaignReport: null,
+    showCampaignReport: false,
+
+    // ── Equipment ─────────────────────────────────────────────────────────
+    equipmentList: [],
+    equipmentHotspotFilter: '',
+    equipmentEditId: null,
+    equipmentForm: {
+      item_type: 'mini-pc', model: '', serial_number: '',
+      hotspot_id: '', original_cost_php: '', condition: 'good',
+    },
+    showEquipmentModal: false,
+
+    // ── Invoices ──────────────────────────────────────────────────────────
+    invoicesList: [],
+    invoiceSummary: null,
+    invoiceOrgFilter: '',
+    invoiceStatusFilter: '',
+    invoiceTypeFilter: '',
+    invoiceForm: {
+      organization_id: '', advertiser_id: '', invoice_type: 'monthly_fee',
+      amount_php: '', due_date: '', notes: '',
+    },
+    showInvoiceModal: false,
+
+    // ── Compliance ────────────────────────────────────────────────────────
+    dpoInfo: null,
+    retentionData: null,
+    cleanupResult: null,
+    cleanupRunning: false,
+
     // ── Confirm dialog ─────────────────────────────────────────────────────
     showConfirm: false,
     confirmMsg: '',
@@ -125,6 +167,10 @@ document.addEventListener('alpine:init', () => {
         case 'devices':     this.loadDevices(); break;
         case 'sessions':    this.loadSessions(); this.startSessTimer(); break;
         case 'settings':    this.loadSettings(); break;
+        case 'campaigns':   this.loadCampaigns(); break;
+        case 'equipment':   this.loadEquipment(); break;
+        case 'invoices':    this.loadInvoices(); break;
+        case 'compliance':  this.loadCompliance(); break;
       }
     },
 
@@ -784,6 +830,415 @@ document.addEventListener('alpine:init', () => {
           : 'Connection failed: ' + (data.message || 'Unknown error');
       } catch (e) {
         this.omadaTestResult = 'Connection failed: ' + e.message;
+      }
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // CAMPAIGNS
+    // ════════════════════════════════════════════════════════════════════════
+    async loadCampaigns() {
+      try {
+        const res = await fetch('/admin/api/campaigns');
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        this.campaigns = Array.isArray(data) ? data : (data.items || []);
+      } catch (e) {
+        this.toast('Failed to load campaigns: ' + e.message, 'error');
+      }
+    },
+
+    get filteredCampaigns() {
+      if (!this.campaignSearch) return this.campaigns;
+      const q = this.campaignSearch.toLowerCase();
+      return this.campaigns.filter(c =>
+        (c.name || '').toLowerCase().includes(q)
+      );
+    },
+
+    campaignStatusClass(status) {
+      const map = {
+        draft: 'gray', review: 'warning', approved: 'info',
+        active: 'success', paused: 'warning', completed: 'gray', rejected: 'danger',
+      };
+      return map[status] || 'gray';
+    },
+
+    campaignStatusLabel(status) {
+      const map = {
+        draft: '草稿', review: '審核中', approved: '已核准',
+        active: '進行中', paused: '已暫停', completed: '已完成', rejected: '已拒絕',
+      };
+      return map[status] || status;
+    },
+
+    openCampaignModal(id) {
+      if (id) {
+        const c = this.campaigns.find(x => x.id === id);
+        if (c) {
+          this.campaignEditId = id;
+          this.campaignForm = {
+            advertiser_id: c.advertiser_id || '',
+            name: c.name || '',
+            objective: c.objective || '',
+            ad_format: c.ad_format || 'video',
+            cpv_php: c.cpv_php || '',
+            listing_fee_php: c.listing_fee_php || '',
+            promotion_budget_php: c.promotion_budget_php || '',
+            creative_url: c.creative_url || '',
+            landing_page_url: c.landing_page_url || '',
+            starts_at: c.starts_at ? c.starts_at.slice(0, 10) : '',
+            ends_at: c.ends_at ? c.ends_at.slice(0, 10) : '',
+          };
+        }
+      } else {
+        this.campaignEditId = null;
+        this.campaignForm = {
+          advertiser_id: '', name: '', objective: '', ad_format: 'video',
+          cpv_php: '', listing_fee_php: '', promotion_budget_php: '',
+          creative_url: '', landing_page_url: '', starts_at: '', ends_at: '',
+        };
+      }
+      this.showCampaignModal = true;
+    },
+
+    async submitCampaign() {
+      try {
+        const url = this.campaignEditId
+          ? `/admin/api/campaigns/${this.campaignEditId}`
+          : '/admin/api/campaigns';
+        const method = this.campaignEditId ? 'PATCH' : 'POST';
+        const payload = {
+          advertiser_id: parseInt(this.campaignForm.advertiser_id) || null,
+          name: this.campaignForm.name,
+          objective: this.campaignForm.objective || null,
+          ad_format: this.campaignForm.ad_format,
+          cpv_php: parseFloat(this.campaignForm.cpv_php) || 0,
+          listing_fee_php: parseFloat(this.campaignForm.listing_fee_php) || 0,
+          promotion_budget_php: parseFloat(this.campaignForm.promotion_budget_php) || 0,
+          creative_url: this.campaignForm.creative_url || null,
+          landing_page_url: this.campaignForm.landing_page_url || null,
+          starts_at: this.campaignForm.starts_at ? new Date(this.campaignForm.starts_at).toISOString() : null,
+          ends_at: this.campaignForm.ends_at ? new Date(this.campaignForm.ends_at).toISOString() : null,
+        };
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.showCampaignModal = false;
+        this.toast(this.campaignEditId ? '活動已更新' : '活動已建立', 'success');
+        await this.loadCampaigns();
+      } catch (e) {
+        this.toast('Failed to save campaign: ' + e.message, 'error');
+      }
+    },
+
+    async deleteCampaign(id) {
+      this.showConfirmDialog('確定要刪除此廣告活動？', async () => {
+        try {
+          const res = await fetch(`/admin/api/campaigns/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          this.toast('活動已刪除', 'success');
+          await this.loadCampaigns();
+        } catch (e) {
+          this.toast('Failed to delete campaign: ' + e.message, 'error');
+        }
+      });
+    },
+
+    async updateCampaignStatus(id, status) {
+      try {
+        const res = await fetch(`/admin/api/campaigns/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.toast('狀態已更新', 'success');
+        await this.loadCampaigns();
+      } catch (e) {
+        this.toast('Failed to update status: ' + e.message, 'error');
+      }
+    },
+
+    async viewCampaignReport(id) {
+      try {
+        const res = await fetch(`/admin/api/campaigns/${id}/report`);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.campaignReport = await res.json();
+        this.showCampaignReport = true;
+      } catch (e) {
+        this.toast('Failed to load report: ' + e.message, 'error');
+      }
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // EQUIPMENT
+    // ════════════════════════════════════════════════════════════════════════
+    async loadEquipment() {
+      try {
+        const params = new URLSearchParams();
+        if (this.equipmentHotspotFilter) params.set('hotspot_id', this.equipmentHotspotFilter);
+        const res = await fetch('/admin/api/equipment?' + params.toString());
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const data = await res.json();
+        this.equipmentList = Array.isArray(data) ? data : (data.items || []);
+      } catch (e) {
+        this.toast('Failed to load equipment: ' + e.message, 'error');
+      }
+    },
+
+    get equipmentStats() {
+      const list = this.equipmentList || [];
+      const total = list.length;
+      const deployed = list.filter(e => e.hotspot_id).length;
+      const good = list.filter(e => e.condition === 'good').length;
+      const totalValue = list.reduce((s, e) => s + (parseFloat(e.current_value_php) || parseFloat(e.original_cost_php) || 0), 0);
+      return { total, deployed, good, totalValue };
+    },
+
+    equipmentConditionClass(cond) {
+      const map = { good: 'success', noted: 'warning', damaged: 'danger', lost: 'danger', removed: 'gray' };
+      return map[cond] || 'gray';
+    },
+
+    equipmentConditionLabel(cond) {
+      const map = { good: '良好', noted: '注意', damaged: '損壞', lost: '遺失', removed: '已移除' };
+      return map[cond] || cond;
+    },
+
+    equipmentTypeLabel(type) {
+      const map = { 'mini-pc': 'Mini PC', 'wifi-ap': 'WiFi AP', 'ups': 'UPS', 'poe': 'PoE', 'cable': '線材' };
+      return map[type] || type;
+    },
+
+    openEquipmentModal(id) {
+      if (id) {
+        const e = this.equipmentList.find(x => x.id === id);
+        if (e) {
+          this.equipmentEditId = id;
+          this.equipmentForm = {
+            item_type: e.item_type || 'mini-pc',
+            model: e.model || '',
+            serial_number: e.serial_number || '',
+            hotspot_id: e.hotspot_id || '',
+            original_cost_php: e.original_cost_php || '',
+            condition: e.condition || 'good',
+          };
+        }
+      } else {
+        this.equipmentEditId = null;
+        this.equipmentForm = {
+          item_type: 'mini-pc', model: '', serial_number: '',
+          hotspot_id: '', original_cost_php: '', condition: 'good',
+        };
+      }
+      this.showEquipmentModal = true;
+    },
+
+    async submitEquipment() {
+      try {
+        const url = this.equipmentEditId
+          ? `/admin/api/equipment/${this.equipmentEditId}`
+          : '/admin/api/equipment';
+        const method = this.equipmentEditId ? 'PATCH' : 'POST';
+        const payload = {
+          item_type: this.equipmentForm.item_type,
+          model: this.equipmentForm.model,
+          serial_number: this.equipmentForm.serial_number || null,
+          hotspot_id: parseInt(this.equipmentForm.hotspot_id) || null,
+          original_cost_php: parseFloat(this.equipmentForm.original_cost_php) || 0,
+          condition: this.equipmentForm.condition,
+        };
+        const res = await fetch(url, {
+          method,
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.showEquipmentModal = false;
+        this.toast(this.equipmentEditId ? '設備已更新' : '設備已新增', 'success');
+        await this.loadEquipment();
+      } catch (e) {
+        this.toast('Failed to save equipment: ' + e.message, 'error');
+      }
+    },
+
+    async removeEquipment(id) {
+      this.showConfirmDialog('確定要移除此設備？', async () => {
+        try {
+          const res = await fetch(`/admin/api/equipment/${id}`, { method: 'DELETE' });
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          this.toast('設備已移除', 'success');
+          await this.loadEquipment();
+        } catch (e) {
+          this.toast('Failed to remove equipment: ' + e.message, 'error');
+        }
+      });
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // INVOICES
+    // ════════════════════════════════════════════════════════════════════════
+    async loadInvoices() {
+      try {
+        const params = new URLSearchParams();
+        if (this.invoiceOrgFilter) params.set('organization_id', this.invoiceOrgFilter);
+        if (this.invoiceStatusFilter) params.set('status', this.invoiceStatusFilter);
+        if (this.invoiceTypeFilter) params.set('type', this.invoiceTypeFilter);
+
+        const [listRes, summaryRes] = await Promise.all([
+          fetch('/admin/api/invoices?' + params.toString()),
+          fetch('/admin/api/invoices/summary'),
+        ]);
+        if (listRes.ok) {
+          const data = await listRes.json();
+          this.invoicesList = Array.isArray(data) ? data : (data.items || []);
+        }
+        if (summaryRes.ok) {
+          const raw = await summaryRes.json();
+          // API returns: {period, total_invoices, total_billed_php, total_paid_php,
+          //   total_outstanding_php, by_type: [{type, count, total_php}]}
+          // Template expects: total_billed, total_paid, outstanding (numbers),
+          //   by_type as object {type: amount}
+          const byTypeObj = {};
+          if (Array.isArray(raw.by_type)) {
+            for (const entry of raw.by_type) {
+              byTypeObj[entry.type] = Number(entry.total_php || 0);
+            }
+          }
+          this.invoiceSummary = {
+            period: raw.period,
+            total_invoices: raw.total_invoices,
+            total_billed: Number(raw.total_billed_php || 0),
+            total_paid: Number(raw.total_paid_php || 0),
+            outstanding: Number(raw.total_outstanding_php || 0),
+            by_type: byTypeObj,
+          };
+        }
+      } catch (e) {
+        this.toast('Failed to load invoices: ' + e.message, 'error');
+      }
+    },
+
+    invoiceStatusClass(status) {
+      const map = { pending: 'warning', paid: 'success', overdue: 'danger', cancelled: 'gray' };
+      return map[status] || 'gray';
+    },
+
+    invoiceStatusLabel(status) {
+      const map = { pending: '待付款', paid: '已付款', overdue: '逾期', cancelled: '已取消' };
+      return map[status] || status;
+    },
+
+    invoiceTypeLabel(type) {
+      const map = {
+        monthly_fee: '月費', listing_fee: '上架費',
+        promotion_budget: '推廣預算', revenue_share: '分潤',
+      };
+      return map[type] || type;
+    },
+
+    openInvoiceModal() {
+      this.invoiceForm = {
+        organization_id: '', advertiser_id: '', invoice_type: 'monthly_fee',
+        amount_php: '', due_date: '', notes: '',
+      };
+      this.showInvoiceModal = true;
+    },
+
+    async submitInvoice() {
+      try {
+        const payload = {
+          organization_id: parseInt(this.invoiceForm.organization_id) || null,
+          advertiser_id: parseInt(this.invoiceForm.advertiser_id) || null,
+          invoice_type: this.invoiceForm.invoice_type,
+          amount_php: parseFloat(this.invoiceForm.amount_php) || 0,
+          due_date: this.invoiceForm.due_date ? new Date(this.invoiceForm.due_date).toISOString() : null,
+          notes: this.invoiceForm.notes || null,
+        };
+        const res = await fetch('/admin/api/invoices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.showInvoiceModal = false;
+        this.toast('帳單已建立', 'success');
+        await this.loadInvoices();
+      } catch (e) {
+        this.toast('Failed to create invoice: ' + e.message, 'error');
+      }
+    },
+
+    async updateInvoiceStatus(id, status) {
+      try {
+        const res = await fetch(`/admin/api/invoices/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.toast('帳單狀態已更新', 'success');
+        await this.loadInvoices();
+      } catch (e) {
+        this.toast('Failed to update invoice: ' + e.message, 'error');
+      }
+    },
+
+    // ════════════════════════════════════════════════════════════════════════
+    // COMPLIANCE
+    // ════════════════════════════════════════════════════════════════════════
+    async loadCompliance() {
+      try {
+        const [dpoRes, retRes] = await Promise.all([
+          fetch('/admin/api/compliance/dpo'),
+          fetch('/admin/api/compliance/retention'),
+        ]);
+        if (dpoRes.ok) {
+          const raw = await dpoRes.json();
+          // API returns {dpo_email, policy_reference} — map to template fields
+          this.dpoInfo = {
+            email: raw.dpo_email || '',
+            policy_reference: raw.policy_reference || '',
+          };
+        }
+        if (retRes.ok) {
+          const raw = await retRes.json();
+          // API returns {policy, tables: [{table, retention_days, row_count}]}
+          // Template expects tables with .name key — map table -> name
+          if (raw.tables) {
+            raw.tables = raw.tables.map(t => ({
+              ...t,
+              name: t.table || t.name,
+            }));
+          }
+          this.retentionData = raw;
+        }
+        this.cleanupResult = null;
+      } catch (e) {
+        this.toast('Failed to load compliance data: ' + e.message, 'error');
+      }
+    },
+
+    retentionWithinPolicy(table) {
+      if (!table.retention_days || !table.oldest_record_age_days) return true;
+      return table.oldest_record_age_days <= table.retention_days;
+    },
+
+    async runRetentionCleanup() {
+      this.cleanupRunning = true;
+      try {
+        const res = await fetch('/admin/api/compliance/retention/cleanup', { method: 'POST' });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        this.cleanupResult = await res.json();
+        this.toast('清理完成', 'success');
+        await this.loadCompliance();
+      } catch (e) {
+        this.toast('Cleanup failed: ' + e.message, 'error');
+      } finally {
+        this.cleanupRunning = false;
       }
     },
 

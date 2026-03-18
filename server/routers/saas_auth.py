@@ -115,8 +115,8 @@ async def register(request: Request, body: RegisterRequest, db: AsyncSession = D
         plan="free",
         status="active",
         monthly_fee_usd=0,
-        revenue_share_pct=70,
-        max_hotspots=1,
+        revenue_share_pct=50,  # VPA-005 Art.6.2
+        max_hotspots=3,
         starts_at=now,
     )
     db.add(subscription)
@@ -355,14 +355,14 @@ async def update_profile(
 # ─── Upgrade Subscription ─────────────────────────────────────────────────────
 
 class UpgradeRequest(BaseModel):
-    plan: str = Field(..., pattern=r"^(free|starter|pro|enterprise)$")
+    plan: str = Field(..., pattern=r"^(starter|pro|business)$")
 
 
+# VPA-005 Art.6.2: 50/50 revenue share across all plans
 PLAN_LIMITS = {
-    "free": {"max_hotspots": 1, "revenue_share_pct": Decimal("70"), "monthly_fee_usd": Decimal("0")},
-    "starter": {"max_hotspots": 3, "revenue_share_pct": Decimal("75"), "monthly_fee_usd": Decimal("9.99")},
-    "pro": {"max_hotspots": 10, "revenue_share_pct": Decimal("80"), "monthly_fee_usd": Decimal("29.99")},
-    "enterprise": {"max_hotspots": 100, "revenue_share_pct": Decimal("85"), "monthly_fee_usd": Decimal("99.99")},
+    "starter": {"max_hotspots": 3, "revenue_share_pct": Decimal("50"), "monthly_fee_usd": Decimal("0")},
+    "pro": {"max_hotspots": 10, "revenue_share_pct": Decimal("50"), "monthly_fee_usd": Decimal("29.99")},
+    "business": {"max_hotspots": 50, "revenue_share_pct": Decimal("50"), "monthly_fee_usd": Decimal("99.99")},
 }
 
 

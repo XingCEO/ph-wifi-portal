@@ -93,15 +93,16 @@ async def test_create_duplicate_mac(client: AsyncClient) -> None:
 @pytest.mark.anyio
 async def test_create_hotspot_exceeds_plan(client: AsyncClient) -> None:
     token = await _register_and_token(client, "-exceed")
-    # Free plan allows max 1 hotspot
-    await client.post(
-        "/api/dashboard/hotspots",
-        json={"name": "HS1", "location": "loc1", "ap_mac": "11:22:33:44:55:66", "site_name": "s"},
-        headers={"Authorization": f"Bearer {token}"},
-    )
+    # Starter plan allows max 3 hotspots — create 3 then try 4th
+    for i in range(3):
+        await client.post(
+            "/api/dashboard/hotspots",
+            json={"name": f"HS{i+1}", "location": f"loc{i+1}", "ap_mac": f"{i+1}1:22:33:44:55:66", "site_name": "s"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
     resp = await client.post(
         "/api/dashboard/hotspots",
-        json={"name": "HS2", "location": "loc2", "ap_mac": "AA:22:33:44:55:66", "site_name": "s"},
+        json={"name": "HS4", "location": "loc4", "ap_mac": "AA:22:33:44:55:66", "site_name": "s"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert resp.status_code == 403

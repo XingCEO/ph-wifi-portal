@@ -146,12 +146,11 @@ class PlanResponse(BaseModel):
     active_subscribers: int
 
 
-# Built-in plans (not stored in DB, managed here)
+# Built-in plans — VPA-005 Art.6.2: 50/50 revenue share
 PLANS = {
-    "free": PlanCreate(name="free", monthly_fee_usd=Decimal("0"), revenue_share_pct=Decimal("70"), max_hotspots=1, description="Free tier — 1 hotspot, 70% revenue share"),
-    "starter": PlanCreate(name="starter", monthly_fee_usd=Decimal("9.99"), revenue_share_pct=Decimal("75"), max_hotspots=3, description="Starter — 3 hotspots, 75% revenue share"),
-    "pro": PlanCreate(name="pro", monthly_fee_usd=Decimal("29.99"), revenue_share_pct=Decimal("80"), max_hotspots=10, description="Pro — 10 hotspots, 80% revenue share"),
-    "enterprise": PlanCreate(name="enterprise", monthly_fee_usd=Decimal("99.99"), revenue_share_pct=Decimal("85"), max_hotspots=100, description="Enterprise — 100 hotspots, 85% revenue share"),
+    "starter": PlanCreate(name="starter", monthly_fee_usd=Decimal("0"), revenue_share_pct=Decimal("50"), max_hotspots=3, description="Starter — 3 hotspots, 50% revenue share"),
+    "pro": PlanCreate(name="pro", monthly_fee_usd=Decimal("29.99"), revenue_share_pct=Decimal("50"), max_hotspots=10, description="Pro — 10 hotspots, 50% revenue share"),
+    "business": PlanCreate(name="business", monthly_fee_usd=Decimal("99.99"), revenue_share_pct=Decimal("50"), max_hotspots=50, description="Business — 50 hotspots, 50% revenue share"),
 }
 
 

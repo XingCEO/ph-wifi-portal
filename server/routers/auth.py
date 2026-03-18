@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -109,12 +110,19 @@ async def grant_access(
     expires_at = now + timedelta(seconds=settings.session_duration_seconds)
 
     try:
+        # Determine ad format and CPV (ADV-004 Art.4.2 / VPA-005 Art.6.2)
+        ad_format = "video"  # default; image ads will be set by campaign routing
+        cpv_php = Decimal(str(settings.cpv_video_php)) if ad_format == "video" else Decimal(str(settings.cpv_image_php))
+
         ad_view = AdView(
             client_mac=session.client_mac,
             hotspot_id=session.hotspot_id if session.hotspot_id > 0 else 1,
             ad_network="adcash" if settings.adcash_zone_key else "direct",
+            ad_format=ad_format,
             advertiser_id=None,
+            cpv_php=cpv_php,
             estimated_revenue_usd=0,
+            is_verified=True,
             viewed_at=now,
         )
         db.add(ad_view)

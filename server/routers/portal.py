@@ -84,8 +84,12 @@ async def portal_page(
     radioId: int = Query(default=0, description="Radio ID"),
     redirectUrl: str = Query(default="https://google.com", description="Redirect URL after auth"),
     db: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
 ) -> HTMLResponse:
+    # Redis is optional in dev mode
+    try:
+        redis = get_redis()
+    except RuntimeError:
+        redis = None
     log = logger.bind(action="portal_page", client_mac=clientMac, ap_mac=apMac, site=site)
 
     if not is_valid_mac(clientMac):
@@ -127,13 +131,18 @@ async def portal_page(
         created_at=datetime.now(tz=timezone.utc).isoformat(),
     )
 
-    redis_svc = RedisService(redis)
-    session_id = await redis_svc.create_portal_session(
-        data=session_data.model_dump(),
-        ttl=settings.session_duration_seconds,
-    )
-
-    log.info("portal_session_created", session_id=session_id, hotspot_id=hotspot_id)
+    if redis is None:
+        # Dev mode without Redis — use a dummy session ID
+        import uuid
+        session_id = f"dev-{uuid.uuid4().hex[:12]}"
+        log.warning("portal_dev_mode", session_id=session_id)
+    else:
+        redis_svc = RedisService(redis)
+        session_id = await redis_svc.create_portal_session(
+            data=session_data.model_dump(),
+            ttl=settings.session_duration_seconds,
+        )
+        log.info("portal_session_created", session_id=session_id, hotspot_id=hotspot_id)
 
     template = _load_template()
     html = _render_template(

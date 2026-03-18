@@ -55,6 +55,78 @@
     <p class="paid-option">
       Skip ad? <a href="#" id="paid-option-link">Pay ₱5 for 30 minutes</a>
     </p>
+
+    <div class="portal-consent">
+      <p class="consent-text">
+        By connecting, you confirm you are 18+ and agree to our
+        <a class="legal-link" data-modal="modal-terms">Terms of Service</a> and
+        <a class="legal-link" data-modal="modal-privacy">Privacy Policy</a>.
+        Network activity may be logged for security.
+      </p>
+      <p class="consent-text-fil">
+        Sa pagkokonekta, kinukumpirma mong ikaw ay 18+ at sumasang-ayon sa aming
+        <a class="legal-link" data-modal="modal-terms">Terms of Service</a> at
+        <a class="legal-link" data-modal="modal-privacy">Privacy Policy</a>.
+      </p>
+    </div>
+  </div>
+
+  <!-- Terms Modal -->
+  <div id="modal-terms" class="legal-modal" style="display:none">
+    <div class="legal-modal-content">
+      <div class="legal-modal-header">
+        <h2>Terms of Service</h2>
+        <button class="legal-modal-close">&times;</button>
+      </div>
+      <div class="legal-modal-body">
+        <p><strong>Last Updated: March 17, 2026</strong></p>
+        <h3>1. Acceptance of Terms</h3>
+        <p>By connecting to the Abot Kamay WiFi network, you agree to be bound by these Terms. If you do not agree, do not use this network.</p>
+        <h3>2. Service Description</h3>
+        <p>Abot Kamay WiFi provides public internet access at designated venues. The Company is not a telecommunications carrier or ISP. Internet speed and availability may vary. No minimum speed is guaranteed.</p>
+        <h3>3. Session Terms</h3>
+        <p>Session credits are non-refundable. Unused time is non-transferable and expires at session end. Credits cannot be transferred between devices.</p>
+        <h3>4. Acceptable Use</h3>
+        <p>Users are prohibited from: hacking, distributing malware, fraud, illegal downloads, CSAM, harassment, or any activity violating Philippine law. Violations result in immediate termination and may be reported to law enforcement.</p>
+        <h3>5. Security</h3>
+        <p>You are responsible for your device security. Avoid transmitting sensitive information over public WiFi. Use a VPN for sensitive communications.</p>
+        <h3>6. Advertising</h3>
+        <p>You may be required to view advertisements. By using this service, you consent to ad display.</p>
+        <h3>7. Liability</h3>
+        <p>Abot Kamay WiFi disclaims liability for data loss, security breaches, or content accessed via this network. Use at your own risk.</p>
+        <h3>8. Governing Law</h3>
+        <p>These Terms are governed by the laws of the Republic of the Philippines.</p>
+        <p><strong>Contact:</strong> support@abotkamay.net</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Privacy Modal -->
+  <div id="modal-privacy" class="legal-modal" style="display:none">
+    <div class="legal-modal-content">
+      <div class="legal-modal-header">
+        <h2>Privacy Policy</h2>
+        <button class="legal-modal-close">&times;</button>
+      </div>
+      <div class="legal-modal-body">
+        <p><strong>Last Updated: March 17, 2026</strong></p>
+        <h3>1. Who We Are</h3>
+        <p>Abot Kamay Digital Inc. is the Personal Information Controller responsible for your data under RA 10173 (Data Privacy Act of 2012).</p>
+        <h3>2. What We Collect</h3>
+        <p>We automatically collect: device MAC address, IP address, session data (time, duration), ad interaction data, and device type. We do NOT collect your name, national ID, banking info, browsing history, or location.</p>
+        <h3>3. Why We Collect</h3>
+        <p>To provide WiFi access, fraud prevention, security monitoring, advertiser billing (anonymized), and legal compliance.</p>
+        <h3>4. Data Retention</h3>
+        <p>Connection logs: 180 days. Ad data: 24 months. Security records: 5 years. Data is then deleted or anonymized.</p>
+        <h3>5. Data Sharing</h3>
+        <p>We do NOT sell personal data. We share with: cloud providers (securely stored), law enforcement (when legally required), and NPC (breach notifications).</p>
+        <h3>6. Your Rights (RA 10173)</h3>
+        <p>You have the right to: access, correct, erase, object to processing, and data portability. Contact: privacy@abotkamay.net. We respond within 15 business days.</p>
+        <h3>7. NPC Complaints</h3>
+        <p>National Privacy Commission: info@privacy.gov.ph | (02) 8234-2228</p>
+        <p><strong>DPO Contact:</strong> privacy@abotkamay.net</p>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -63,5 +135,24 @@
     window.__PORTAL_AD_DURATION__ = {{ ad_duration }};
   </script>
   <script src="/static/js/portal.js"></script>
+  <script>
+    document.querySelectorAll('.legal-link').forEach(function(a) {
+      a.addEventListener('click', function(e) {
+        e.preventDefault();
+        var id = a.getAttribute('data-modal');
+        if (id) document.getElementById(id).style.display = 'flex';
+      });
+    });
+    document.querySelectorAll('.legal-modal').forEach(function(m) {
+      m.addEventListener('click', function(e) {
+        if (e.target === m) m.style.display = 'none';
+      });
+    });
+    document.querySelectorAll('.legal-modal-close').forEach(function(b) {
+      b.addEventListener('click', function() {
+        b.closest('.legal-modal').style.display = 'none';
+      });
+    });
+  </script>
 </body>
 </html>

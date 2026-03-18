@@ -34,7 +34,13 @@ class Settings(BaseSettings):
 
     @property
     def async_database_url(self) -> str:
-        url = _get_database_url()
+        # Prefer the value pydantic-settings resolved from .env / env vars
+        url = self.database_url
+        # Fallback: check Zeabur-injected env var names
+        if url == "postgresql+asyncpg://user:pass@localhost/wifi_portal":
+            env_url = _get_database_url()
+            if env_url != url:
+                url = env_url
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
         elif url.startswith("postgres://"):
@@ -59,10 +65,33 @@ class Settings(BaseSettings):
     # Adcash
     adcash_zone_key: str = ""
 
-    # Business Rules
-    ad_duration_seconds: int = 10
-    session_duration_seconds: int = 3600
-    anti_spam_window_seconds: int = 10
+    # Business Rules (aligned with VPA-005 and ADV-004)
+    ad_duration_seconds: int = 30           # VPA-005: 30-sec forced video view
+    session_duration_seconds: int = 600     # 10 minutes free WiFi access
+    anti_spam_window_seconds: int = 3600    # VPA-005 Art.1.5: 60-min MAC dedup
+
+    # CPV Rates in PHP (ADV-004 Art.4.2 / VPA-005 Art.6.2)
+    cpv_video_php: float = 3.00             # Video Ad (30 sec, forced view)
+    cpv_image_php: float = 2.00             # Image/Banner Ad (15 sec display)
+
+    # Revenue Share (VPA-005 Art.6.2): 50/50 split
+    revenue_share_partner_pct: float = 50.0
+    revenue_share_platform_pct: float = 50.0
+
+    # Minimum views threshold for revenue share (VPA-005 Art.6.3.3)
+    min_monthly_views_for_revenue: int = 2000
+
+    # Data Retention in days (AKD-POL-004 Sec.4)
+    retention_connection_logs_days: int = 180    # Connection logs
+    retention_ad_data_days: int = 730            # Ad interaction data (24 months)
+    retention_security_records_days: int = 1825  # Security incidents (5 years)
+
+    # Monthly Fee PHP (VPA-005 Art.6.1)
+    monthly_fee_equipment_php: float = 800.0
+    monthly_fee_platform_php: float = 700.0
+
+    # DPO Contact (AKD-POL-004)
+    dpo_email: str = "privacy@abotkamay.net"
 
     # Admin
     admin_username: str = "admin"

@@ -11,12 +11,6 @@ const languages = [
   { code: "zh-hant", label: "中文" },
 ];
 
-function getAuthLabels(lang: string) {
-  if (lang === "zh-hant") return { login: "登入", register: "免費註冊" };
-  if (lang === "fil") return { login: "Mag-login", register: "Mag-sign up" };
-  return { login: "Log In", register: "Sign Up Free" };
-}
-
 export default function Header({
   dict,
   lang,
@@ -26,7 +20,6 @@ export default function Header({
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const authLabels = getAuthLabels(lang);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -34,15 +27,17 @@ export default function Header({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // Prevent body scroll when mobile menu is open
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
+    document.body.style.overflow = menuOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
   }, [menuOpen]);
+
+  const navItems = [
+    { href: "#how-it-works", label: dict.nav.howItWorks },
+    { href: "#why", label: dict.nav.about },
+    { href: "#advertising", label: dict.nav.advertise },
+    { href: "#contact", label: dict.nav.contact },
+  ];
 
   return (
     <>
@@ -70,8 +65,162 @@ export default function Header({
           }}
         />
 
-        <div className="max-w-6xl mx-auto px-5 sm:px-8 flex items-center h-16 relative">
-          {/* Logo — left */}
+        {/* ── Desktop ── */}
+        <div
+          className="hidden md:flex"
+          style={{
+            maxWidth: "72rem",
+            margin: "0 auto",
+            padding: "0 2rem",
+            height: "4rem",
+            display: "flex",
+            alignItems: "center",
+          }}
+        >
+          {/* Logo */}
+          <Link
+            href={`/${lang}`}
+            className="no-underline"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              flexShrink: 0,
+              fontFamily: "var(--font-plus-jakarta), sans-serif",
+            }}
+          >
+            <div
+              style={{
+                width: "2rem",
+                height: "2rem",
+                borderRadius: "0.5rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                background: "#0099DB",
+                flexShrink: 0,
+              }}
+            >
+              <Wifi size={16} color="white" strokeWidth={2.5} />
+            </div>
+            <span style={{ fontSize: "1.15rem", fontWeight: 800, letterSpacing: "-0.02em" }}>
+              <span style={{ color: "#1B4F8A" }}>Abot</span>
+              <span style={{ color: "#F58220" }}>Kamay</span>
+            </span>
+          </Link>
+
+          {/* Nav — right after logo */}
+          <nav
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "1.25rem",
+              marginLeft: "2rem",
+            }}
+          >
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="link-underline"
+                style={{
+                  fontSize: "0.875rem",
+                  fontWeight: 500,
+                  whiteSpace: "nowrap",
+                  color: "var(--color-text-secondary)",
+                  textDecoration: "none",
+                  transition: "color 0.2s",
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-primary)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; }}
+              >
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          {/* Spacer */}
+          <div style={{ flex: 1 }} />
+
+          {/* Right: Lang + Auth */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "0.75rem",
+              flexShrink: 0,
+            }}
+          >
+            {/* Language switcher */}
+            <div style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>
+              {languages.map((l) => (
+                <Link
+                  key={l.code}
+                  href={`/${l.code}`}
+                  className="no-underline"
+                  style={{
+                    fontSize: "0.75rem",
+                    padding: "0.375rem 0.625rem",
+                    borderRadius: "9999px",
+                    fontWeight: 500,
+                    transition: "all 0.2s",
+                    ...(lang === l.code
+                      ? { background: "var(--color-brand-green)", color: "white", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+                      : { color: "var(--color-text-muted)" }),
+                  }}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+
+            <div style={{ width: "1px", height: "1rem", background: "#e0dbd5" }} />
+
+            {/* Login */}
+            <Link
+              href="/login"
+              className="no-underline"
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 500,
+                whiteSpace: "nowrap",
+                color: "var(--color-text-secondary)",
+                textDecoration: "none",
+                padding: "0 0.25rem",
+                transition: "color 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = "var(--color-text-primary)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = "var(--color-text-secondary)"; }}
+            >
+              {dict.nav.login}
+            </Link>
+
+            {/* Sign up CTA */}
+            <Link
+              href="/register"
+              className="no-underline btn-scale"
+              style={{
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                whiteSpace: "nowrap",
+                color: "white",
+                padding: "0.5rem 1rem",
+                borderRadius: "0.75rem",
+                background: "var(--color-brand-green)",
+                boxShadow: "0 1px 4px rgba(27,79,138,0.2)",
+                textDecoration: "none",
+                transition: "all 0.2s",
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--color-brand-green-light)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--color-brand-green)"; }}
+            >
+              {dict.nav.register}
+            </Link>
+          </div>
+        </div>
+
+        {/* ── Mobile ── */}
+        <div className="md:hidden flex items-center justify-between h-16 px-5">
           <Link
             href={`/${lang}`}
             className="flex items-center gap-2 no-underline flex-shrink-0"
@@ -84,87 +233,13 @@ export default function Header({
               <Wifi size={16} color="white" strokeWidth={2.5} />
             </div>
             <span className="text-[1.15rem] font-extrabold tracking-tight">
-              <span style={{ color: "#1B4F8A" }}>Abot</span><span style={{ color: "#F58220" }}>Kamay</span>
+              <span style={{ color: "#1B4F8A" }}>Abot</span>
+              <span style={{ color: "#F58220" }}>Kamay</span>
             </span>
           </Link>
-
-          {/* Nav — center (desktop) */}
-          <nav className="hidden md:flex items-center gap-7 absolute left-1/2 -translate-x-1/2">
-            {[
-              { href: "#how-it-works", label: dict.nav.howItWorks },
-              { href: "#why", label: dict.nav.about },
-              { href: "#advertising", label: dict.nav.advertise },
-              { href: "#contact", label: dict.nav.contact },
-            ].map((item) => (
-              <a
-                key={item.href}
-                href={item.href}
-                className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors no-underline link-underline"
-              >
-                {item.label}
-              </a>
-            ))}
-          </nav>
-
-          {/* Right side — desktop */}
-          <div className="hidden md:flex items-center gap-3 ml-auto">
-            {/* Language switcher */}
-            <div className="flex items-center gap-1 mr-1">
-              {languages.map((l) => (
-                <Link
-                  key={l.code}
-                  href={`/${l.code}`}
-                  className={`text-xs px-2.5 py-1.5 rounded-full font-medium transition-all no-underline ${
-                    lang === l.code
-                      ? "text-white shadow-sm"
-                      : "text-[var(--color-text-muted)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-warm-gray)]"
-                  }`}
-                  style={
-                    lang === l.code
-                      ? { background: "var(--color-brand-green)" }
-                      : {}
-                  }
-                >
-                  {l.label}
-                </Link>
-              ))}
-            </div>
-
-            <div className="w-px h-4 bg-[#e0dbd5]" />
-
-            {/* Login */}
-            <Link
-              href="/login"
-              className="text-sm font-medium text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] transition-colors no-underline px-1"
-            >
-              {authLabels.login}
-            </Link>
-
-            {/* Sign up CTA */}
-            <Link
-              href="/register"
-              className="text-sm font-semibold text-white px-4 py-2 rounded-xl no-underline btn-scale transition-all hover:shadow-md"
-              style={{
-                background: "var(--color-brand-green)",
-                boxShadow: "0 1px 4px rgba(27,79,138,0.2)",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "var(--color-brand-green-light)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLAnchorElement).style.background =
-                  "var(--color-brand-green)";
-              }}
-            >
-              {authLabels.register}
-            </Link>
-          </div>
-
-          {/* Hamburger — mobile */}
           <button
             onClick={() => setMenuOpen(true)}
-            className="md:hidden ml-auto p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-warm-gray)] transition-colors"
+            className="p-2 rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-warm-gray)] transition-colors"
             aria-label="Open menu"
           >
             <Menu size={22} />
@@ -172,10 +247,9 @@ export default function Header({
         </div>
       </header>
 
-      {/* Mobile fullscreen menu */}
+      {/* ── Mobile fullscreen menu ── */}
       {menuOpen && (
         <div className="fixed inset-0 z-[100] md:hidden animate-fade-in">
-          {/* Solid background overlay */}
           <div
             className="absolute inset-0"
             style={{ background: "var(--color-warm-white)" }}
@@ -197,7 +271,8 @@ export default function Header({
                   <Wifi size={16} color="white" strokeWidth={2.5} />
                 </div>
                 <span className="text-[1.15rem] font-extrabold tracking-tight">
-                  <span style={{ color: "#1B4F8A" }}>Abot</span><span style={{ color: "#F58220" }}>Kamay</span>
+                  <span style={{ color: "#1B4F8A" }}>Abot</span>
+                  <span style={{ color: "#F58220" }}>Kamay</span>
                 </span>
               </Link>
               <button
@@ -209,14 +284,9 @@ export default function Header({
               </button>
             </div>
 
-            {/* Nav links — large, centered */}
+            {/* Nav links */}
             <nav className="flex flex-col items-center gap-2 flex-1 justify-center">
-              {[
-                { href: "#how-it-works", label: dict.nav.howItWorks },
-                { href: "#why", label: dict.nav.about },
-                { href: "#advertising", label: dict.nav.advertise },
-                { href: "#contact", label: dict.nav.contact },
-              ].map((item) => (
+              {navItems.map((item) => (
                 <a
                   key={item.href}
                   href={item.href}
@@ -231,14 +301,13 @@ export default function Header({
 
             {/* Bottom section */}
             <div className="flex flex-col gap-4 mt-auto">
-              {/* Auth buttons */}
               <div className="flex items-center gap-3">
                 <Link
                   href="/login"
                   onClick={() => setMenuOpen(false)}
                   className="flex-1 text-center text-base font-semibold text-[var(--color-text-primary)] py-3 rounded-2xl border-2 border-[#e0dbd5] no-underline hover:bg-[var(--color-warm-gray)] transition-colors"
                 >
-                  {authLabels.login}
+                  {dict.nav.login}
                 </Link>
                 <Link
                   href="/register"
@@ -246,11 +315,10 @@ export default function Header({
                   className="flex-1 text-center text-base font-semibold text-white py-3 rounded-2xl no-underline transition-all btn-scale"
                   style={{ background: "var(--color-brand-green)" }}
                 >
-                  {authLabels.register}
+                  {dict.nav.register}
                 </Link>
               </div>
 
-              {/* Language switcher */}
               <div className="flex items-center justify-center gap-2 pt-4 border-t border-[#e8e4de]">
                 {languages.map((l) => (
                   <Link

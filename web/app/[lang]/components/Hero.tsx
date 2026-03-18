@@ -1,243 +1,11 @@
 "use client";
 
-import { Wifi, ArrowRight, Signal } from "lucide-react";
+import { Wifi, ArrowRight, Zap, Shield, Users, MapPin } from "lucide-react";
 import AnimateIn from "./AnimateIn";
 import ScrollIndicator from "./ScrollIndicator";
+import IPhoneMockup from "./IPhoneMockup";
+import PortalScreen from "./PortalScreen";
 import type { Dictionary } from "../dictionaries";
-
-function AnimatedWifiIllustration() {
-  return (
-    <div className="relative w-full max-w-[360px] mx-auto">
-      {/* Outer glow rings */}
-      <div
-        className="absolute inset-0 rounded-full animate-glow-pulse"
-        style={{
-          background:
-            "radial-gradient(circle, rgba(27,79,138,0.12) 0%, transparent 70%)",
-          transform: "scale(1.3)",
-        }}
-      />
-
-      {/* Phone mockup */}
-      <div className="animate-float relative mx-auto w-[200px]">
-        {/* WiFi arcs above phone */}
-        <div className="flex flex-col items-center gap-2 mb-4">
-          <div
-            className="w-3 h-3 rounded-full"
-            style={{ background: "#0099DB", opacity: 0.9 }}
-          />
-          <svg width="80" height="48" viewBox="0 0 80 48" fill="none">
-            <path
-              d="M10 40 Q40 8 70 40"
-              stroke="#0099DB"
-              strokeWidth="3"
-              strokeOpacity="0.7"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M22 40 Q40 20 58 40"
-              stroke="#0099DB"
-              strokeWidth="3"
-              strokeOpacity="0.5"
-              fill="none"
-              strokeLinecap="round"
-            />
-            <path
-              d="M31 40 Q40 30 49 40"
-              stroke="#0099DB"
-              strokeWidth="3"
-              strokeOpacity="0.35"
-              fill="none"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-
-        {/* Phone body */}
-        <div
-          className="relative rounded-[2rem] overflow-hidden shadow-2xl mx-auto"
-          style={{
-            width: 160,
-            height: 280,
-            background: "white",
-            border: "2px solid rgba(0,0,0,0.08)",
-            boxShadow:
-              "0 30px 60px rgba(0,0,0,0.12), 0 0 0 1px rgba(255,255,255,0.5) inset",
-          }}
-        >
-          {/* Status bar */}
-          <div
-            className="flex items-center justify-between px-5 pt-3 pb-1"
-            style={{ background: "rgba(27,79,138,0.04)" }}
-          >
-            <span className="text-[10px] font-bold text-[var(--color-text-primary)]">
-              9:41
-            </span>
-            <div className="flex items-center gap-1">
-              <Signal size={10} style={{ color: "var(--color-brand-green)" }} />
-              <Wifi size={10} style={{ color: "var(--color-brand-green)" }} />
-            </div>
-          </div>
-
-          {/* Screen content */}
-          <div className="flex flex-col items-center pt-6 px-4 gap-3">
-            {/* Brand badge */}
-            <div
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full"
-              style={{
-                background: "rgba(27,79,138,0.08)",
-                border: "1px solid rgba(27,79,138,0.15)",
-              }}
-            >
-              <Wifi size={10} style={{ color: "var(--color-brand-green)" }} />
-              <span
-                className="text-[10px] font-bold"
-                style={{ color: "var(--color-brand-green)" }}
-              >
-                AbotKamay WiFi
-              </span>
-            </div>
-
-            {/* Ad area */}
-            <div
-              className="w-full rounded-xl overflow-hidden"
-              style={{
-                height: 80,
-                background:
-                  "linear-gradient(135deg, rgba(27,79,138,0.06) 0%, rgba(245,130,32,0.06) 100%)",
-                border: "1px solid rgba(27,79,138,0.08)",
-              }}
-            >
-              <div className="flex items-center justify-center h-full">
-                <span
-                  className="text-[10px] font-medium"
-                  style={{ color: "var(--color-text-muted)" }}
-                >
-                  Advertisement
-                </span>
-              </div>
-            </div>
-
-            {/* Progress bar */}
-            <div className="w-full">
-              <div
-                className="flex justify-between mb-1"
-                style={{ color: "var(--color-text-muted)" }}
-              >
-                <span className="text-[9px]">Loading...</span>
-                <span className="text-[9px]">5s</span>
-              </div>
-              <div
-                className="w-full h-1.5 rounded-full overflow-hidden"
-                style={{ background: "rgba(0,0,0,0.06)" }}
-              >
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: "60%",
-                    background: "var(--color-brand-green)",
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Connect button */}
-            <div
-              className="w-full py-2.5 rounded-xl text-center"
-              style={{
-                background: "var(--color-brand-green)",
-              }}
-            >
-              <span className="text-[11px] font-bold text-white">
-                Get Free Internet →
-              </span>
-            </div>
-
-            {/* Free badge */}
-            <div className="flex items-center gap-1">
-              <div
-                className="w-1.5 h-1.5 rounded-full animate-pulse"
-                style={{ background: "var(--color-brand-green)" }}
-              />
-              <span
-                className="text-[9px] font-semibold"
-                style={{ color: "var(--color-brand-green)" }}
-              >
-                FREE • 10 minutes
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Floating badges */}
-      <div
-        className="absolute top-8 -left-4 animate-float-slow"
-        style={{ animationDelay: "1s" }}
-      >
-        <div
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl shadow-lg"
-          style={{
-            background: "white",
-            border: "1px solid rgba(27,79,138,0.12)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-          }}
-        >
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(27,79,138,0.1)" }}
-          >
-            <Wifi size={12} style={{ color: "var(--color-brand-green)" }} />
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-[var(--color-text-primary)]">
-              Connected!
-            </div>
-            <div
-              className="text-[9px]"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              10 min free
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div
-        className="absolute bottom-16 -right-4 animate-float-slow"
-        style={{ animationDelay: "2.5s" }}
-      >
-        <div
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl"
-          style={{
-            background: "white",
-            border: "1px solid rgba(245,130,32,0.2)",
-            boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
-          }}
-        >
-          <div
-            className="w-6 h-6 rounded-full flex items-center justify-center"
-            style={{ background: "rgba(245,130,32,0.1)" }}
-          >
-            <span className="text-xs">📶</span>
-          </div>
-          <div>
-            <div className="text-[10px] font-bold text-[var(--color-text-primary)]">
-              100% Free
-            </div>
-            <div
-              className="text-[9px]"
-              style={{ color: "var(--color-text-muted)" }}
-            >
-              No data needed
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 export default function Hero({ dict }: { dict: Dictionary }) {
   return (
@@ -380,10 +148,67 @@ export default function Hero({ dict }: { dict: Dictionary }) {
             </AnimateIn>
           </div>
 
-          {/* Right — Illustration */}
+          {/* Right — iPhone mockup + feature tags below */}
           <AnimateIn delay={0.25} direction="right" duration={0.8}>
-            <div className="hidden lg:flex items-center justify-center">
-              <AnimatedWifiIllustration />
+            <div className="hidden lg:flex flex-col items-center gap-8">
+              {/* Phone */}
+              <div className="relative">
+                {/* Background glow */}
+                <div className="absolute animate-glow-pulse" style={{
+                  top: "10%", left: "-10%", right: "-10%", bottom: "10%",
+                  background: "radial-gradient(circle, rgba(0,153,219,0.1) 0%, transparent 70%)",
+                  borderRadius: "50%", filter: "blur(40px)",
+                }} />
+
+                <div className="relative animate-float" style={{ width: 240 }}>
+                  <IPhoneMockup>
+                    <PortalScreen dict={dict} />
+                  </IPhoneMockup>
+
+                  {/* Phone shadow */}
+                  <div style={{
+                    position: "absolute", bottom: -16, left: "15%", right: "15%", height: 24,
+                    background: "radial-gradient(ellipse, rgba(0,0,0,0.1) 0%, transparent 70%)",
+                    borderRadius: "50%", filter: "blur(6px)",
+                  }} />
+                </div>
+              </div>
+
+              {/* Feature tags — 2×2 grid below phone */}
+              <div style={{
+                display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10,
+                width: "100%", maxWidth: 320,
+              }}>
+                {[
+                  { icon: <Zap size={14} color="white" />, bg: "linear-gradient(135deg, #22c55e, #16a34a)", label: "Instant", sub: "No password" },
+                  { icon: <Shield size={14} color="white" />, bg: "linear-gradient(135deg, #F58220, #f97316)", label: "Secure", sub: "Protected WiFi" },
+                  { icon: <Users size={14} color="white" />, bg: "linear-gradient(135deg, #0099DB, #1B4F8A)", label: "2,847+", sub: "Users online" },
+                  { icon: <MapPin size={14} color="white" />, bg: "linear-gradient(135deg, #8b5cf6, #7c3aed)", label: "50+", sub: "Hotspots" },
+                ].map((item, i) => (
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 8,
+                      padding: "10px 12px", borderRadius: 14,
+                      background: "white",
+                      boxShadow: "0 2px 12px rgba(0,0,0,0.05)",
+                      border: "1px solid rgba(0,0,0,0.04)",
+                    }}
+                  >
+                    <div style={{
+                      width: 30, height: 30, borderRadius: 8, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      background: item.bg,
+                    }}>
+                      {item.icon}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontSize: 12, fontWeight: 700, color: "#1a1a1a", lineHeight: 1.2 }}>{item.label}</div>
+                      <div style={{ fontSize: 9, color: "#7a7a7a", lineHeight: 1.2 }}>{item.sub}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           </AnimateIn>
         </div>

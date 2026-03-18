@@ -9,7 +9,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Tech Stack
 
 - **Brand website:** Next.js 16 (App Router, static export), Tailwind CSS 4, Framer Motion, Lucide icons, i18n (EN/Filipino/繁體中文)
-- **Backend:** Python 3.11+, FastAPI 0.115.0, Uvicorn (async)
+- **Backend:** Python 3.11+ (Docker uses 3.12-slim), FastAPI 0.115.0, Uvicorn (async)
 - **Database:** PostgreSQL 16 (SQLAlchemy 2.0 async + asyncpg)
 - **Cache:** Redis 7 (redis-asyncio) for sessions and anti-spam
 - **Portal frontend:** Vanilla HTML/CSS/JS, Alpine.js + Chart.js for admin dashboard
@@ -65,10 +65,10 @@ cd server && alembic upgrade head
 - `server/routers/dashboard.py` — SaaS customer dashboard API (per-organization stats, hotspot management).
 - `server/routers/superadmin.py` — Platform-wide super admin API (all organizations, subscriptions, platform metrics).
 - `server/services/omada.py` — OmadaClient: authenticates with Omada Controller (software or OC200), authorizes/deauthorizes MACs via httpx with session/CSRF token management.
-- `server/rate_limit.py` — Shared slowapi Limiter instance (imported by main.py and routers to avoid circular imports).
+- `server/rate_limit.py` — Shared slowapi Limiter instance (default 200/min), imported by main.py and routers to avoid circular imports.
 - `server/services/redis_service.py` — Session management (atomic pipeline consume), `check_and_record_anti_spam` (SET NX), active user tracking. Module-level singleton via `set_redis_instance()`/`get_redis()`.
 - `server/models/database.py` — SQLAlchemy 2.0 ORM (mapped_column), `get_db()` async generator (auto-commit/rollback), `is_valid_mac()`. Includes SaaS models: `Organization`, `SaasUser`, `Subscription`.
-- `server/config.py` — Pydantic Settings with bounds validation on startup. Production requires non-empty `admin_password` and non-default `secret_key` (RuntimeError if missing). Auto-detects Zeabur-injected env var names.
+- `server/config.py` — Pydantic Settings with bounds validation on startup. Defaults: ad 10s, session 3600s, anti-spam 10s. Production requires non-empty `admin_password` and non-default `secret_key` (RuntimeError if missing). Auto-detects Zeabur-injected env var names. API docs (`/docs`) disabled in production.
 
 **Auth layers:**
 - **Admin endpoints:** HTTP Basic Auth (`secrets.compare_digest`). Empty password is rejected with 401.
@@ -110,13 +110,16 @@ cd server && alembic upgrade head
 - Test client uses `httpx.AsyncClient` with `ASGITransport`
 - pytest runs with `asyncio_mode = "auto"` (no need for `@pytest.mark.asyncio`)
 - Rate limiting is disabled in tests via `limiter.enabled = False` in conftest
+- `factory-boy` and `faker` available for test data generation (dev dependencies)
 - Test files: `test_portal.py`, `test_auth.py`, `test_auth_extended.py`, `test_admin_api.py`, `test_omada.py`, `test_saas_auth.py`, `test_dashboard.py`, `test_superadmin.py` (121 tests total)
 
 ## Deployment
 
 **Self-hosted VPS:** `deploy/setup.sh` (Ubuntu 22.04+), `deploy/update.sh` (rolling updates), `deploy/backup.sh` (DB backups). Docker Compose runs 8 services: Nginx, Next.js, FastAPI, PostgreSQL, Redis, Omada Controller, Certbot. Nginx routes by subdomain: `omada.*` → Omada Controller; main domain routes `/portal`, `/api/`, `/admin`, `/health`, `/thanks` to FastAPI; `/_next/` and `/` to Next.js. Omada AP communication ports (29810-29814) are exposed to host.
 
-**Zeabur + VPS:** `zeabur.json` deploys FastAPI only. Omada Controller must run on a separate VPS (`deploy/omada/docker-compose.yml`) since Zeabur only exposes one HTTP port. Brand website on Vercel.
+**Zeabur + VPS:** `zeabur.json` deploys FastAPI only (uses `requirements.txt`, not Poetry). Omada Controller must run on a separate VPS (`deploy/omada/docker-compose.yml`) since Zeabur only exposes one HTTP port. Brand website on Vercel.
+
+**Operational scripts:** `deploy/update.sh` pulls `main`, rebuilds app image, runs zero-downtime rolling update, and executes migrations. `deploy/backup.sh` does local Postgres backups (7-day retention) with optional S3/R2 upload. Docker app runs as non-root `appuser` (UID 1000).
 
 ## Key Patterns
 

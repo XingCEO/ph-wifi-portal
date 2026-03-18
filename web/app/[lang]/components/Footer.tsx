@@ -89,10 +89,10 @@ export default function Footer({
               {dict.footer.legal}
             </h4>
             <nav className="flex flex-col gap-2.5">
-              <Link href="/privacy" className="text-sm hover:text-white transition-colors no-underline link-underline w-fit">
+              <Link href={`/${lang}/privacy`} className="text-sm hover:text-white transition-colors no-underline link-underline w-fit">
                 {dict.footer.privacy}
               </Link>
-              <Link href="/terms" className="text-sm hover:text-white transition-colors no-underline link-underline w-fit">
+              <Link href={`/${lang}/terms`} className="text-sm hover:text-white transition-colors no-underline link-underline w-fit">
                 {dict.footer.terms}
               </Link>
             </nav>
