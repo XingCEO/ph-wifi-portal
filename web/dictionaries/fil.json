@@ -106,49 +106,46 @@
     "description": "Simpleng plano, lumago habang lumalaki ka. Lahat ng plano ay may kasamang core WiFi platform.",
     "popularBadge": "Pinaka-popular",
     "cta": "Magsimula Na",
-    "free": {
-      "name": "Libre",
-      "price": "$0",
+    "starter": {
+      "name": "Starter",
+      "price": "$9",
       "period": "/buwan",
-      "revenue": "50/50 Revenue Share",
-      "sites": "1 site",
+      "revenue": "60/40 Revenue Share",
+      "sites": "Hanggang 3 site",
       "features": [
-        "1 hotspot na lokasyon",
-        "50/50 ad revenue split",
-        "Basic na dashboard",
-        "Email na suporta",
-        "Standard na format ng ad"
+        "Hanggang 3 hotspot",
+        "60/40 ad revenue split",
+        "Basic analytics dashboard",
+        "Email support",
+        "Standard ad formats"
       ]
     },
     "pro": {
       "name": "Pro",
-      "price": "$9",
+      "price": "$29",
       "period": "/buwan",
-      "revenue": "70/30 Revenue Share",
-      "sites": "Hanggang 5 na site",
+      "revenue": "75/25 Revenue Share",
+      "sites": "Hanggang 10 site",
       "features": [
-        "Hanggang 5 na hotspot na lokasyon",
-        "70/30 ad revenue split",
-        "Advanced na analytics dashboard",
-        "Priority na email na suporta",
-        "Custom na pag-iskedyul ng ad",
-        "Branded na splash page"
+        "Hanggang 10 hotspot",
+        "75/25 ad revenue split",
+        "Advanced analytics & reports",
+        "Priority support",
+        "Custom ad scheduling"
       ]
     },
     "business": {
       "name": "Business",
-      "price": "$29",
+      "price": "$99",
       "period": "/buwan",
-      "revenue": "80/20 Revenue Share",
-      "sites": "Walang limitasyon na mga site",
+      "revenue": "85/15 Revenue Share",
+      "sites": "Walang limit na site",
       "features": [
-        "Walang limitasyon na mga hotspot na lokasyon",
-        "80/20 ad revenue split",
-        "Buong analytics at pag-uulat",
-        "Dedicated na account manager",
-        "API access",
-        "Custom na integrasyon",
-        "White-label na opsyon"
+        "Walang limit na hotspot",
+        "85/15 ad revenue split",
+        "Dedicated account manager",
+        "API access & integrations",
+        "White-label branding"
       ]
     }
   },

@@ -9,6 +9,16 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
 
   const plans = [
     {
+      key: "starter",
+      name: p.starter.name,
+      price: p.starter.price,
+      period: p.starter.period,
+      revenue: p.starter.revenue,
+      sites: p.starter.sites,
+      features: p.starter.features as string[],
+      popular: false,
+    },
+    {
       key: "pro",
       name: p.pro.name,
       price: p.pro.price,
@@ -17,8 +27,6 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
       sites: p.pro.sites,
       features: p.pro.features as string[],
       popular: true,
-      cta: p.cta,
-      ctaHref: "#contact",
     },
     {
       key: "business",
@@ -29,8 +37,6 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
       sites: p.business.sites,
       features: p.business.features as string[],
       popular: false,
-      cta: p.cta,
-      ctaHref: "#contact",
     },
   ];
 
@@ -61,12 +67,12 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
           </div>
         </AnimateIn>
 
-        {/* Cards */}
-        <div className="grid md:grid-cols-2 gap-6 items-start max-w-4xl mx-auto">
+        {/* Cards — equal height via items-stretch */}
+        <div className="grid md:grid-cols-3 gap-6 items-stretch">
           {plans.map((plan, i) => (
             <AnimateIn key={plan.key} delay={0.1 * i}>
               <div
-                className={`relative rounded-3xl p-8 flex flex-col gap-6 card-lift transition-all ${
+                className={`relative rounded-3xl p-8 h-full flex flex-col gap-6 card-lift transition-all ${
                   plan.popular ? "pricing-popular" : ""
                 }`}
                 style={{
@@ -85,7 +91,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                 {plan.popular && (
                   <div className="absolute -top-4 left-1/2 -translate-x-1/2">
                     <div
-                      className="px-4 py-1.5 rounded-full text-xs font-bold shadow-lg"
+                      className="px-4 py-1.5 rounded-full text-xs font-bold shadow-lg whitespace-nowrap"
                       style={{
                         background: "var(--color-brand-gold)",
                         color: "white",
@@ -199,7 +205,7 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
 
                 {/* CTA */}
                 <a
-                  href={plan.ctaHref}
+                  href="#contact"
                   className="block text-center py-3.5 rounded-2xl font-bold text-sm no-underline transition-all btn-scale"
                   style={
                     plan.popular
@@ -214,20 +220,8 @@ export default function Pricing({ dict }: { dict: Dictionary }) {
                           boxShadow: "0 2px 8px rgba(27,79,138,0.2)",
                         }
                   }
-                  onMouseEnter={(e) => {
-                    if (!plan.popular) {
-                      (e.currentTarget as HTMLAnchorElement).style.background =
-                        "var(--color-brand-green-light)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!plan.popular) {
-                      (e.currentTarget as HTMLAnchorElement).style.background =
-                        "var(--color-brand-green)";
-                    }
-                  }}
                 >
-                  {plan.cta}
+                  {p.cta}
                 </a>
               </div>
             </AnimateIn>
