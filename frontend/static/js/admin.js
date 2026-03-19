@@ -15,6 +15,7 @@ document.addEventListener('alpine:init', () => {
     // ── Dashboard ──────────────────────────────────────────────────────────
     dashStats: null,
     healthData: null,
+    networkData: null,
     trendChart: null,
 
     // ── Hotspots ───────────────────────────────────────────────────────────
@@ -69,6 +70,7 @@ document.addEventListener('alpine:init', () => {
 
     // ── Sessions ───────────────────────────────────────────────────────────
     sessions: null,
+    sessionsAvgRemaining: 0,
     sessCountdown: 30,
     _sessTimer: null,
     _sessCountdownTimer: null,
@@ -179,9 +181,10 @@ document.addEventListener('alpine:init', () => {
     // ════════════════════════════════════════════════════════════════════════
     async loadDashboard() {
       try {
-        const [statsRes, healthRes] = await Promise.all([
+        const [statsRes, healthRes, networkRes] = await Promise.all([
           fetch('/admin/api/stats'),
           fetch('/health'),
+          fetch('/admin/api/network'),
         ]);
         if (statsRes.ok) {
           this.dashStats = await statsRes.json();
@@ -190,6 +193,9 @@ document.addEventListener('alpine:init', () => {
         }
         if (healthRes.ok) {
           this.healthData = await healthRes.json();
+        }
+        if (networkRes.ok) {
+          this.networkData = await networkRes.json();
         }
       } catch (e) {
         this.toast('Failed to load dashboard: ' + e.message, 'error');
@@ -737,7 +743,9 @@ document.addEventListener('alpine:init', () => {
       try {
         const res = await fetch('/admin/api/sessions/active');
         if (!res.ok) throw new Error('HTTP ' + res.status);
-        this.sessions = await res.json();
+        const data = await res.json();
+        this.sessions = data.items || [];
+        this.sessionsAvgRemaining = data.avg_remaining_seconds || 0;
         this.sessCountdown = 30;
         this.lastUpdate = this.fmtDate(new Date().toISOString());
       } catch (e) {
@@ -994,7 +1002,7 @@ document.addEventListener('alpine:init', () => {
       const total = list.length;
       const deployed = list.filter(e => e.hotspot_id).length;
       const good = list.filter(e => e.condition === 'good').length;
-      const totalValue = list.reduce((s, e) => s + (parseFloat(e.current_value_php) || parseFloat(e.original_cost_php) || 0), 0);
+      const totalValue = list.reduce((s, e) => s + (parseFloat(e.original_cost_php) || 0), 0);
       return { total, deployed, good, totalValue };
     },
 
@@ -1200,7 +1208,7 @@ document.addEventListener('alpine:init', () => {
           const raw = await dpoRes.json();
           // API returns {dpo_email, policy_reference} — map to template fields
           this.dpoInfo = {
-            email: raw.dpo_email || '',
+            dpo_email: raw.dpo_email || '',
             policy_reference: raw.policy_reference || '',
           };
         }

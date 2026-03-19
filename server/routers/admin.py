@@ -804,6 +804,62 @@ async def test_omada_connection(request: Request) -> dict[str, Any]:
         return {"status": "error", "message": str(exc)}
 
 
+@router.get("/api/network")
+async def get_network_status(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, Any]:
+    verify_basic_auth(request)
+    # 若 Omada 未設定，直接回傳空狀態
+    if not settings.omada_controller_id:
+        return {
+            "omada_connected": False,
+            "controller_url": "",
+            "online_clients": 0,
+            "ap_list": [],
+        }
+    controller_url = f"https://{settings.omada_host}:{settings.omada_port}"
+    try:
+        omada = get_omada_client()
+        # 取得所有 hotspot 的 site_name 並查詢線上用戶
+        hotspots_result = await db.execute(select(Hotspot).where(Hotspot.is_active == True))  # noqa: E712
+        hotspots = hotspots_result.scalars().all()
+        all_clients: list[dict[str, Any]] = []
+        ap_map: dict[str, dict[str, Any]] = {}
+        for hotspot in hotspots:
+            try:
+                clients = await omada.get_online_clients(hotspot.site_name)
+                all_clients.extend(clients)
+                # 依 AP MAC 彙整
+                for c in clients:
+                    ap_mac = c.get("apMac", "unknown")
+                    if ap_mac not in ap_map:
+                        ap_map[ap_mac] = {
+                            "name": c.get("apName", ap_mac),
+                            "mac": ap_mac,
+                            "status": "online",
+                            "clients": 0,
+                            "uptime": c.get("apUptime", "N/A"),
+                        }
+                    ap_map[ap_mac]["clients"] += 1
+            except OmadaError:
+                continue
+        return {
+            "omada_connected": True,
+            "controller_url": controller_url,
+            "online_clients": len(all_clients),
+            "ap_list": list(ap_map.values()),
+        }
+    except (OmadaError, RuntimeError) as exc:
+        logger.warning("network_status_degraded", error=str(exc))
+        return {
+            "omada_connected": False,
+            "controller_url": controller_url,
+            "online_clients": 0,
+            "ap_list": [],
+        }
+
+
 # ── Hotspot Delete + Detail ──────────────────────────────────────────────
 
 

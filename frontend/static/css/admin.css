@@ -36,7 +36,7 @@
   --red-muted: rgba(220, 38, 38, 0.1);
 
   /* Layout */
-  --sidebar-w: 240px;
+  --sidebar-w: 260px;
   --topbar-h: 56px;
 
   /* Radii */
@@ -47,7 +47,7 @@
   --radius-pill: 20px;
 
   /* Transitions */
-  --ease: 0.15s ease;
+  --ease: 0.2s ease;
 }
 
 
@@ -202,7 +202,7 @@ img { display: block; max-width: 100%; }
 /* Navigation */
 .sidebar-nav {
   flex: 1;
-  padding: 12px 10px;
+  padding: 12px 14px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -239,13 +239,13 @@ img { display: block; max-width: 100%; }
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 8px 12px;
-  border-radius: var(--radius);
+  padding: 12px 20px;
+  border-radius: var(--radius-md);
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
-  transition: background var(--ease), color var(--ease);
+  transition: all var(--ease);
   position: relative;
   border: none;
   background: none;
@@ -261,6 +261,7 @@ img { display: block; max-width: 100%; }
 .nav-item.active {
   background: var(--blue-muted);
   color: var(--blue);
+  border-radius: var(--radius-md);
 }
 
 .nav-item.active::before {
@@ -326,8 +327,8 @@ img { display: block; max-width: 100%; }
    ============================================================ */
 
 .topbar-title {
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 18px;
+  font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;
   white-space: nowrap;
@@ -429,18 +430,19 @@ img { display: block; max-width: 100%; }
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-left: 4px solid var(--green);
-  border-radius: var(--radius-md);
-  padding: 20px;
+  border-radius: 14px;
+  padding: 20px 24px;
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
-  transition: border-color var(--ease), background var(--ease);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  transition: border-color var(--ease), background var(--ease), box-shadow var(--ease);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .kpi-card:hover {
   background: var(--bg-elevated);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
 }
 
 .kpi-card.blue { border-left-color: var(--blue); }
@@ -449,7 +451,7 @@ img { display: block; max-width: 100%; }
 .kpi-card.green { border-left-color: var(--green); }
 
 .kpi-label {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--text-secondary);
   margin-bottom: 8px;
@@ -498,9 +500,9 @@ img { display: block; max-width: 100%; }
 .card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .card-header {
@@ -513,14 +515,14 @@ img { display: block; max-width: 100%; }
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--text);
   letter-spacing: -0.01em;
 }
 
 .card-body {
-  padding: 20px;
+  padding: 16px 20px;
 }
 
 .card-footer {
@@ -538,6 +540,7 @@ img { display: block; max-width: 100%; }
 
 .table-wrap {
   overflow-x: auto;
+  border-radius: 12px;
 }
 
 table {
@@ -547,8 +550,8 @@ table {
 
 th {
   text-align: left;
-  padding: 10px 20px;
-  font-size: 11px;
+  padding: 12px 16px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-muted);
   letter-spacing: 0.06em;
@@ -561,10 +564,10 @@ th {
 }
 
 td {
-  padding: 12px 20px;
+  padding: 12px 16px;
   font-size: 13px;
   color: var(--text-secondary);
-  border-bottom: 1px solid var(--border-subtle);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.04);
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -623,10 +626,10 @@ td.center {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
-  padding: 3px 10px;
-  border-radius: var(--radius-pill);
+  padding: 4px 10px;
+  border-radius: 8px;
   line-height: 1.4;
   white-space: nowrap;
 }
@@ -679,10 +682,10 @@ td.center {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 36px;
-  padding: 0 16px;
+  height: 40px;
+  padding: 10px 20px;
   border: 1px solid transparent;
-  border-radius: var(--radius);
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 500;
   font-family: inherit;
@@ -713,6 +716,7 @@ td.center {
 .btn-primary:hover {
   background: #163f6e;
   border-color: #163f6e;
+  box-shadow: 0 4px 14px rgba(27, 79, 138, 0.35);
 }
 
 .btn-outline {
@@ -812,7 +816,7 @@ td.center {
 
 .form-label {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-secondary);
   margin-bottom: 6px;
@@ -821,11 +825,11 @@ td.center {
 
 .form-control {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
+  height: 42px;
+  padding: 10px 14px;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
@@ -856,11 +860,11 @@ textarea.form-control {
 
 .form-select {
   width: 100%;
-  height: 38px;
-  padding: 0 32px 0 12px;
+  height: 42px;
+  padding: 10px 32px 10px 14px;
   background: var(--bg-surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 4.5L6 7.5L9 4.5' stroke='%237a7a7a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3C/svg%3E") no-repeat right 10px center;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;
@@ -966,7 +970,7 @@ textarea.form-control {
 .modal {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-lg);
+  border-radius: 18px;
   width: 100%;
   max-width: 480px;
   max-height: 85vh;
@@ -989,13 +993,13 @@ textarea.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 .modal-header h3 {
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 600;
   color: var(--text);
 }
@@ -1020,13 +1024,13 @@ textarea.form-control {
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 24px;
   overflow-y: auto;
   flex: 1;
 }
 
 .modal-footer {
-  padding: 14px 20px;
+  padding: 16px 24px;
   border-top: 1px solid var(--border);
   display: flex;
   align-items: center;
@@ -1055,8 +1059,8 @@ textarea.form-control {
   background: var(--bg-elevated);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  padding: 12px 16px;
-  font-size: 13px;
+  padding: 14px 18px;
+  font-size: 14px;
   color: var(--text);
   display: flex;
   align-items: center;
@@ -1188,12 +1192,7 @@ textarea.form-control {
    ============================================================ */
 
 .tab-pane {
-  display: none;
   animation: fade-in 0.2s ease;
-}
-
-.tab-pane.active {
-  display: block;
 }
 
 @keyframes fade-in {
@@ -1465,11 +1464,11 @@ textarea.form-control {
    ============================================================ */
 
 .page-header {
-  margin-bottom: 24px;
+  margin-bottom: 28px;
 }
 
 .page-header h2 {
-  font-size: 20px;
+  font-size: 26px;
   font-weight: 700;
   color: var(--text);
   letter-spacing: -0.02em;
@@ -1478,7 +1477,7 @@ textarea.form-control {
 }
 
 .page-header p {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -1716,13 +1715,13 @@ textarea.form-control {
 .stat-card {
   background: var(--bg-surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
+  border-radius: 14px;
   padding: 20px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-secondary);
   margin-bottom: 8px;
   font-weight: 500;
@@ -1947,7 +1946,7 @@ textarea.form-control {
 }
 
 .page-desc {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-secondary);
   margin-top: 4px;
 }
@@ -1963,9 +1962,9 @@ textarea.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 12px 0;
   border-bottom: 1px solid var(--border-subtle);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .stat-row:last-child {
@@ -1978,7 +1977,8 @@ textarea.form-control {
 
 .stat-row strong {
   color: var(--text);
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .stat-row a {
@@ -2061,11 +2061,11 @@ textarea.form-control {
 /* Input (generic) */
 .input {
   width: 100%;
-  height: 38px;
-  padding: 0 12px;
+  height: 42px;
+  padding: 10px 14px;
   background: var(--bg-surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
   color: var(--text);
   font-size: 13px;
   font-family: inherit;

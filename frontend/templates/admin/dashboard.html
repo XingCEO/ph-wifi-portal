@@ -109,19 +109,19 @@
       <div class="kpi-grid">
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x5BA2;</div>
-          <div class="kpi-value" x-text="dashStats ? dashStats.today_visits : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? dashStats.total_visits : '...'"></div>
         </div>
         <div class="kpi-card kpi-green">
           <div class="kpi-label">&#x7E3D;&#x9023;&#x7DDA;</div>
-          <div class="kpi-value" x-text="dashStats ? dashStats.total_grants : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? dashStats.total_access_grants : '...'"></div>
         </div>
         <div class="kpi-card kpi-purple">
           <div class="kpi-label">&#x6D3B;&#x8E8D;&#x71B1;&#x9EDE;</div>
-          <div class="kpi-value" x-text="dashStats ? dashStats.active_hotspots : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? (dashStats.hotspots ? dashStats.hotspots.length : 0) : '...'"></div>
         </div>
         <div class="kpi-card kpi-amber">
           <div class="kpi-label">&#x672C;&#x6708;&#x6536;&#x5165;</div>
-          <div class="kpi-value" x-text="dashStats ? ('&#x20B1;' + Number(dashStats.monthly_revenue || 0).toLocaleString()) : '...'"></div>
+          <div class="kpi-value" x-text="dashStats ? ('&#x20B1;' + Number(dashStats.total_revenue_usd || 0).toLocaleString()) : '...'"></div>
         </div>
       </div>
 
@@ -161,6 +161,77 @@
         </div>
       </div>
 
+      <!-- ── 網路狀態 ── -->
+      <div class="card">
+        <div class="card-header">
+          <h3>&#x7DB2;&#x8DEF;&#x72C0;&#x614B;</h3>
+        </div>
+        <div class="card-body">
+          <template x-if="!networkData">
+            <div class="table-empty"><div class="spinner"></div></div>
+          </template>
+          <template x-if="networkData">
+            <div>
+              <div class="health-grid" style="margin-bottom: 1rem;">
+                <div class="health-item">
+                  <span class="health-dot" :class="networkData.omada_connected ? 'dot-green' : 'dot-red'"></span>
+                  <span>Omada &#x63A7;&#x5236;&#x5668;</span>
+                  <span class="status-badge" :class="networkData.omada_connected ? 'status-active' : 'status-inactive'" x-text="networkData.omada_connected ? '&#x5DF2;&#x9023;&#x7DDA;' : '&#x672A;&#x9023;&#x7DDA;'"></span>
+                </div>
+                <div class="health-item" x-show="networkData.controller_url">
+                  <span style="color: var(--text-muted); font-size: 0.85rem;" x-text="networkData.controller_url"></span>
+                </div>
+              </div>
+              <template x-if="!networkData.omada_connected && networkData.controller_url === ''">
+                <p style="color: var(--text-muted); font-style: italic;">Omada &#x63A7;&#x5236;&#x5668;&#x672A;&#x8A2D;&#x5B9A;</p>
+              </template>
+              <template x-if="networkData.omada_connected">
+                <div>
+                  <div class="kpi-grid" style="margin-bottom: 1rem;">
+                    <div class="kpi-card kpi-blue">
+                      <div class="kpi-label">&#x7DDA;&#x4E0A;&#x7528;&#x6236;</div>
+                      <div class="kpi-value" x-text="networkData.online_clients"></div>
+                    </div>
+                    <div class="kpi-card kpi-green">
+                      <div class="kpi-label">AP &#x6578;&#x91CF;</div>
+                      <div class="kpi-value" x-text="networkData.ap_list.length"></div>
+                    </div>
+                  </div>
+                  <template x-if="networkData.ap_list.length > 0">
+                    <div class="table-responsive">
+                      <table class="data-table">
+                        <thead>
+                          <tr>
+                            <th>AP &#x540D;&#x7A31;</th>
+                            <th>MAC</th>
+                            <th>&#x72C0;&#x614B;</th>
+                            <th>&#x9023;&#x7DDA;&#x7528;&#x6236;</th>
+                            <th>Uptime</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <template x-for="ap in networkData.ap_list" :key="ap.mac">
+                            <tr>
+                              <td x-text="ap.name"></td>
+                              <td><code x-text="ap.mac"></code></td>
+                              <td>
+                                <span class="status-badge" :class="ap.status === 'online' ? 'status-active' : 'status-inactive'" x-text="ap.status === 'online' ? '&#x7DDA;&#x4E0A;' : '&#x96E2;&#x7DDA;'"></span>
+                              </td>
+                              <td x-text="ap.clients"></td>
+                              <td x-text="ap.uptime"></td>
+                            </tr>
+                          </template>
+                        </tbody>
+                      </table>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </template>
+        </div>
+      </div>
+
       <div class="card">
         <div class="card-header">
           <h3>&#x71B1;&#x9EDE;&#x7E3D;&#x89BD;</h3>
@@ -177,19 +248,19 @@
                 </tr>
               </thead>
               <tbody>
-                <template x-if="!hotspots">
+                <template x-if="!dashStats || !dashStats.hotspots">
                   <tr><td colspan="4" class="table-empty"><div class="spinner"></div></td></tr>
                 </template>
-                <template x-if="hotspots && hotspots.length === 0">
+                <template x-if="dashStats && dashStats.hotspots && dashStats.hotspots.length === 0">
                   <tr><td colspan="4" class="table-empty">&#x5C1A;&#x7121;&#x71B1;&#x9EDE;&#x8CC7;&#x6599;</td></tr>
                 </template>
-                <template x-for="h in (hotspots || [])" :key="h.id">
+                <template x-for="h in (dashStats?.hotspots || [])" :key="h.hotspot_id">
                   <tr>
-                    <td x-text="h.name"></td>
-                    <td x-text="h.location"></td>
-                    <td x-text="h.today_visits ?? '-'"></td>
+                    <td x-text="h.hotspot_name"></td>
+                    <td x-text="'-'"></td>
+                    <td x-text="h.visits_today ?? '-'"></td>
                     <td>
-                      <span class="status-badge" :class="h.is_active ? 'status-active' : 'status-inactive'" x-text="h.is_active ? '&#x555F;&#x7528;' : '&#x505C;&#x7528;'"></span>
+                      <span class="status-badge status-active">&#x555F;&#x7528;</span>
                     </td>
                   </tr>
                 </template>
@@ -289,19 +360,19 @@
       <div class="kpi-grid">
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x6708;&#x4EFD;</div>
-          <div class="kpi-value" x-text="revData ? revData.month : '-'"></div>
+          <div class="kpi-value" x-text="revData ? revData.period : '-'"></div>
         </div>
         <div class="kpi-card kpi-green">
-          <div class="kpi-label">&#x7E3D;&#x6536;&#x5165;</div>
-          <div class="kpi-value" x-text="revData ? ('&#x20B1;' + Number(revData.total_revenue || 0).toLocaleString()) : '-'"></div>
+          <div class="kpi-label">&#x5EE3;&#x544A;&#x6536;&#x5165; (USD)</div>
+          <div class="kpi-value" x-text="revData ? ('$' + Number(revData.adcash_revenue_usd || 0).toLocaleString()) : '-'"></div>
         </div>
         <div class="kpi-card kpi-purple">
           <div class="kpi-label">&#x5EE3;&#x544A;&#x5C55;&#x793A;</div>
           <div class="kpi-value" x-text="revData ? (revData.total_ad_views || 0).toLocaleString() : '-'"></div>
         </div>
         <div class="kpi-card kpi-amber">
-          <div class="kpi-label">&#x7E3D;&#x8A2A;&#x5BA2;</div>
-          <div class="kpi-value" x-text="revData ? (revData.total_visits || 0).toLocaleString() : '-'"></div>
+          <div class="kpi-label">&#x76F4;&#x63A5;&#x5EE3;&#x544A;&#x6536;&#x5165; (PHP)</div>
+          <div class="kpi-value" x-text="revData ? ('&#x20B1;' + Number(revData.direct_revenue_php || 0).toLocaleString()) : '-'"></div>
         </div>
       </div>
 
@@ -322,15 +393,15 @@
                   </tr>
                 </thead>
                 <tbody>
-                  <template x-if="!revData || !revData.by_hotspot">
+                  <template x-if="!revData || !revData.breakdown_by_hotspot">
                     <tr><td colspan="4" class="table-empty">&#x8ACB;&#x5148;&#x67E5;&#x8A62;</td></tr>
                   </template>
-                  <template x-for="r in (revData?.by_hotspot || [])" :key="r.hotspot">
+                  <template x-for="r in (revData?.breakdown_by_hotspot || [])" :key="r.hotspot_id">
                     <tr>
-                      <td x-text="r.hotspot"></td>
-                      <td x-text="r.visits"></td>
+                      <td x-text="r.hotspot_name"></td>
                       <td x-text="r.ad_views"></td>
-                      <td x-text="'&#x20B1;' + Number(r.revenue || 0).toLocaleString()"></td>
+                      <td x-text="r.ad_views"></td>
+                      <td x-text="'$' + Number(r.revenue_usd || 0).toLocaleString()"></td>
                     </tr>
                   </template>
                 </tbody>
@@ -353,16 +424,16 @@
         <div>
           <div class="kpi-grid kpi-grid-3">
             <div class="kpi-card kpi-green">
-              <div class="kpi-label">&#x65E5;&#x5747;&#x6536;&#x5165;</div>
-              <div class="kpi-value" x-text="'&#x20B1;' + Number(revDailyData.avg_revenue || 0).toFixed(2)"></div>
+              <div class="kpi-label">&#x7E3D;&#x6536;&#x5165;</div>
+              <div class="kpi-value" x-text="'$' + Number(revDailyData.total_revenue || 0).toLocaleString()"></div>
             </div>
             <div class="kpi-card kpi-purple">
-              <div class="kpi-label">&#x65E5;&#x5747;&#x5EE3;&#x544A;</div>
-              <div class="kpi-value" x-text="Number(revDailyData.avg_views || 0).toFixed(0)"></div>
+              <div class="kpi-label">&#x7E3D;&#x5EE3;&#x544A;</div>
+              <div class="kpi-value" x-text="Number(revDailyData.total_views || 0).toLocaleString()"></div>
             </div>
             <div class="kpi-card kpi-amber">
               <div class="kpi-label">CPM</div>
-              <div class="kpi-value" x-text="'&#x20B1;' + Number(revDailyData.cpm || 0).toFixed(2)"></div>
+              <div class="kpi-value" x-text="'$' + Number(revDailyData.cpm || 0).toFixed(4)"></div>
             </div>
           </div>
           <div class="card">
@@ -385,7 +456,7 @@
 
       <div class="live-hero">
         <div class="live-count-wrap">
-          <div class="live-count pulse" x-text="liveData ? liveData.online_count : '...'"></div>
+          <div class="live-count pulse" x-text="liveData ? liveData.total_active_users : '...'"></div>
         </div>
         <p class="live-label">
           &#x76EE;&#x524D;&#x5728;&#x7DDA;&#x4EBA;&#x6578; |
@@ -415,12 +486,12 @@
                 <template x-if="liveData && liveData.hotspots && liveData.hotspots.length === 0">
                   <tr><td colspan="3" class="table-empty">&#x7121;&#x71B1;&#x9EDE;&#x8CC7;&#x6599;</td></tr>
                 </template>
-                <template x-for="h in (liveData?.hotspots || [])" :key="h.name">
+                <template x-for="h in (liveData?.hotspots || [])" :key="h.hotspot_id">
                   <tr>
-                    <td x-text="h.name"></td>
-                    <td x-text="h.online"></td>
+                    <td x-text="h.hotspot_name"></td>
+                    <td x-text="h.active_users"></td>
                     <td>
-                      <span class="status-badge" :class="h.online > 0 ? 'status-active' : 'status-inactive'" x-text="h.online > 0 ? '&#x6D3B;&#x8E8D;' : '&#x7A7A;&#x9592;'"></span>
+                      <span class="status-badge" :class="h.active_users > 0 ? 'status-active' : 'status-inactive'" x-text="h.active_users > 0 ? '&#x6D3B;&#x8E8D;' : '&#x7A7A;&#x9592;'"></span>
                     </td>
                   </tr>
                 </template>
@@ -459,30 +530,24 @@
                   <th>IP</th>
                   <th>&#x71B1;&#x9EDE;</th>
                   <th>&#x6642;&#x9593;</th>
-                  <th>&#x5EE3;&#x544A;</th>
-                  <th>&#x6388;&#x6B0A;</th>
+                  <th>User Agent</th>
                 </tr>
               </thead>
               <tbody>
                 <template x-if="!users">
-                  <tr><td colspan="7" class="table-empty"><div class="spinner"></div></td></tr>
+                  <tr><td colspan="6" class="table-empty"><div class="spinner"></div></td></tr>
                 </template>
                 <template x-if="users && users.length === 0">
-                  <tr><td colspan="7" class="table-empty">&#x7121;&#x8A2A;&#x554F;&#x8A18;&#x9304;</td></tr>
+                  <tr><td colspan="6" class="table-empty">&#x7121;&#x8A2A;&#x554F;&#x8A18;&#x9304;</td></tr>
                 </template>
                 <template x-for="v in (users || [])" :key="v.id">
                   <tr>
                     <td x-text="v.id"></td>
-                    <td><code x-text="v.mac"></code></td>
-                    <td x-text="v.ip || '-'"></td>
+                    <td><code x-text="v.client_mac"></code></td>
+                    <td x-text="v.ip_address || '-'"></td>
                     <td x-text="v.hotspot_name || '-'"></td>
-                    <td x-text="v.created_at"></td>
-                    <td>
-                      <span class="status-badge" :class="v.ad_viewed ? 'status-active' : 'status-inactive'" x-text="v.ad_viewed ? '&#x2713;' : '-'"></span>
-                    </td>
-                    <td>
-                      <span class="status-badge" :class="v.granted ? 'status-active' : 'status-inactive'" x-text="v.granted ? '&#x2713;' : '-'"></span>
-                    </td>
+                    <td x-text="v.visited_at"></td>
+                    <td x-text="truncate(v.user_agent, 30) || '-'"></td>
                   </tr>
                 </template>
               </tbody>
@@ -517,19 +582,19 @@
                 <div class="stat-list">
                   <div class="stat-row">
                     <span>&#x7E3D;&#x8A2A;&#x554F;</span>
-                    <strong x-text="secStats.today_visits || 0"></strong>
+                    <strong x-text="secStats.total_visits || 0"></strong>
                   </div>
                   <div class="stat-row">
                     <span>&#x5EE3;&#x544A;&#x8A08;&#x6578;</span>
-                    <strong x-text="secStats.today_ad_views || 0"></strong>
+                    <strong x-text="secStats.total_ad_views || 0"></strong>
                   </div>
                   <div class="stat-row">
                     <span>&#x6388;&#x6B0A;&#x6B21;&#x6578;</span>
-                    <strong x-text="secStats.today_grants || 0"></strong>
+                    <strong x-text="secStats.total_access_grants || 0"></strong>
                   </div>
                   <div class="stat-row">
                     <span>&#x6D3B;&#x8E8D;&#x7528;&#x6236;</span>
-                    <strong x-text="secStats.active_users || 0"></strong>
+                    <strong x-text="secStats.active_users_total || 0"></strong>
                   </div>
                 </div>
               </template>
@@ -558,7 +623,7 @@
                       <tr>
                         <td x-text="log.created_at"></td>
                         <td x-text="log.action"></td>
-                        <td x-text="log.detail"></td>
+                        <td x-text="log.target_type ? (log.target_type + ' ' + (log.target_id || '')) : (JSON.stringify(log.details) || '-')"></td>
                       </tr>
                     </template>
                   </tbody>
@@ -632,12 +697,12 @@
                     <td x-text="a.id"></td>
                     <td x-text="a.name"></td>
                     <td x-text="a.contact || '-'"></td>
-                    <td x-text="'&#x20B1;' + Number(a.monthly_fee || 0).toLocaleString()"></td>
+                    <td x-text="'&#x20B1;' + Number(a.monthly_fee_php || 0).toLocaleString()"></td>
                     <td>
-                      <span class="status-badge" :class="a.status === 'active' ? 'status-active' : 'status-inactive'" x-text="a.status"></span>
+                      <span class="status-badge" :class="a.is_active ? 'status-active' : 'status-inactive'" x-text="a.is_active ? '&#x555F;&#x7528;' : '&#x505C;&#x7528;'"></span>
                     </td>
-                    <td x-text="a.start_date || '-'"></td>
-                    <td x-text="a.end_date || '-'"></td>
+                    <td x-text="a.starts_at ? a.starts_at.slice(0, 10) : '-'"></td>
+                    <td x-text="a.ends_at ? a.ends_at.slice(0, 10) : '-'"></td>
                     <td class="actions-cell">
                       <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openAdvModal(a.id)">&#x270F;&#xFE0F;</button>
                       <button class="btn-icon btn-danger-icon" title="&#x522A;&#x9664;" @click="deleteAdvertiser(a.id)">&#x1F5D1;&#xFE0F;</button>
@@ -684,14 +749,14 @@
                 <template x-if="blockedDevices && blockedDevices.length === 0">
                   <tr><td colspan="5" class="table-empty">&#x7121;&#x5C01;&#x9396;&#x88DD;&#x7F6E;</td></tr>
                 </template>
-                <template x-for="d in (blockedDevices || [])" :key="d.mac">
+                <template x-for="d in (blockedDevices || [])" :key="d.id">
                   <tr>
-                    <td><code x-text="d.mac"></code></td>
+                    <td><code x-text="d.client_mac"></code></td>
                     <td x-text="d.reason || '-'"></td>
                     <td x-text="d.blocked_at"></td>
                     <td x-text="d.expires_at || '&#x6C38;&#x4E45;'"></td>
                     <td>
-                      <button class="btn btn-outline btn-sm" @click="unblockDevice(d.mac)">&#x89E3;&#x9664;&#x5C01;&#x9396;</button>
+                      <button class="btn btn-outline btn-sm" @click="unblockDevice(d.id)">&#x89E3;&#x9664;&#x5C01;&#x9396;</button>
                     </td>
                   </tr>
                 </template>
@@ -714,37 +779,33 @@
               <div class="kpi-grid kpi-grid-3">
                 <div class="kpi-card kpi-blue">
                   <div class="kpi-label">&#x7E3D;&#x8A2A;&#x554F;</div>
-                  <div class="kpi-value" x-text="deviceHistory.total_visits || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.visits ? deviceHistory.visits.length : 0"></div>
                 </div>
                 <div class="kpi-card kpi-green">
                   <div class="kpi-label">&#x6388;&#x6B0A;&#x6B21;&#x6578;</div>
-                  <div class="kpi-value" x-text="deviceHistory.total_grants || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.grants ? deviceHistory.grants.length : 0"></div>
                 </div>
                 <div class="kpi-card kpi-purple">
                   <div class="kpi-label">&#x5EE3;&#x544A;&#x6B21;&#x6578;</div>
-                  <div class="kpi-value" x-text="deviceHistory.total_ad_views || 0"></div>
+                  <div class="kpi-value" x-text="deviceHistory.ad_views ? deviceHistory.ad_views.length : 0"></div>
                 </div>
               </div>
 
-              <div class="table-responsive" x-show="deviceHistory.recent_visits?.length > 0">
+              <div class="table-responsive" x-show="deviceHistory.visits?.length > 0">
                 <table class="data-table">
                   <thead>
                     <tr>
                       <th>&#x6642;&#x9593;</th>
-                      <th>&#x71B1;&#x9EDE;</th>
+                      <th>&#x71B1;&#x9EDE; ID</th>
                       <th>IP</th>
-                      <th>&#x5EE3;&#x544A;</th>
-                      <th>&#x6388;&#x6B0A;</th>
                     </tr>
                   </thead>
                   <tbody>
-                    <template x-for="v in (deviceHistory.recent_visits || [])" :key="v.id">
+                    <template x-for="v in (deviceHistory.visits || [])" :key="v.id">
                       <tr>
-                        <td x-text="v.created_at"></td>
-                        <td x-text="v.hotspot_name || '-'"></td>
+                        <td x-text="v.at"></td>
+                        <td x-text="v.hotspot_id || '-'"></td>
                         <td x-text="v.ip || '-'"></td>
-                        <td x-text="v.ad_viewed ? '&#x2713;' : '-'"></td>
-                        <td x-text="v.granted ? '&#x2713;' : '-'"></td>
                       </tr>
                     </template>
                   </tbody>
@@ -769,7 +830,7 @@
         </div>
         <div class="kpi-card kpi-blue">
           <div class="kpi-label">&#x5E73;&#x5747;&#x5269;&#x9918;&#x6642;&#x9593;</div>
-          <div class="kpi-value" x-text="'-'"></div>
+          <div class="kpi-value" x-text="sessionsAvgRemaining ? Math.round(sessionsAvgRemaining / 60) + ' min' : '-'"></div>
         </div>
       </div>
 
@@ -798,22 +859,22 @@
                 <template x-if="sessions && sessions.length === 0">
                   <tr><td colspan="6" class="table-empty">&#x7121;&#x6D3B;&#x8E8D;&#x9023;&#x7DDA;</td></tr>
                 </template>
-                <template x-for="s in (sessions || [])" :key="s.mac">
+                <template x-for="s in (sessions || [])" :key="s.id">
                   <tr>
-                    <td><code x-text="s.mac"></code></td>
+                    <td><code x-text="s.client_mac"></code></td>
                     <td x-text="s.hotspot_name || '-'"></td>
-                    <td x-text="s.started_at"></td>
+                    <td x-text="s.granted_at"></td>
                     <td x-text="s.expires_at"></td>
                     <td>
                       <div class="session-remaining">
                         <div class="progress-bar-sm">
-                          <div class="progress-fill-sm" :style="'width:' + (s.remaining_pct || 0) + '%'"></div>
+                          <div class="progress-fill-sm" :style="'width:' + Math.min(100, Math.max(0, (s.remaining_seconds / 3600) * 100)) + '%'"></div>
                         </div>
-                        <span class="remaining-text" x-text="s.remaining_label || '-'"></span>
+                        <span class="remaining-text" x-text="s.remaining_seconds ? Math.round(s.remaining_seconds / 60) + ' min' : '-'"></span>
                       </div>
                     </td>
                     <td>
-                      <button class="btn btn-danger btn-sm" @click="revokeSession(s.mac)">&#x64A4;&#x92B7;</button>
+                      <button class="btn btn-danger btn-sm" @click="revokeSession(s.id)">&#x64A4;&#x92B7;</button>
                     </td>
                   </tr>
                 </template>
@@ -1005,18 +1066,17 @@
                   <th>&#x5E8F;&#x865F;</th>
                   <th>&#x71B1;&#x9EDE;</th>
                   <th>&#x72C0;&#x6CC1;</th>
-                  <th>&#x539F;&#x59CB;&#x6210;&#x672C;</th>
-                  <th>&#x73FE;&#x503C;</th>
+                  <th>&#x6210;&#x672C;</th>
                   <th>&#x5B89;&#x88DD;&#x65E5;&#x671F;</th>
                   <th>&#x64CD;&#x4F5C;</th>
                 </tr>
               </thead>
               <tbody>
                 <template x-if="!equipmentList">
-                  <tr><td colspan="10" class="table-empty"><div class="spinner"></div></td></tr>
+                  <tr><td colspan="9" class="table-empty"><div class="spinner"></div></td></tr>
                 </template>
                 <template x-if="equipmentList && equipmentList.length === 0">
-                  <tr><td colspan="10" class="table-empty">&#x7121;&#x8A2D;&#x5099;&#x8CC7;&#x6599;</td></tr>
+                  <tr><td colspan="9" class="table-empty">&#x7121;&#x8A2D;&#x5099;&#x8CC7;&#x6599;</td></tr>
                 </template>
                 <template x-for="e in (equipmentList || [])" :key="e.id">
                   <tr>
@@ -1024,7 +1084,7 @@
                     <td x-text="equipmentTypeLabel(e.item_type)"></td>
                     <td x-text="e.model || '-'"></td>
                     <td><code x-text="e.serial_number || '-'"></code></td>
-                    <td x-text="e.hotspot_name || '-'"></td>
+                    <td x-text="e.hotspot_id || '-'"></td>
                     <td>
                       <span class="badge" :class="equipmentConditionClass(e.condition)">
                         <span class="badge-dot"></span>
@@ -1032,7 +1092,6 @@
                       </span>
                     </td>
                     <td x-text="'&#x20B1;' + Number(e.original_cost_php || 0).toLocaleString()"></td>
-                    <td x-text="'&#x20B1;' + Number(e.current_value_php || e.original_cost_php || 0).toLocaleString()"></td>
                     <td x-text="e.installed_at ? fmtDate(e.installed_at) : '-'"></td>
                     <td class="actions-cell">
                       <button class="btn-icon" title="&#x7DE8;&#x8F2F;" @click="openEquipmentModal(e.id)">&#x270F;&#xFE0F;</button>
@@ -1144,7 +1203,7 @@
                   <tr>
                     <td x-text="inv.id"></td>
                     <td x-text="invoiceTypeLabel(inv.invoice_type)"></td>
-                    <td x-text="inv.organization_name || inv.advertiser_name || '-'"></td>
+                    <td x-text="inv.organization_id ? ('Org #' + inv.organization_id) : (inv.advertiser_id ? ('Adv #' + inv.advertiser_id) : '-')"></td>
                     <td x-text="'&#x20B1;' + Number(inv.amount_php || 0).toLocaleString()"></td>
                     <td>
                       <span class="badge" :class="invoiceStatusClass(inv.status)">
@@ -1153,7 +1212,7 @@
                       </span>
                     </td>
                     <td x-text="inv.due_date ? fmtDate(inv.due_date) : '-'"></td>
-                    <td x-text="inv.paid_date ? fmtDate(inv.paid_date) : '-'"></td>
+                    <td x-text="inv.paid_at ? fmtDate(inv.paid_at) : '-'"></td>
                     <td x-text="truncate(inv.notes, 20) || '-'"></td>
                     <td class="actions-cell">
                       <template x-if="inv.status === 'pending'">
@@ -1359,9 +1418,8 @@
           <div class="form-group">
             <label class="form-label">&#x72C0;&#x614B;</label>
             <select class="input select" x-model="advForm.status">
-              <option value="active">Active</option>
-              <option value="paused">Paused</option>
-              <option value="ended">Ended</option>
+              <option value="true">&#x555F;&#x7528;</option>
+              <option value="false">&#x505C;&#x7528;</option>
             </select>
           </div>
         </div>
@@ -1415,7 +1473,7 @@
   <div class="modal-overlay" x-show="showHsDetail" x-transition.opacity @click.self="showHsDetail = false">
     <div class="modal modal-wide" @click.stop>
       <div class="modal-header">
-        <h3>&#x71B1;&#x9EDE;&#x8A73;&#x60C5;: <span x-text="hsDetail?.name || ''"></span></h3>
+        <h3>&#x71B1;&#x9EDE;&#x8A73;&#x60C5;: <span x-text="hsDetail?.hotspot?.name || ''"></span></h3>
         <button class="modal-close" @click="showHsDetail = false">&times;</button>
       </div>
       <div class="modal-body">
@@ -1427,15 +1485,15 @@
             <div class="kpi-grid kpi-grid-3">
               <div class="kpi-card kpi-blue">
                 <div class="kpi-label">&#x4ECA;&#x65E5;&#x8A2A;&#x554F;</div>
-                <div class="kpi-value" x-text="hsDetail.today_visits || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.visits_today || 0"></div>
               </div>
               <div class="kpi-card kpi-green">
                 <div class="kpi-label">&#x672C;&#x9031;&#x8A2A;&#x554F;</div>
-                <div class="kpi-value" x-text="hsDetail.week_visits || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.visits_week || 0"></div>
               </div>
               <div class="kpi-card kpi-purple">
                 <div class="kpi-label">&#x4ECA;&#x65E5;&#x5EE3;&#x544A;</div>
-                <div class="kpi-value" x-text="hsDetail.today_ads || 0"></div>
+                <div class="kpi-value" x-text="hsDetail.ads_today || 0"></div>
               </div>
             </div>
 
@@ -1446,18 +1504,16 @@
                   <tr>
                     <th>MAC</th>
                     <th>&#x8A2A;&#x554F;&#x6B21;&#x6578;</th>
-                    <th>&#x6700;&#x5F8C;&#x8A2A;&#x554F;</th>
                   </tr>
                 </thead>
                 <tbody>
                   <template x-if="!hsDetail.top_devices || hsDetail.top_devices.length === 0">
-                    <tr><td colspan="3" class="table-empty">&#x7121;&#x8CC7;&#x6599;</td></tr>
+                    <tr><td colspan="2" class="table-empty">&#x7121;&#x8CC7;&#x6599;</td></tr>
                   </template>
                   <template x-for="d in (hsDetail.top_devices || [])" :key="d.mac">
                     <tr>
                       <td><code x-text="d.mac"></code></td>
-                      <td x-text="d.visit_count"></td>
-                      <td x-text="d.last_visit"></td>
+                      <td x-text="d.count"></td>
                     </tr>
                   </template>
                 </tbody>
