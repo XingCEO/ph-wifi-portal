@@ -26,6 +26,8 @@ _TEMPLATE_CACHE: str | None = None
 
 def _load_template() -> str:
     global _TEMPLATE_CACHE
+    if settings.environment == "development":
+        return TEMPLATE_PATH.read_text(encoding="utf-8")
     if _TEMPLATE_CACHE is None:
         _TEMPLATE_CACHE = TEMPLATE_PATH.read_text(encoding="utf-8")
     return _TEMPLATE_CACHE
